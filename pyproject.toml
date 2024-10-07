@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "vitacore-runtime"
+version = "0.0.0"
+description = "Vitacore Runtime Documentation"
+authors = ["Stanislav N"]
+license = "Apache-2.0"
+
+[tool.poetry.group.docs.dependencies]
+mkdocs = "^1.4.2"
+mkdocs-material = "^9.1.4"
+jinja2 = "3.1.0"
+mkdocs-glightbox = "^0.3.0"
+mkdocs-macros-plugin = "^0.7.0"
+mkdocstrings = "^0.20.0"
+mkdocstrings-python = "^0.8.3"
+
