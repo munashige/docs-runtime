@@ -1,0 +1,30 @@
+site_name: Vitacore
+site_url: https://vitacore.ru/
+repo_name: vitacore-company/runtime
+repo_url: https://github.com/vitacore-company/runtime
+edit_uri: ""
+copyright: Copyright &copy; 2024 Vitacore. All Rights Reserved.
+extra:
+  generator: false
+  social:
+  - icon: fontawesome/brands/github
+    link: https://github.com/vitacore-company/
+  - icon: material/home
+    link: https://vitacore.ru/
+extra_css:
+  - css/custom.css
+theme:
+  name: "material"
+  language: "ru"
+  palette:
+    - scheme: "default"
+      media: "(prefers-color-scheme: light)"
+      toggle:
+        icon: "material/lightbulb"
+        name: "Switch to dark mode"
+    - scheme: "slate"
+      media: "(prefers-color-scheme: dark)"
+      primary: "blue"
+      toggle:
+        icon: "material/lightbulb-outline"
+        name: "Switch to light mode"
