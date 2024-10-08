@@ -24,7 +24,32 @@ theme:
         name: "Switch to dark mode"
     - scheme: "slate"
       media: "(prefers-color-scheme: dark)"
-      primary: "blue"
       toggle:
         icon: "material/lightbulb-outline"
         name: "Switch to light mode"
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.keys
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - attr_list
+  - toc:
+      toc_depth: 3
+plugins:
+  - glightbox
+  - search:
+      lang: ru
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          options:
+            show_signature_annotations: true
+            show_source: false
+            show_bases: false
+            show_root_toc_entry: false
