@@ -24,7 +24,7 @@ VitaCore состоит из среды выполнения (Runtime) и пак
 ## Документы по проектированию
 
 Проектирование функций Runtime доступны в [соответствующей главе](design/features/).
-Дополнительные документы о проектировании функций доступны в этой ссылке : [github.com/dotnet/designs](https://github.com/dotnet/designs).
+Дополнительные сведения доступны по этой ссылке: [github.com/dotnet/designs](https://github.com/dotnet/designs).
 
 ### Книга Runtime
 
