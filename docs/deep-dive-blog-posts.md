@@ -1,6 +1,6 @@
-## List of blog posts that provide a 'deep-dive' into the CoreCLR source code
+Ниже представлен список статей, которые предоставляют "глубокое погружение" в исходный код CoreCLR:
 
-### Posts that take a high-level overview of releases
+## Статьи для общего обзора релизов
 
 - [Corestart 2.0: What's new for performance in .NET Core 2.0](https://www.ageofascent.com/2017/11/05/perfromance-dotnet-core-2-corestart-conference/)
 - [Performance Improvements in .NET Core 2.0](https://devblogs.microsoft.com/dotnet/performance-improvements-in-net-core/)
@@ -12,13 +12,13 @@
 - [Performance Improvements in .NET 8](https://devblogs.microsoft.com/dotnet/performance-improvements-in-net-8/)
 - [Performance Improvements in .NET 9](https://devblogs.microsoft.com/dotnet/performance-improvements-in-net-9/)
 
-### Posts that take a high-level look at the entire source:
+## Статьи для общего обзора на весь исходный код
 
 - [A Hitchhikers Guide to the CoreCLR Source Code](http://mattwarren.org/2017/03/23/Hitchhikers-Guide-to-the-CoreCLR-Source-Code/)
 - [The 68 things the CLR does before executing a single line of your code](http://mattwarren.org/2017/02/07/The-68-things-the-CLR-does-before-executing-a-single-line-of-your-code/)
 - [Research papers in the .NET source](http://mattwarren.org/2016/12/12/Research-papers-in-the-.NET-source/)
 
-### Posts that reference specific parts of the source:
+## Статьи, которые ссылаются на конкретные части исходного кода:
 
 - [A look at the internals of 'boxing' in the CLR](http://mattwarren.org/2017/08/02/A-look-at-the-internals-of-boxing-in-the-CLR/)
 - [Memory Usage Inside the CLR](http://mattwarren.org/2017/07/10/Memory-Usage-Inside-the-CLR/)
