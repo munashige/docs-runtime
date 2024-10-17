@@ -21,12 +21,12 @@ theme:
       media: "(prefers-color-scheme: light)"
       toggle:
         icon: "material/lightbulb"
-        name: "Switch to dark mode"
+        name: "Темная тема"
     - scheme: "slate"
       media: "(prefers-color-scheme: dark)"
       toggle:
         icon: "material/lightbulb-outline"
-        name: "Switch to light mode"
+        name: "Светлая тема"
 markdown_extensions:
   - admonition
   - pymdownx.highlight
@@ -53,3 +53,75 @@ plugins:
             show_source: false
             show_bases: false
             show_root_toc_entry: false
+nav:
+  - Платформа VitaCore: README.md
+  - Работа c репозиторием: 
+    - Инструкция по работе: workflow/README.md
+    - Требования: 
+      - Windows: workflow/requirements/windows-requirements.md
+      - macOS: workflow/requirements/macos-requirements.md
+      - Linux: workflow/requirements/linux-requirements.md
+      - FreeBSD: workflow/requirements/freebsd-requirements.md
+    - Использование Codespaces: Codespaces.md
+    - Редактирование и отладка: editing-and-debugging.md
+    - Использование Docker: using-docker.md
+    - Сборка:
+      - CoreCLR: workflow/building/coreclr/README.md
+      - Сборка Mono: workflow/building/mono/README.md
+      - Библиотеки: 
+        - Cборка: workflow/building/libraries/README.md
+        - Code Coverage: workflow/building/libraries/code-coverage.md
+        - Кросс-сборка: workflow/building/libraries/cross-building.md
+        - WebAssembly: workflow/building/libraries/webassembly-instructions.md
+    - Continuous Integration:
+      - Состояние и анализ: workflow/ci/coreclr-ci-health.md
+      - Отключение тестов: workflow/ci/disabling-tests.md
+      - Анализ сбоев и известные проблемы: workflow/ci/failure-analysis.md
+      - Обзор Pipelines: workflow/ci/pipelines-overview.md
+      - Инструкции для Pull Requests: workflow/ci/pr-guide.md
+      - Приоритизация сбоев CI-тестов: workflow/ci/triaging-failures.md
+    - Отладка: 
+      - CoreCLR: 
+        - Отладка CoreCLR: workflow/debugging/coreclr/debugging-runtime.md
+        - Отладка компиляторов AOT: workflow/debugging/coreclr/debugging-aot-compilers.md
+        - Анализ зависимостей компилятора отладки: workflow/debugging/coreclr/debugging-compiler-dependency-analysis.md 
+      - Библиотеки:
+        - Инструкции для Unix: workflow/debugging/libraries/unix-instructions.md
+        - Инструкции для Windows: workflow/debugging/libraries/windows-instructions.md
+        - VS Code: workflow/debugging/libraries/debugging-vscode.md
+        - Отладка Corelib: workflow/debugging/libraries/debugging-corelib.md
+      - Mono:
+        - Android Runtime: workflow/debugging/mono/android-debugging.md 
+        - WASM Runtime: workflow/debugging/mono/wasm-debugging.md
+    - Тестирование: 
+      - Инструменты управления: workflow/testing/testing-managed-tools.md
+      - Тестирование workloads: workflow/testing/testing-workloads.md
+      - Использование Corerun: workflow/testing/using-corerun-and-coreroot.md
+      - Использование Dev Shipping Package: /workflow/testing/using-dev-shipping-packages.md
+      - Использование билдов .NET Runtime: workflow/testing/using-your-build-with-installed-sdk.md
+      - Работа с Visual Studio: workflow/testing/visualstudio.md
+      - CodeCLR:
+        - Общая структура тестов: workflow/testing/coreclr/test-configuration.md 
+        - Сборка и запуск CoreCLR тестов: workflow/testing/coreclr/testing.md
+        - Инструкции для Windows: workflow/testing/coreclr/unix-test-instructions.md
+        - Инструкции для Unix: workflow/testing/coreclr/unix-test-instructions.md
+        - AutoTrace: workflow/testing/coreclr/automated-stress-testing-diagnostic-server.md
+        - Верификация вывода дизассемблирования: workflow/testing/coreclr/disasm-checks.md
+        - Stress run для изменений GC: workflow/testing/coreclr/gc-stress-run-readme.md
+        - Benchmark Driver 2: workflow/testing/coreclr/running-aspnet-benchmarks-with-crossgen2.md
+      - Хосты:
+        - Запуск и сборка хост-тестов: workflow/testing/host/using-apphost.md
+        - Использование Apphost: workflow/testing/host/using-apphost.md 
+      - Библиотеки:
+        - Отладка библиотек: workflow/testing/libraries/debugging-wasm.md
+        - Filtering libraries tests using traits: workflow/testing/libraries/filtering-tests.md
+        - Тестирование на Android: workflow/testing/libraries/testing-android.md
+        - iOS, tvOS, and MacCatalyst: workflow/testing/libraries/testing-apple.md
+        - Тестирование на WebAssembly: workflow/testing/libraries/testing-wasm.md
+        - Тестирование библиотек: workflow/testing/libraries/testing.md
+      - Mono: workflow/testing/mono/testing.md 
+    - Trimming: 
+      - Файлы ILLink: workflow/trimming/ILLink-files
+      - Переключатели функций: workflow/trimming/feature-switches.md
+  - Статьи CoreCLR: deep-dive-blog-posts.md 
+  - Руководство для PR: issues-pr-management.md
