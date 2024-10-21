@@ -62,9 +62,9 @@ nav:
       - macOS: workflow/requirements/macos-requirements.md
       - Linux: workflow/requirements/linux-requirements.md
       - FreeBSD: workflow/requirements/freebsd-requirements.md
-    - Использование Codespaces: Codespaces.md
-    - Редактирование и отладка: editing-and-debugging.md
-    - Использование Docker: using-docker.md
+    - Использование Codespaces: workflow/Codespaces.md
+    - Редактирование и отладка: workflow/editing-and-debugging.md
+    - Использование Docker: workflow/using-docker.md
     - Сборка:
       - CoreCLR: workflow/building/coreclr/README.md
       - Сборка Mono: workflow/building/mono/README.md

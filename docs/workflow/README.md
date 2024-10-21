@@ -1,23 +1,10 @@
-# Workflow Guide
+# Инструкция по работе с репозиторием
 
-- [Introduction](#introduction)
-- [Important Concepts to Understand](#important-concepts-to-understand)
-  - [Build Configurations](#build-configurations)
-- [Building the Repo](#building-the-repo)
-  - [General Overview](#general-overview)
-  - [Get Started on your Platform and Components](#get-started-on-your-platform-and-components)
-  - [General Recommendations](#general-recommendations)
-- [Testing the Repo](#testing-the-repo)
-  - [Performance Analysis](#performance-analysis)
-- [Warnings as Errors](#warnings-as-errors)
-- [Submitting a PR](#submitting-a-pr)
-- [Triaging Errors in CI](#triaging-errors-in-ci)
+## Введение
 
-## Introduction
+Платформа VitaCore работает на Windows, Linux, macOS и FreeBSD. Каждая операционная система имеет свои требования для корректной работы. Обратите внимание, что не все архитектуры поддерживаются для разработки. Однако, сами сборки могут быть ориентированы на более широкий спектр систем, чем те, которые были упомянуты ранее. То есть имеются два типа систем, которые одновременно задействованы всякий раз, когда вы работаете со сборками в репозитории платформы:
 
-The runtime repo can be worked with on Windows, Linux, macOS, and FreeBSD. Each platform has its own specific requirements to work properly, and not all architectures are supported for dev work. That said, the builds can target a wider range of platforms beyond the ones mentioned earlier. You can see it as there are always two platforms at play whenever you are working with builds in the runtime repo:
-
-- **The Build Platform:** This is the platform of the machine where you cloned the runtime repo and therefore where all your build tools are running on. The following table shows the OS and architecture combinations that we currently support, as well as links to each OS's requirements doc. If you are using WSL directly (i.e. not Docker), then follow the Linux requirements doc.
+- **Система сборки** : Это машина, на которой вы клонировали репозиторий платформы VitaCore и на которой работают все ваши инструменты сборки. В таблице ниже показаны поддерживаемые комбинации операционных систем и архитектур, а также ссылки на документацию с требованиями для каждой операционной системы. Если вы используете WSL напрямую (т. е. не Docker), то следуйте документации с требованиями для Linux.
 
 | Chip  | Windows  | Linux    | macOS    | FreeBSD  |
 | :---: | :------: | :------: | :------: | :------: |
@@ -25,25 +12,28 @@ The runtime repo can be worked with on Windows, Linux, macOS, and FreeBSD. Each 
 | x86   | &#x2714; |          |          |          |
 | Arm32 |          | &#x2714; |          |          |
 | Arm64 | &#x2714; | &#x2714; | &#x2714; |          |
-|       | [Requirements](requirements/windows-requirements.md) | [Requirements](requirements/linux-requirements.md) | [Requirements](requirements/macos-requirements.md) | [Requirements](requirements/freebsd-requirements.md)
+|       | [Требования Windows](requirements/windows-requirements.md) | [Требования Linux](requirements/linux-requirements.md) | [Требования macOS](requirements/macos-requirements.md) | [Требования FreeBSD](requirements/freebsd-requirements.md)
 
-- **The Target Platform:** This is the platform you are building the artifacts for, i.e. the platform you intend to run your builds on.
+- **Конечная система**: Это машина, для которой вы создаете артефакты. То есть система, на которой вы хотите запускать платформу VitaCore.
 
-The *Build Platform* and the *Target Platform* can be either the same as or different from each other. The former scenario is straightforward, as you will likely be doing all the work on the same machine. In the latter scenario, the process is called *cross-compiling*. There are certain workflows that require you to follow this process, as it is not possible to build the repo directly on those platforms (e.g., Web Assembly (WASM), Browser, Mobiles). The full instructions on how to work with this are detailed in the building docs later on.
+Система сборки и конечная система могут представлять одну и ту же систему или разные системы. Первый вариант проще, поскольку вы, вероятно, будете работать на одной и той же машине. Работа с разными системами называется *кросс-компиляцией* (cross-compiling). При кросс-компиляции необходимо следовать различным рабочим процессам для успешного завершения, так как невозможно собрать репозиторий в этих системах напрямую (например, Web Assembly (WASM), Browser, Mobiles). Инструкции по работе с данными процессами будут представлены дальше. 
 
-Additionally, keep in mind that cloning the full history of this repo takes roughly 400-500 MB of network transfer, inflating to a repository that can consume somewhere between 1 to 1.5 GB. A build of the repo can take somewhere between 10 and 20 GB of space for a single OS and Platform configuration depending on the portions of the product built. This might increase over time, so consider this to be a minimum bar for working with this codebase.
+Имейте в виду, что клонирование полной истории этого репозитория занимает примерно 400-500 МБ сетевого трафика, что приводит к увеличению репозитория до 1-1,5 ГБ. Сборка репозитория может занять примерно 10-20 ГБ места для одной конфигурации ОС в зависимости от собранных частей продукта. Имейте ввиду, что этот размер может увеличиться в будущем.
 
-The runtime repo consists of three major components:
+## Компоненты
 
-- The Runtimes (CoreCLR and Mono)
-- The Libraries
-- The Hosts and Installers
+Платформа состоит из трех основных компонентов:
 
-You can run your builds from a regular terminal, from the root of the repository. Sudo and administrator privileges are not needed for this.
+- Runtimes (CoreCLR и Mono)
+- Библиотеки
+- Хосты и установщики
 
-- For instructions on how to edit code and make changes, see [Editing and Debugging](/docs/workflow/editing-and-debugging.md).
-- For instructions on how to debug CoreCLR, see [Debugging CoreCLR](/docs/workflow/debugging/coreclr/debugging-runtime.md).
-- For instructions on using GitHub Codespaces, see [Codespaces](/docs/workflow/Codespaces.md).
+Можно запускать сборки из обычной консоли, из корня репозитория. Sudo и права администратора не требуются.
+
+- Для инструкций по редактированию кода и внесению изменений см. [Редактирование и отладка](/docs/workflow/editing-and-debugging.md).
+- Для инструкций по отладке CoreCLR см. [Отладка CoreCLR](/docs/workflow/debugging/coreclr/debugging-runtime.md).
+- Для инструкций по использованию GitHub Codespaces см. [Использование Codespaces](/docs/workflow/Codespaces.md).
+
 
 ## Important Concepts to Understand
 
