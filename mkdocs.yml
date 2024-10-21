@@ -124,4 +124,4 @@ nav:
       - Файлы ILLink: workflow/trimming/ILLink-files
       - Переключатели функций: workflow/trimming/feature-switches.md
   - Статьи CoreCLR: deep-dive-blog-posts.md 
-  - Руководство для PR: issues-pr-management.md
+  - Правила оформления PR: issues-pr-management.md
