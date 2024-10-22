@@ -30,38 +30,38 @@
 
 Можно запускать сборки из обычной консоли, из корня репозитория. Sudo и права администратора не требуются.
 
-- Для инструкций по редактированию кода и внесению изменений см. [Редактирование и отладка](/docs/workflow/editing-and-debugging.md).
-- Для инструкций по отладке CoreCLR см. [Отладка CoreCLR](/docs/workflow/debugging/coreclr/debugging-runtime.md).
-- Для инструкций по использованию GitHub Codespaces см. [Использование Codespaces](/docs/workflow/Codespaces.md).
+- Для инструкций по редактированию кода и внесению изменений см. [Редактирование и отладка](editing-and-debugging.md).
+- Для инструкций по отладке CoreCLR см. [Отладка CoreCLR](debugging/coreclr/debugging-runtime.md).
+- Для инструкций по использованию GitHub Codespaces см. [Использование Codespaces](Codespaces.md).
 
 
-## Important Concepts to Understand
+## Терминология и концепты
 
-The following sections describe some important terminology to keep in mind while working with runtime repo builds. For more information, and a complete list of acronyms and their meanings, check out the glossary [over here](/docs/project/glossary.md).
+Ниже описана важная терминология, с которой следует ознакомиться перед тем, как начать работать с платформой. Для получения дополнительной информации и полного списка сокращений и их значений обратитесь к глоссарию [по этой ссылке](/docs/project/glossary.md).
 
-### Build Configurations
+### Конфигурация сборки
 
-To work with the runtime repo, there are three supported configurations (one is *CoreCLR* exclusive) that define how your build will behave:
+Для работы с репозиторием поддерживаются три конфигурации, которые определяют, как будет вести себя ваша сборка:
 
-- **Debug**: Non-optimized code. Asserts are enabled. This configuration runs the slowest. As its name suggests, it provides the best experience for debugging the product.
-- **Checked** *(CoreCLR runtime exclusive)*: Optimized code. Asserts are enabled.
-- **Release**: Optimized code. Asserts are disabled. Runs at the best speed, and is most suitable for performance profiling. This will impact the debugging experience however, due to compiler optimizations that make understanding what the debugger shows difficult, relative to the source code.
+- **Debug**: Неоптимизированный код. Утверждения (asserts) включены. Эта конфигурация работает медленнее всего. Обеспечивает лучший опыт для отладки продукта.
+- **Checked** (эксклюзивно для CoreCLR): Оптимизированный код. Утверждения включены.
+- **Release**: Оптимизированный код. Утверждения выключены. Эта конфигурация обеспечивает максимальную производительность, но может затруднить процесс отладки из-за оптимизации компилятора.
 
-### Build Components
+### Компоненты сборки
 
-- **Runtime**: The execution engine for managed code. There are two different implementations, both written in C or C++:
-  - *CoreCLR*: The comprehensive execution engine originally born from .NET Framework. Its source code lives under the [src/coreclr](/src/coreclr) subtree.
-  - *Mono*: A slimmer runtime than CoreCLR, originally born open-source to bring .NET and C# support to non-Windows platforms. Due to its lightweight nature, it is less affected in terms of speed when working with the *Debug* configuration. Its source code lives under the [src/mono](/src/mono) subtree.
+- **Runtime**: Среда выполнения для управляемого кода. Существуют две различные реализации, написанные на C или C++:
+    - *CoreCLR*: Комплексный движок, который изначально появился из .NET Framework. Его исходный код находится в папке [src/coreclr](https://github.com/vitacore-company/runtime/tree/main/src/coreclr).
+    - *Mono*: Среда выполнения, которая легче чем CoreCLR. Изначально Mono появился как открытый исходный код для поддержки .NET и C# на не-Windows системах. Благодаря легковесности работает без замедлений и с конфигурацией *Debug*. Исходный код находится в папке [src/mono](https://github.com/vitacore-company/runtime/tree/main/src/mono).
 
-- **CoreLib** *(also known as System.Private.CoreLib)*: The lowest level managed library. It is directly related to the runtime, which means it must be built in the matching configuration (e.g. Building a *Debug* runtime means *CoreLib* must also be in *Debug*). The `clr` subset includes both, the *Runtime* and the *CoreLib* components, so you usually don't have to worry about that. There are, however, some special cases where you might need to build the components separately. The runtime agnostic code for this library can be found at [src/libraries/System.Private.CoreLib/src](/src/libraries/System.Private.CoreLib/src/README.md).
+- **CoreLib** *(aka System.Private.CoreLib)*: Наименее управляемая библиотека. Она напрямую связана с runtime, поэтому также должна быть собрана в соответствующей конфигурации (например, сборка *Debug* runtime означает, что CoreLib также должна быть с конфигурацией *Debug*). Подмножество `clr` включает включает в себя как Runtime, так и CoreLib компоненты, поэтому волноваться о работе с одинаковыми конфигурациями не стоит. Однако стоит обратить внимание на особые случаи, когда когда вам может потребоваться собрать компоненты отдельно. Код библиотеки, который не зависит от runtime, можно найти в [src/libraries/System.Private.CoreLib/src](https://github.com/vitacore-company/runtime/tree/main/src/libraries/System.Private.CoreLib/src/README.md).
 
-- **Libraries**: The bulk of dll's providing the rest of the functionality to the runtime. The libraries can be built in their own configuration, regardless of which one the runtime is using. Their source code lives under the [src/libraries](/src/libraries) subtree.
+- **Библиотеки**: Группа DLL-файлов, которая обеспечивают дополнительную функциональность runtime. Библиотеки можно собирать в собственной конфигурации, независимо от того, какая конфигурация используется в runtime. Их исходный код находится в папке [src/libraries](https://github.com/vitacore-company/runtime/tree/main/src/libraries).
 
-## Building the Repo
+## Сборка репозитория
 
-The main script that will be in charge of most of the building you might want to do is the `build.sh`, or `build.cmd` on Windows, located at the root of the repo. This script receives as arguments the subset(s) you might want to build, as well as multiple parameters to configure your build, such as the configuration, target operating system, target architecture, and so on.
+Основной скрипт, который отвечает за большинство билдов — это `build.sh` (или `build.cmd` на Windows), который находится в корневой папке репозитория. Этот скрипт принимает в качестве аргументов подмножества, которые вам могут быть необходимы для сборки. Кроме того, для сборки необходимо указывать и другие параметры, такие как конфигурация, конечная система, архитектура конечной системы и т.д.
 
-**NOTE:** If you plan on using Docker to work on the runtime repo, read [this doc](/docs/workflow/using-docker.md) first. It explains how to set up, as well as the images and containers to prepare you to follow the building and testing instructions in the next sections.
+**Примечание:** Если вы планируете использовать Docker для работы с репозиторием, ознакомьтесь сначала с документацией [по этой ссылке](using-docker.md).
 
 ### General Overview
 
