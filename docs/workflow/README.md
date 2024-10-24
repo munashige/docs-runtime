@@ -53,7 +53,7 @@
     - *CoreCLR*: Комплексный движок, который изначально появился из .NET Framework. Его исходный код находится в папке [src/coreclr](https://github.com/vitacore-company/runtime/tree/main/src/coreclr).
     - *Mono*: Среда выполнения, которая легче чем CoreCLR. Изначально Mono появился как открытый исходный код для поддержки .NET и C# на не-Windows системах. Благодаря легковесности работает без замедлений и с конфигурацией *Debug*. Исходный код находится в папке [src/mono](https://github.com/vitacore-company/runtime/tree/main/src/mono).
 
-- **CoreLib** *(aka System.Private.CoreLib)*: Наименее управляемая библиотека. Она напрямую связана с runtime, поэтому также должна быть собрана в соответствующей конфигурации (например, сборка *Debug* runtime означает, что CoreLib также должна быть с конфигурацией *Debug*). Подмножество `clr` включает включает в себя как Runtime, так и CoreLib компоненты, поэтому волноваться о работе с одинаковыми конфигурациями не стоит. Однако стоит обратить внимание на особые случаи, когда когда вам может потребоваться собрать компоненты отдельно. Код библиотеки, который не зависит от runtime, можно найти в [src/libraries/System.Private.CoreLib/src](https://github.com/vitacore-company/runtime/tree/main/src/libraries/System.Private.CoreLib/src/README.md).
+- **CoreLib** *(aka System.Private.CoreLib)*: Наименее управляемая библиотека. Она напрямую связана с runtime, поэтому также должна быть собрана в соответствующей конфигурации (например, сборка *Debug* runtime означает, что CoreLib также должна быть с конфигурацией *Debug*). Подмножество `clr` (_subset clr_) включает включает в себя как Runtime, так и CoreLib компоненты, поэтому волноваться о работе с одинаковыми конфигурациями не стоит. Однако стоит обратить внимание на особые случаи, когда когда вам может потребоваться собрать компоненты отдельно. Код библиотеки, который не зависит от runtime, можно найти в [src/libraries/System.Private.CoreLib/src](https://github.com/vitacore-company/runtime/tree/main/src/libraries/System.Private.CoreLib/src/README.md).
 
 - **Библиотеки**: Группа DLL-файлов, которая обеспечивают дополнительную функциональность runtime. Библиотеки можно собирать в собственной конфигурации, независимо от того, какая конфигурация используется в runtime. Их исходный код находится в папке [src/libraries](https://github.com/vitacore-company/runtime/tree/main/src/libraries).
 
@@ -63,23 +63,23 @@
 
 **Примечание:** Если вы планируете использовать Docker для работы с репозиторием, ознакомьтесь сначала с документацией [по этой ссылке](using-docker.md).
 
-### General Overview
+### Основная информация 
 
-Running the script (`build.sh`/`build.cmd`) with no arguments will build the whole repo in *Debug* configuration, for the OS and architecture of your machine. A typical dev workflow only one or two components at a time, so it is more efficient to just build those. This is done by means of the `-subset` flag. For example, for CoreCLR, it would be:
+Запуск скрипта сборки (`build.sh`/`build.cmd`) без аргументов соберет весь репозиторий в конфигурации *Debug* для ОС и архитектуры вашей машины. Обычный процесс разработки требует сборки только одного или двух компонентов. Для этого используйте флаг `-subset`. Например, для сборки CoreCLR используйте:
 
 ```bash
 ./build.sh -subset clr
 ```
 
-The main subset values are:
+Основные значение флага subset:
 
-- `Clr`: The full CoreCLR runtime, which consists of the runtime itself and the CoreLib components.
-- `Libs`: All the libraries components, excluding their tests. This includes the libraries' native parts, refs, source assemblies, and their packages and test infrastructure.
-- `Packs`: The shared framework packs, archives, bundles, installers, and the framework pack tests.
-- `Host`: The .NET hosts, packages, hosting libraries, and their tests.
-- `Mono`: The Mono runtime and its CoreLib.
+- `Clr`: Сборка самого CoreCLR и компонентов CoreLib.
+- `Libs`: Все компоненты библиотек, за исключением тестов. Включает в себя native-части библиотек, refs, исходные сборки и их пакеты, а также тестовую инфраструктуру.
+- `Packs`: Общие пакеты фреймворка, архивы, пакеты, установщики и тесты фреймворка.
+- `Host`: Хосты .NET, пакеты, библиотеки хостинга и их тесты.
+- `Mono`: Сборка Mono и компонентов CoreLib.
 
-Some subsets are subsequently divided into smaller pieces, giving you more flexibility as to what to build/rebuild depending on what you're working on. For a full list of all the supported subsets, run the build script, passing `help` as the argument to the `subset` flag.
+Некоторые Some subsets are subsequently divided into smaller pieces, giving you more flexibility as to what to build/rebuild depending on what you're working on. For a full list of all the supported subsets, run the build script, passing `help` as the argument to the `subset` flag.
 
 It is also possible to build more than one subset under the same command-line. In order to do this, you have to link them together with a `+` sign in the value you're passing to `-subset`. For example, to build both, CoreCLR and Libraries in Release configuration, the command-line would look like this:
 
