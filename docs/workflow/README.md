@@ -55,7 +55,7 @@
 
 - **CoreLib** *(aka System.Private.CoreLib)*: Наименее управляемая библиотека. Она напрямую связана с runtime, поэтому также должна быть собрана в соответствующей конфигурации (например, сборка *Debug* runtime означает, что CoreLib также должна быть с конфигурацией *Debug*). Подмножество `clr` (_subset clr_) включает включает в себя как Runtime, так и CoreLib компоненты, поэтому волноваться о работе с одинаковыми конфигурациями не стоит. Однако стоит обратить внимание на особые случаи, когда когда вам может потребоваться собрать компоненты отдельно. Код библиотеки, который не зависит от runtime, можно найти в [src/libraries/System.Private.CoreLib/src](https://github.com/vitacore-company/runtime/tree/main/src/libraries/System.Private.CoreLib/src/README.md).
 
-- **Библиотеки**: Группа DLL-файлов, которая обеспечивают дополнительную функциональность runtime. Библиотеки можно собирать в собственной конфигурации, независимо от того, какая конфигурация используется в runtime. Их исходный код находится в папке [src/libraries](https://github.com/vitacore-company/runtime/tree/main/src/libraries).
+- **Библиотеки** (_Libraries_): Группа DLL-файлов, которая обеспечивают дополнительную функциональность runtime. Библиотеки можно собирать в собственной конфигурации, независимо от того, какая конфигурация используется в runtime. Их исходный код находится в папке [src/libraries](https://github.com/vitacore-company/runtime/tree/main/src/libraries).
 
 ## Сборка репозитория
 
@@ -79,74 +79,74 @@
 - `Host`: Хосты .NET, пакеты, библиотеки хостинга и их тесты.
 - `Mono`: Сборка Mono и компонентов CoreLib.
 
-Некоторые Some subsets are subsequently divided into smaller pieces, giving you more flexibility as to what to build/rebuild depending on what you're working on. For a full list of all the supported subsets, run the build script, passing `help` as the argument to the `subset` flag.
+Некоторые подмножества поделены части поменьше, что дает гибкость над процессами с которыми вы работаете при сборке/пересборке. Для получения полного списка всех поддерживаемых подмножеств выполните скрипт сборки, передав `help` в качестве аргумента для флага `subset`.
 
-It is also possible to build more than one subset under the same command-line. In order to do this, you have to link them together with a `+` sign in the value you're passing to `-subset`. For example, to build both, CoreCLR and Libraries in Release configuration, the command-line would look like this:
+Также возможно собрать более одного подмножества в одной командной строке. Для этого необходимо связать их вместе с помощью знака `+` в значении, которое вы передаете параметру `-subset`. Например, чтобы собрать как `CoreCLR`, так и `Libraries` в конфигурации _Release_, командная строка будет выглядеть следующим образом:
 
 ```bash
 ./build.sh -subset clr+libs -configuration Release
 ```
 
-If you require to use different configurations for different subsets, there are some specific flags you can use:
+Если вам необходимо использовать иную конфигурацию для других подмножеств, вы можете использовать данные флаги:
 
-- `-runtimeConfiguration (-rc)`: The CoreCLR build configuration
-- `-librariesConfiguration (-lc)`: The Libraries build configuration
-- `-hostConfiguration (-hc)`: The Host build configuration
+- `-runtimeConfiguration (-rc)`: Конфигурация сборки CoreCLR
+- `-librariesConfiguration (-lc)`: Конфигурация сборки Библиотек 
+- `-hostConfiguration (-hc)`: Конфигурация сборки хоста
 
-The behavior of the script is that the general configuration flag `-c` affects all subsets that have not been qualified with a more specific flag, as well as the subsets that don't have a specific flag supported, like `packs`. For example, the following command-line would build the libraries in *Release* mode and the runtime in *Debug* mode:
+Поведение скрипта определяется основным флагом конфигурации `-c`. Этот флаг влияет на все подмножества, которые не были включены при помощи соответствующих флагов, а также на подмножества, для которых не поддерживается конкретный флаг (таких как `packs`). Например, следующая командная строка соберет библиотеки в режиме _Release_ и runtime в режиме _Debug_:
 
 ```bash
 ./build.sh -subset clr+libs -configuration Release -runtimeConfiguration Debug
 ```
 
-In this example, the `-lc` flag was not specified, so `-c` qualifies `libs`. In the first example, only `-c` was passed, so it qualifies both, `clr` and `libs`.
+В данном примере флаг `-lc` не был указан, поэтому флаг `-c` указывает `libs`. В первом примере был передан только флаг `-c`, поэтому он указывает как `clr`, так и `libs`.
 
-As an extra note here, if your first argument to the build script are the subsets, you can omit the `-subset` flag altogether. Additionally, several of the supported flags also include a shorthand version (e.g. `-c` for `-configuration`). Run the script with `-h` or `-help` to get an extensive overview on all the supported flags to customize your build, including their shorthand forms, as well as a wider variety of examples.
+Дополнительно стоит отметить, что если ваш первый аргумент к скрипту сборки — это подмножества, вы можете полностью опустить флаг `-subset`. Кроме того, несколько поддерживаемых флагов также имеют сокращенные версии (например, `-c` для `-configuration`). Запустите скрипт с `-h` или `-help`, чтобы получить дополнительную информацию о поддерживаемых флагов для настройки вашей сборки, включая их сокращенные формы и примеры использования.  
 
-**NOTE:** On non-Windows systems, the longhand versions of the flags can be passed with either single `-` or double `--` dashes.
+**ПРИМЕЧАНИЕ**: На системах, отличных от Windows, длинные версии флагов могут быть переданы как с одним `-`, так и с двумя `--` дефисами.
 
-### Get Started on your Platform and Components
+### Начало работы c системой и компонентами
 
-Now that you've got the general idea on how to get started, it is important to mention that, while the procedure is very similar among platforms and subsets, each component has its own technicalities and details, as explained in their own specific docs:
+Теперь, когда у вас есть общее представление о том, с чего начать, важно упомянуть, что процесс сборки похожа на разных платформах и подмножествах, однако, каждый компонент имеет свои технические особенности и детали, которые представлены в соответствующих доках:
 
-**Component Specifics:**
+**Специфика компонентов:**
 
-- [CoreCLR](/docs/workflow/building/coreclr/README.md)
-- [Libraries](/docs/workflow/building/libraries/README.md)
-- [Mono](/docs/workflow/building/mono/README.md)
+- [CoreCLR](building/coreclr/README.md)
+- [Libraries](building/libraries/README.md)
+- [Mono](building/mono/README.md)
 
-**NOTE:** *NativeAOT* is part of CoreCLR, but it has its own specifics when it comes to building. We have a separate doc dedicated to it [over here](/docs/workflow/building/coreclr/nativeaot.md).
+**ПРИМЕЧАНИЕ:** _NativeAOT_ является частью CoreCLR, но имеет свои особенности при сборке. Документация доступна [по этой ссылке](building/coreclr/nativeaot.md).
 
-### General Recommendations
+### Общие рекомендации
 
-- If you're working with the runtimes, then the usual recommendation is to build everything in *Debug* mode. That said, if you know you won't be debugging the libraries source code but will need them (e.g. for a *Core_Root* build), then building the libraries on *Release* instead will provide a more productive experience.
-- The counterpart to the previous point: When you are working in libraries. In this case, it is recommended to build the runtime on *Release* and the libraries on *Debug*.
-- If you're working on *CoreLib*, then you probably want to try to get the job done with a *Release* runtime, and fall back to *Debug* if you need to.
+- При работе с runtime рекомендуется собирать все в режиме _Debug_. Тем не менее, если вам не нужно отлаживать исходный код библиотек, но они вам понадобятся (напр., для сборки *Core_Root*), то сборка библиотек в режиме _Release_ обеспечит большую продуктивность.
+- И наоборот, если вам необходимо работать с библиотеками — рекомендуется собирать runtime в режиме _Release_, а библиотеки в режиме _Debug_.
+- При работе с _CoreLib_, рекомендуется выполнять задачи с помощью _Release_ версии runtime, а в случае необходимости перейти на _Debug_.
 
-## Testing the Repo
+## Тестирование репозитория
 
-Building the components of the repo is just part of the experience. The runtime repo also includes vast test suites you can run to ensure your changes work properly as expected and don't inadvertently break something else. Each component has its own methodologies to run their tests, which are explained in their own specific docs:
+Сборка компонентов репозитория — это лишь часть рабочего процесса. Этот репозиторий также включает в себя широкий набор тестов, которые вы можете запустить, чтобы убедиться в правильной работе ваших изменений, а также для выявлении ошибок и сбоев. Каждый компонент имеет свои методологии для запуска тестов, которые представлены в соответствующих доках:
 
-- [CoreCLR](/docs/workflow/testing/coreclr/testing.md)
-  - [NativeAOT](/docs/workflow/building/coreclr/nativeaot.md#running-tests)
-- [Libraries](/docs/workflow/testing/libraries/testing.md)
-- [Mono](/docs/workflow/testing/mono/testing.md)
+- [CoreCLR](testing/coreclr/testing.md)
+  - [NativeAOT](building/coreclr/nativeaot.md#running-tests)
+- [Libraries](testing/libraries/testing.md)
+- [Mono](testing/mono/testing.md)
 
-### Performance Analysis
+### Анализ производительности
 
-Fixing bugs and adding new features aren't the only things to work on in the runtime repo. We also have to ensure performance is kept as optimal as can be, and that is done through benchmarking and profiling. If you're interested in conducting these kinds of analysis, the following links will show you the usual workflow you can follow:
+Исправление ошибок и добавление новых функций — это не единственные задачи, с которыми нужно работать в этом репозитории. Необходимо также следить за оптимальной производительностью с помощью бенчмаркинга и профилирования. Если вас интересует анализ производительности, ссылки ниже демонстрируют необходимые процессы, которым вы можете следовать:
 
-* [Benchmarking Workflow for dotnet/runtime repository](https://github.com/dotnet/performance/blob/master/docs/benchmarking-workflow-dotnet-runtime.md)
-* [Profiling Workflow for dotnet/runtime repository](https://github.com/dotnet/performance/blob/master/docs/profiling-workflow-dotnet-runtime.md)
+* [Бенчмаркинг репозитория](https://github.com/dotnet/performance/blob/master/docs/benchmarking-workflow-dotnet-runtime.md)
+* [Профайлинг репозитория](https://github.com/dotnet/performance/blob/master/docs/profiling-workflow-dotnet-runtime.md)
 
-## Warnings as Errors
+## Предупреждения вместо ошибок 
 
-The repo build treats warnings as errors, including many code-style warnings. Dealing with warnings when you're in the middle of making changes can be annoying (e.g. unused variable that you plan to use later). To disable treating warnings as errors, set the `TreatWarningsAsErrors` environment variable to `false` before building. This variable will be respected by both the `build.sh`/`build.cmd` root build scripts and builds done with `dotnet build` or Visual Studio. Some people may prefer setting this environment variable globally in their machine settings.
+Сборка репозитория выдает предупреждения вместо ошибок, включая предупреждения по стилю кода. Выскакивающие предупреждения могут мешать рабочему процессу (например, предупреждения о неиспользуемой переменной, которую вы планируете использовать позже). Чтобы отключить трактовку предупреждений вместо ошибок, установите переменную окружения `TreatWarningsAsErrors` в значение `false` перед сборкой. Эта переменная будет учитываться как в скриптах сборки `build.sh/build.cmd`, так и в сборках, выполненных с помощью `dotnet build` или Visual Studio. Вы также можете установить эту переменную окружения глобально в настройках своего компьютера.
 
-## Submitting a PR
+## Отправка PR
 
-Before submitting a PR, make sure to review the [contribution guidelines](/CONTRIBUTING.md). After you get familiarized with them, please read the [PR guide](/docs/workflow/ci/pr-guide.md) to find more information about tips and conventions around creating a PR, getting it reviewed, and understanding the CI results.
+Перед отправкой Pull Request-ов ознакомьтесь с правилами их оформления в [соответствующей главе](/issues-pr-management). Эта глава также содержит правила оформления коммитов, а также правила работы с PR.
 
-## Triaging Errors in CI
+## Анализ сбоев в CI
 
-Given the size of the runtime repository, flaky tests are expected to some degree. There are a few mechanisms we use to help with the discoverability of widely impacting issues. We also have a regular procedure that ensures issues get properly tracked and prioritized. You can find more information on [triaging failures in CI](/docs/workflow/ci/failure-analysis.md).
+Учитывая размер репозитория, некоторые тесты могут быть нестабильными. Поэтому предоставляются несколько механизмов, чтобы помочь в обнаружении важных проблем. Имеется также и специальный процесс, который обеспечивает отслеживание и правильную приоритизацию возникших проблем. Вы можете найти больше информации в главе [Анализ сбоев CI](ci/failure-analysis.md).
