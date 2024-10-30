@@ -78,7 +78,6 @@ nav:
       - Отключение тестов: workflow/ci/disabling-tests.md
       - Анализ сбоев и известные проблемы: workflow/ci/failure-analysis.md
       - Обзор Pipelines: workflow/ci/pipelines-overview.md
-      - Инструкции для Pull Requests: workflow/ci/pr-guide.md
       - Приоритизация сбоев CI-тестов: workflow/ci/triaging-failures.md
     - Отладка: 
       - CoreCLR: 
@@ -95,11 +94,11 @@ nav:
         - WASM Runtime: workflow/debugging/mono/wasm-debugging.md
     - Тестирование: 
       - Инструменты управления: workflow/testing/testing-managed-tools.md
-      - Тестирование workloads: workflow/testing/testing-workloads.md
+      - Рабочие нагрузки: workflow/testing/testing-workloads.md
       - Использование Corerun: workflow/testing/using-corerun-and-coreroot.md
-      - Использование Dev Shipping Package: /workflow/testing/using-dev-shipping-packages.md
-      - Использование билдов .NET Runtime: workflow/testing/using-your-build-with-installed-sdk.md
-      - Работа с Visual Studio: workflow/testing/visualstudio.md
+      - Сборка с Dev Shipping Package: /workflow/testing/using-dev-shipping-packages.md
+      - Сборка с .NET SDK: workflow/testing/using-your-build-with-installed-sdk.md
+      - Visual Studio: workflow/testing/visualstudio.md
       - CodeCLR:
         - Общая структура тестов: workflow/testing/coreclr/test-configuration.md 
         - Сборка и запуск CoreCLR тестов: workflow/testing/coreclr/testing.md
