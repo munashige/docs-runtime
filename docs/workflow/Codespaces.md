@@ -1,6 +1,6 @@
-# Codespaces
+# GitHub Codespaces
 
-Codespaces позволяет вести разработку в Docker-контейнере, который работает в облаке. Вы можете использовать веб-версию VS Code или установленный VS Code с помощью расширения [GitHub Codespaces](https://marketplace.visualstudio.com/items?itemName=GitHub.codespaces).
+Codespaces позволяет вести разработку в Docker-контейнере, который работает в облаке. Можно использовать веб-версию VSCode, а также on-premise версию с расширением [GitHub Codespaces](https://marketplace.visualstudio.com/items?itemName=GitHub.codespaces).
 
 
 ## Создание Codespaces
@@ -17,14 +17,14 @@ Codespaces позволяет вести разработку в Docker-конт
 
     ![Dev container configuration](./codespace-dev-container-configuration.png)
 
-     - Для работы с `библиотеками` (*libraries*) выберите `.devcontainer/libraries/devcontainer.json`.
+     - Для работы с `библиотеками` выберите `.devcontainer/libraries/devcontainer.json`.
      - Для работы с  `WASM` выберите `.devcontainer/wasm/devcontainer.json`.
 
 4. Выберите Machine Type. Рекомендуется выбрать опцию `4-core` или выше.
 
     ![Codespace machine size](codespace-machine-size.png)
 
-Если эти инструкции устарели, используйте [документацию Github](https://docs.github.com/codespaces/developing-in-codespaces/creating-a-codespace#creating-a-codespace) для созданию нового Codespace.
+Если эти инструкции устарели, используйте [документацию GitHub](https://docs.github.com/codespaces/developing-in-codespaces/creating-a-codespace#creating-a-codespace) для созданию нового Codespace.
 
 ## Обновление конфигурации Codespaces
 
@@ -41,7 +41,7 @@ Codespaces позволяет вести разработку в Docker-конт
     * Файл для создания Docker-образа.
 3. Github Action. Настройте GitHub Action, следуя [этой инструкции](https://docs.github.com/codespaces/prebuilding-your-codespaces/configuring-prebuilds).
 
-Чтобы протестировать изменения в файлах `.devcontainer`, необходимо следовать процессу, описанному в [документации Github](https://docs.github.com/codespaces/customizing-your-codespace/configuring-codespaces-for-your-project#applying-changes-to-your-configuration). Таким образом, можно пересобрать Codespaces перед созданием PR.
+Чтобы протестировать изменения в файлах `.devcontainer`, необходимо следовать процессу, описанному в [документации GitHub](https://docs.github.com/codespaces/customizing-your-codespace/configuring-codespaces-for-your-project#applying-changes-to-your-configuration). Таким образом, можно пересобрать Codespaces перед созданием PR.
 
 ## Тестирование изменений
 
