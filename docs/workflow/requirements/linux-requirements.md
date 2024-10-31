@@ -19,7 +19,7 @@ sudo eng/install-native-dependencies.sh
 
 ### Debian/Ubuntu
 
-Инструкции ниже написаны с учетом версии *Ubuntu LTS*. Ниже перечислены пакеты, которые вам необходимо установить:
+Зависимости представлены для версии *Ubuntu LTS*. Ниже перечислены пакеты, которые вам необходимо установить:
 
 - `CMake` (версии 3.20 и выше)
 - `llvm`
@@ -54,11 +54,11 @@ sudo apt install -y cmake llvm lld clang build-essential \
 sudo snap install cmake
 ```
 
-Инструкции по установка через *Kitware* доступны [по этой ссылке](https://apt.kitware.com/).
+Инструкция по установке через *Kitware* доступна [по этой ссылке](https://apt.kitware.com/).
 
 #### Clang for WASM
 
-As of now, *WASM* builds have a minimum requirement of `Clang` version 16 or later (version 18 is the latest at the time of writing this doc). If you're using *Ubuntu 22.04 LTS* or older, then you will have to add an additional repository to `apt` to be able to get said version. Run the following commands on your terminal to do this:
+На момент написание документации сборки *WASM* требуют установку `Clang` версии 16 и выше. Если вы используете *Ubuntu 22.04 LTS* или более раннюю версию, вам необходимо добавить дополнительный репозиторий в `apt`, чтобы получить указанную версию. Выполните следующие команды в терминале:
 
 ```bash
 sudo add-apt-repository -y "deb http://apt.llvm.org/$(lsb_release -s -c)/ llvm-toolchain-$(lsb_release -s -c)-18 main"
@@ -66,11 +66,11 @@ sudo apt update -y
 sudo apt install -y clang-18
 ```
 
-You can also take a look at the Linux-based *Dockerfile* [over here](/.devcontainer/Dockerfile) for another example.
+Вы также можете использовать Dockerfile на Linux в папке [/.devcontainer/Dockerfile](/.devcontainer/Dockerfile) внутри репозитория.
 
-#### Additional Tools for Cross Building
+#### Дополнительные инструменты для кросс-сборки
 
-If you're planning to use your environment to do Linux cross-building to other architectures (e.g. Arm32, Arm64), and/or other operating systems (e.g. Alpine, FreeBSD), you'll need to install a few additional dependencies. It is worth mentioning these other packages are required to build the `crossrootfs`, which is used to effectively do the cross-compilation, not to build the runtime itself.
+Кросс-сборка в среде системы Linux для других архитектур (например, Arm32 или Arm64) и/или других операционных систем (например, Alpine, FreeBSD) требует установки нескольких дополнительных зависимостей. Эти пакеты необходимы для сборки `crossrootfs`, который используется для эффективной кросс-компиляции, а не для сборки самого времени выполнения.
 
 - `qemu`
 - `qemu-user-static`
@@ -79,9 +79,7 @@ If you're planning to use your environment to do Linux cross-building to other a
 
 ### Fedora
 
-These instructions are written assuming *Fedora 40*.
-
-Install the following packages for the toolchain:
+Зависимости представлены для *Fedora 40*. Установите следующие пакеты из списка: 
 
 - `cmake`
 - `llvm`
@@ -95,7 +93,7 @@ Install the following packages for the toolchain:
 - `openssl-devel`
 - `krb5-devel`
 - `lttng-ust-devel`
-- `ninja-build` (Optional. Enables building native code using `ninja` instead of `make`)
+- `ninja-build` (Установка опциональна. Позволяет собирать нативный код с использованием `ninja` вместо `make`)
 
 ```bash
 sudo dnf install -y cmake llvm lld lldb clang python curl git \
@@ -104,14 +102,14 @@ sudo dnf install -y cmake llvm lld lldb clang python curl git \
 
 ### Gentoo
 
-In case you have Gentoo you can run following command:
+Если у вас Gentoo, вы можете выполнить следующую команду:
 
 ```bash
 emerge --ask clang dev-util/lttng-ust app-crypt/mit-krb5
 ```
 
-## Using Docker
+## Использование Docker
 
-As mentioned at the beginning of this doc, the other method to build the runtime repo for Linux is to use the prebuilt Docker images that our official builds use. In order to be able to run them, you first need to download and install the Docker Engine. The binaries needed and installation instructions can be found at the Docker official site [in this link](https://docs.docker.com/get-started/get-docker).
+Альтернативным способом сборки репозитория на Linux является использование официальных образов Docker. Чтобы начать использовать Docker, необходимо скачать и установить Docker Engine. Файлы установки и инструкции доступны на [официальном сайте Docker](https://docs.docker.com/get-started/get-docker).
 
-Once you have the Docker Engine up and running, you can follow our docker building instructions [over here](/docs/workflow/using-docker.md).
+После того как Docker Engine установлен, следуйте [инструкции по сборке с использованием Docker](../using-docker.md).
