@@ -14,7 +14,7 @@
 
 ## Linux
 
-Кросс-сборка FreeBSD в вашей среде Linux требует [установки зависимостей Linux](/docs/workflow/requirements/linux-requirements.md). Затем необходимо создать crossrootfs для FreeBSD, что требует установки дополнительных пакетов:
+Кросс-сборка FreeBSD в вашей среде Linux требует [установки зависимостей Linux](../linux-requirements). Затем необходимо создать crossrootfs для FreeBSD, что требует установки дополнительных пакетов:
 
 * libbz2-dev
 * liblzma-dev
@@ -80,7 +80,7 @@ NuGet пакеты:
 * Microsoft.NETCore.App.Runtime.freebsd-x64.VERSION.nupkg
 * Microsoft.AspNetCore.App.Runtime.freebsd-x64.VERSION.nupkg
 
-Добавьте следующую строку в любой `NuGet.config`, который вы используете, в разделе `<packageSources>`:
+Добавьте следующую строку в любой `NuGet.config` в разделе `<packageSources>`:
 
 
 ```xml
