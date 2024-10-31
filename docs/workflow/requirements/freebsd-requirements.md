@@ -1,106 +1,89 @@
-# Requirements to build dotnet/runtime on FreeBSD
+# Требования для FreeBSD
 
-* [Docker](#docker)
-* [Linux Environment](#linux-environment)
-* [FreeBSD Environment](#freebsd-environment)
-* [Old Documentation](#old-documentation)
-  * [Toolchain Setup](#toolchain-setup)
-  * [Running on FreeBSD](#running-on-freebsd)
+Ниже представлены требования для сборки и запуска runtime на FreeBSD. Имеется три способа установки и конфигурации, которые перечислены ниже, а также отсортированы от самого простого способа к самому сложному:
 
-This guide will walk you through the requirements needed to build and run _dotnet/runtime_ on FreeBSD. We'll start by showing how to set up your environment from scratch.
-
-Since there is no official build and FreeBSD package, native build on FreeBSD is not trivial. There are generally three options, sorted by ease of use:
-
-* Cross-compile using prebuilt Docker Images
-* Cross-compile on Linux using your environment
-* Build directly on FreeBSD
+- Кросс-компиляция с использованием образов Docker
+- Кросс-компиляция на Linux с использованием вашей среды
+- Прямая сборка на FreeBSD
 
 ## Docker
 
-Install Docker. For further instructions on installation, see [here](https://docs.docker.com/install/).
+Установите Docker. Инструкция по установке доступна [по этой ссылке](https://docs.docker.com/install/).
 
-All the required build tools are included in the Docker images used to do the build, so no additional setup is required.
+Все необходимые инструменты для сборки включены в образы Docker, используемые для сборки, поэтому дополнительная настройка не требуется.
 
-## Linux Environment
+## Linux
 
-To cross-build FreeBSD on your Linux environment, first make sure you have all the [normal Linux prerequisites](/docs/workflow/requirements/linux-requirements.md) fulfilled. Then, the _crossrootfs_ for FreeBSD has to be constructed, and this requires a few more packages to be installed:
+Кросс-сборка FreeBSD в вашей среде Linux требует [установки зависимостей Linux](/docs/workflow/requirements/linux-requirements.md). Затем необходимо создать crossrootfs для FreeBSD, что требует установки дополнительных пакетов:
 
 * libbz2-dev
 * liblzma-dev
 * libarchive-dev
 * libbsd-dev
 
-## FreeBSD Environment
+## FreeBSD
 
-These instructions assume you use FreeBSD's default binary package tool `pkg` (analog to `apt`, `apt-get`, or `yum` on Linux) to install the environment. Compiling the dependencies from source using the ports tree might work too, but is untested.
+Инструкции ниже предполагают, что вы используете `pkg` - стандартный инструмент бинарных пакетов FreeBSD  (аналог `apt`, `apt-get` или `yum` на Linux). Компиляция зависимостей из исходников с использованием дерева портов также может работать, но не тестировалась в рамках написания этой документации.
 
-FreeBSD Prerequisites Coming Soon!
+Требования FreeBSD будут обновлены в скором времени. Инструкции ниже предполагают работу со старыми версиями.
 
-Meanwhile here are the old instructions.
+### Установка зависимостей
 
-## Old Documentation
-
-These instructions were written quite a while ago, and they may or may not work today. Updated instructions coming soon.
-
-### Toolchain Setup
-
-Building the _dotnet/runtime_ repo requires several tools to be installed.
-
-Install the following packages:
+Сборка репозитория требует установки следующих пакетов:
 
 * Bash
 * CMake
 * icu
 * libunwind
 * krb5
-* openssl (optional)
+* openssl (не обязательно)
 * python39
 * libinotify
-* ninja (optional, enables building native code with ninja instead of make)
+* ninja (не обязательно - является альтернативой make)
 
 ```sh
 sudo pkg install --yes libunwind icu libinotify lttng-ust krb5 cmake openssl ninja
 ```
 
-### Running on FreeBSD
+### Запуск на FreeBSD
 
-Install the following packages:
+Установите следующие пакеты:
 
 * icu
 * libunwind
-* lttng-ust (optional, debug support)
+* lttng-ust (не обязательно, поддержка отладки)
 * krb5
-* openssl (optional, SSL support)
+* openssl (не обязательно, поддержка SSL)
 * libinotify
-* terminfo-db (optional, terminal colors)
+* terminfo-db (не обязательно, цвета терминала)
 
 ```sh
 sudo pkg install --yes libunwind icu libinotify lttng-ust krb5 openssl terminfo-db
 ```
 
-Extract the SDK:
-The canonical location for the SDK is `/usr/share/dotnet`
+Извлечение SDK:
+По умолчанию SDK располагается тут: `/usr/share/dotnet`
 
-"VERSION" is the SDK version being unpacked.
+"VERSION" — это версия SDK, которую вы хотите распаковывать.
 
 ```sh
 sudo mkdir /usr/share/dotnet
 tar xf /tmp/dotnet-sdk-VERSION-freebsd-x64.tar.gz -C /usr/share/dotnet/
 ```
 
-NuGet Packages:
-The canonical location for the NuGet packages is `/var/cache/nuget`
+NuGet пакеты:
+По умолчанию эти пакеты располагаются тут: `/var/cache/nuget`
 
-"VERSION" is the same version as the SDK from above.
+"VERSION" — это та же версия, что и SDK выше.
 
 * Microsoft.NETCore.App.Host.freebsd-x64.VERSION.nupkg
 * Microsoft.NETCore.App.Runtime.freebsd-x64.VERSION.nupkg
 * Microsoft.AspNetCore.App.Runtime.freebsd-x64.VERSION.nupkg
 
-Add the following line to any `NuGet.config` you are using under the `<packageSources>` section:
+Добавьте следующую строку в любой `NuGet.config`, который вы используете, в разделе `<packageSources>`:
+
 
 ```xml
 <add key="local" value="/var/cache/nuget" />
 ```
-
-Finally, either add `/usr/share/dotnet` to your PATH or create a symbolic for `/usr/share/dotnet/dotnet`
+Добавьте `/usr/share/dotnet` в ваш PATH или создайте символическую ссылку на `/usr/share/dotnet/dotnet`.
