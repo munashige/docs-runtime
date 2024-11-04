@@ -62,9 +62,9 @@ nav:
       - macOS: workflow/requirements/macos-requirements.md
       - Linux: workflow/requirements/linux-requirements.md
       - FreeBSD: workflow/requirements/freebsd-requirements.md
-    - Codespaces: workflow/Codespaces.md
+    - GitHub Codespaces: workflow/Codespaces.md
     - Редактирование и отладка: workflow/editing-and-debugging.md
-    - Использование Docker: workflow/using-docker.md
+    - Работа с Docker: workflow/using-docker.md
     - Сборка:
       - CoreCLR: workflow/building/coreclr/README.md
       - Сборка Mono: workflow/building/mono/README.md
@@ -95,7 +95,7 @@ nav:
     - Тестирование: 
       - Инструменты управления: workflow/testing/testing-managed-tools.md
       - Рабочие нагрузки: workflow/testing/testing-workloads.md
-      - Использование Corerun: workflow/testing/using-corerun-and-coreroot.md
+      - Работа с Corerun: workflow/testing/using-corerun-and-coreroot.md
       - Сборка с Dev Shipping Package: /workflow/testing/using-dev-shipping-packages.md
       - Сборка с .NET SDK: workflow/testing/using-your-build-with-installed-sdk.md
       - Visual Studio: workflow/testing/visualstudio.md
@@ -110,7 +110,7 @@ nav:
         - Benchmark Driver 2: workflow/testing/coreclr/running-aspnet-benchmarks-with-crossgen2.md
       - Хосты:
         - Запуск и сборка хост-тестов: workflow/testing/host/using-apphost.md
-        - Использование Apphost: workflow/testing/host/using-apphost.md 
+        - Работа с Apphost: workflow/testing/host/using-apphost.md 
       - Библиотеки:
         - Отладка библиотек: workflow/testing/libraries/debugging-wasm.md
         - Filtering libraries tests using traits: workflow/testing/libraries/filtering-tests.md

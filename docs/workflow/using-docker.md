@@ -1,28 +1,26 @@
-# Using Docker for your Workflow
+# Работа с Docker
 
-- [Docker Basics](#docker-basics)
-- [The Official Runtime Docker Images](#the-official-runtime-docker-images)
-- [Build the Repo](#build-the-repo)
+Документация ниже описывает работу использовать образы и контейнеры Docker для ваших.
 
-This doc will cover the usage of Docker images and containers for your builds.
+## Начало работы
 
-## Docker Basics
+Для начала работы необходимо установить Docker Engine. Если Docker Engine не установлен, следуйте инструкциям [на официальном сайте](https://docs.docker.com/get-started/get-docker).
 
-First, you have to enable and install the Docker Engine. Follow the instructions in their official site in [this link](https://docs.docker.com/get-started/get-docker) if you haven't done so.
+При использовании Docker операционная система вашего компьютера не так важна. Например, при работе с *Ubuntu 22.04*, вы можете без проблем использовать образ *Ubuntu 18.04*. Также можно запускать образы Linux на Windows, если у вас включен WSL.
 
-When using Docker, your machine's OS is strictly speaking not terribly important. For example, if you are on *Ubuntu 22.04*, you can use the *Ubuntu 18.04* image without any issues whatsoever. Likewise, you can run Linux images on Windows if you have WSL enabled. If you followed the instructions from the Docker official website when installing the engine, you most likely have it already up and running. If not, you can follow the instructions in [this link](https://learn.microsoft.com/windows/wsl/install) to enable it. However, note that you can't run multiple OS's on the same *Docker Daemon*, as it takes resources from the underlying kernel as needed. In other words, you can run either Linux on WSL, or Windows containers. You have to switch between them if you need both, and restart Docker.
+Инструкции по запуску Docker Engine доступны [по этой ссылке]((https://learn.microsoft.com/windows/wsl/install)). Стоит отметить, что вы не можете запускать несколько ОС на одном Docker Daemon, так как он использует ресурсы из основного ядра по мере необходимости. Поэтому можно запускать либо Linux на WSL, либо контейнеры Windows. Необходимо переключаться между ними вручную , а также перезапускать Docker.
 
-The target architecture is more important to consider when using Docker containers. The image's architecture has to match your machine's supported platforms. For instance, you can run both, x64 and Arm64 images on an *Apple Silicon Mac*, thanks to the *Rosetta* x64 emulator it provides. Likewise, you can run Linux Arm32 images on a Linux Arm64 host.
+Архитектура конечной системы имеет большее значение при использовании контейнеров Docker. Архитектура образа должна соответствовать системе вашего компьютера. Например, вы можете запускать как x64, так и Arm64 образы на Apple Silicon Mac благодаря эмулятору x64 Rosetta, который он предоставляет. Точно так же вы можете запускать образы Linux Arm32 на хосте Linux Arm64. 
 
-Note that while Docker uses WSL to run the Linux containers on Windows, you don't have to boot up a WSL terminal to run them. Any `cmd` or `powershell` terminal with the `docker` command available will suffice to run all the commands. Docker takes care of the rest.
+Docker использует WSL для запуска контейнеров Linux на Windows, но вам не нужно запускать терминал WSL, чтобы запускать контейнеры. Достаточно использовать терминал `cmd` или `powershell` с командой `docker`.
 
-## The Official Runtime Docker Images
+## Образы Docker
 
-In the following tables, you will find the full names with tags of the images used for the official builds.
+В таблицах ниже представлены имена образов, требуемая архитектура, ссылки для скачивания и другая информация.
 
-**Main Docker Images**
+### Основные образы
 
-The main Docker images are the most commonly used ones, and the ones you will probably need for your builds. If you are working with more specific scenarios (e.g. Android, Risc-V), then you will find the images you need in the *Extended Docker Images* table right below this one.
+Основные образы Docker — это наиболее часто используемые образы. При работе с другими сценариями (например, Android или Risc-V), используйте таблицу *Дополнительные образы*.
 
 | Host OS           | Target OS    | Target Arch     | Image                                                                                  | crossrootfs dir      |
 | ----------------- | ------------ | --------------- | -------------------------------------------------------------------------------------- | -------------------- |
@@ -34,7 +32,7 @@ The main Docker images are the most commonly used ones, and the ones you will pr
 | Azure Linux (x64) | Ubuntu 16.04 | Arm64 (arm64v8) | `mcr.microsoft.com/dotnet-buildtools/prereqs:azurelinux-3.0-net9.0-cross-arm64`        | `/crossrootfs/arm64` |
 | Azure Linux (x64) | Ubuntu 16.04 | x86             | `mcr.microsoft.com/dotnet-buildtools/prereqs:azurelinux-3.0-net9.0-cross-x86`          | `/crossrootfs/x86`   |
 
-**Extended Docker Images**
+### Дополнительные образы
 
 | Host OS           | Target OS                  | Target Arch   | Image                                                                                   | crossrootfs dir        |
 | ----------------- | -------------------------- | ------------- | --------------------------------------------------------------------------------------- | ---------------------- |
@@ -52,11 +50,11 @@ The main Docker images are the most commonly used ones, and the ones you will pr
 | Ubuntu (x64)      | Tizen 9.0                  | Arm32 (armel) | `mcr.microsoft.com/dotnet-buildtools/prereqs:ubuntu-22.04-cross-armel-tizen`            | `/crossrootfs/armel`   |
 | Ubuntu (x64)      | Ubuntu 20.04               | Arm32 (v6)    | `mcr.microsoft.com/dotnet-buildtools/prereqs:ubuntu-20.04-cross-armv6-raspbian-10`      | `/crossrootfs/armv6`   |
 
-**NOTE:** The Ubuntu image marked with an * in the table above is only used for producing *deb* packages, but not for building any product code.
+**ПРИМЕЧАНИЕ:** Образы *Ubuntu* со звездочкой (*) используется только для создания deb пакетов, но не могут использоваться для сборки какого-либо продуктового кода.
 
-## Build the Repo
+## Сборка репозитория
 
-Once you've chosen the image that suits your needs, you can issue `docker run` with the necessary arguments to use your clone of the runtime repo, and call the build scripts as you need. Down below, we have a small command-line example, explaining each of the flags you might need to use:
+Скачайте необходимый образ и используйте команду `docker run` с требуемыми флагами для того, чтобы использовать копию репозитория и запустить скрипты сборки. Ниже представлен небольшой пример команды с описанием каждого использованного флага:
 
 ```bash
 docker run --rm \
@@ -66,14 +64,14 @@ docker run --rm \
   ./build.sh --subset clr --configuration Checked
 ```
 
-Now, dissecting the command:
+Разберем предоставленный пример:
 
-- `--rm`: Erase the created container after it finishes running.
-- `-v <RUNTIME_REPO_PATH>:/runtime`: Mount the runtime repo clone located in `<RUNTIME_REPO_PATH>` to the container path `/runtime`.
-- `-w /runtime`: Start the container in the `/runtime` directory.
-- `mcr.microsoft.com/dotnet-buildtools/prereqs:azurelinux-3.0-net9.0-cross-amd64`: The fully qualified name of the Docker image to download. In this case, we want to use an *Azure Linux* image to target the *x64* architecture.
-- `./build.sh --subset clr --configuration Checked`: The build command to run in the repo. In this case, we want to build the *Clr* subset in the *Checked* configuration.
+- `--rm`: Удаляет созданный контейнер после завершения его работы.
+- `-v <RUNTIME_REPO_PATH>:/runtime`: Монтирует клон репозитория, расположенный по пути <RUNTIME_REPO_PATH>, в папку `/runtime`.
+- `-w /runtime`: Запускает контейнер в папке `/runtime`.
+- `mcr.microsoft.com/dotnet-buildtools/prereqs:azurelinux-3.0-net9.0-cross-amd64`: Полное имя Docker-образа для загрузки. В данном случае используется образ Azure Linux для архитектуры x64.
+- `./build.sh --subset clr --configuration Checked`: Команда сборки, которую нужно выполнить в репозитории. В данном случае соберется подмножество `Clr` в конфигурации `Checked`.
 
-You might also want to interact with the container directly for a myriad of reasons, like running multiple builds in different paths for example. In this case, instead of passing the build script command to the `docker` command-line, pass the flag `-it`. When you do this, you will get access to a small shell within the container, which allows you to explore it, run builds manually, and so on, like you would on a regular terminal in your machine. Note that the containers' shell's built-in tools are very limited in comparison to the ones you probably have on your machine, so don't expect to be able to do full work there.
+С контейнером можно взаимодействовать напрямую по ряду причин. Например, для выполнения нескольких команд сборок в разных путях. В этом случае вместо команды сборки можно использовать флаг `-it`. Таким образом, будет получен доступ к оболочке внутри контейнера, что позволит вам исследовать его, выполнять сборки вручную и т.д. - как и в обычном терминале на вашем компьютере. Стоит отметить, что встроенные инструменты оболочки контейнера очень ограничены по сравнению с теми, которые есть на вашем компьютере.
 
-To do cross-building using Docker, make sure to select the appropriate image that targets the platform you want to build for. As for the commands to run, follow the same instructions from the cross-building doc [over here](/docs/workflow/building/coreclr/cross-building.md), with the difference that you don't need to generate the *ROOTFS*, as the cross-building images already include it.
+Чтобы выполнить кросс-сборку с использованием Docker, убедитесь, что вы выбрали необходимый образ для системы сборки. Команды сборки представлены [в соответствующей главе](/docs/workflow/building/coreclr/cross-building.md) с тем отличием, что вам не нужно генерировать *ROOTFS*, так как образы для кросс-сборки включают его по умолчанию.
