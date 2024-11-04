@@ -1,41 +1,30 @@
-# Building CoreCLR Guide
+# Инструкция по сборке CoreCLR
 
-- [The Basics](#the-basics)
-  - [Build Results](#build-results)
-  - [What to do with the Build](#what-to-do-with-the-build)
-    - [The Core_Root for Testing Your Build](#the-core-root-for-testing-your-build)
-    - [The Dev Shipping Packs](#the-dev-shipping-packs)
-  - [Cross Compilation](#cross-compilation)
-- [Other Features](#other-features)
-  - [Build Drivers](#build-drivers)
-  - [Extra Flags](#extra-flags)
-  - [Native ARM64 Building on Windows](#native-arm64-building-on-windows)
-  - [Debugging Information for macOS](#debugging-information-for-macos)
-  - [Native Sanitizers](#native-sanitizers)
+Прежде всего, убедитесь, что все требования установлены и окружение настроено согласно инструкциям [в этой главе](../../README.md).
 
-Firstly, make sure you've prepared your environment and installed all the requirements for your platform. If not, follow this [link](/docs/workflow/README.md#introduction) for the corresponding instructions.
+## Введение
 
-## The Basics
-
-As explained in the main workflow [*README*](/docs/workflow/README.md), you can build the CoreCLR runtime by passing `-subset clr` as argument to the repo's main `build.sh`/`build.cmd` script:
+Как описано в главе [Работа с репозиторием](../../README.md), для сборки CoreCLR нужно использовать флаг `-subset clr` и команду `build.sh`/`build.cmd`:
 
 ```bash
-./build.sh -subset clr <other args go here>
+./build.sh -subset clr <другие аргументы>
 ```
 
-By default, the script builds the _clr_ in *Debug* configuration, which doesn't have any optimizations and has all assertions enabled. If you're aiming to run performance benchmarks, make sure you select the *Release* version with `-configuration Release`, as that one generates the most optimized code. On the other hand, if your goal is to run tests, then you can take the most advantage from CoreCLR's exclusive *Checked* configuration. This one retains the assertions but has the native compiler optimizations enabled, thus making it run faster than *Debug*. This is the usual mode used for running tests in the CI pipelines.
+По умолчанию скрипты сборки  _clr_ работают с конфигурацией *Debug*, которая не имеет оптимизаций и оставляет утверждения (assertions) включенными. Если вы планируете запускать тесты производительности, убедитесь, что вы выбрали версию *Release* с помощью флага `-configuration Release`, так как эта конфигурация генерирует наиболее оптимизированный код. 
 
-### Build Results
+Для работы с тестами используйте эксклюзивную для CoreCLR конфигурацию *Checked*. Эта конфигурация сохраняет утверждения, но включает оптимизации нативного компилятора, что намного быстрее работы версии *Debug*.  Конфигурация *Checked* также обычно используется для запуска тестов в CI-пайплайнах.
 
-Once the `clr` build completes, the main generated artifacts are placed in `artifacts/bin/coreclr/<OS>.<Architecture>.<Configuration>`. For example, for a Linux x64 Release build, the output path would be `artifacts/bin/coreclr/linux.x64.Release`. Here, you will find a number of different binaries, of which the most important are the following:
+### Результаты сборки
 
-- `corerun`: The command-line host executable. This program loads and starts the CoreCLR runtime and receives the managed program you want to run as argument (e.g. `./corerun program.dll`). On Windows, it is called `corerun.exe`.
-- `coreclr`: The CoreCLR runtime itself. On Windows, it's called `coreclr.dll`, on macOS it is `libcoreclr.dylib`, and on Linux it is `libcoreclr.so`.
-- `System.Private.CoreLib.dll`: The core managed library, containing the definitions of `Object` and the base functionality.
+После завершения сборки `clr` основные артефакты генерируются в папке `artifacts/bin/coreclr/<OS>.<Архитектура>.<Конфигурация>`. Например, для сборки Linux x64 в конфигурации *Release* папка выглядит следующим образом: `artifacts/bin/coreclr/linux.x64.Release`. Здесь находятся различные бинарные файлы, наиболее важные из которых:
 
-All the generated logs are placed in under `artifacts/log`, and all the intermediate output the build uses is placed in the `artifacts/obj/coreclr` directory.
+- `corerun`: Исполняемый файл командной строки хоста. Эта программа загружает и запускает CoreCLR, а также получает управляемую программу, которую необходимо запустить, в качестве аргумента (например, `./corerun program.dll`). Для Windows файл называется `corerun.exe`.
+- `coreclr`: Файл CoreCLR runtime. Для windows файл называется `coreclr.dll`, для macOS - `libcoreclr.dylib` и для Linux - `libcoreclr.so`.
+- `System.Private.CoreLib.dll`: Основная управляемая библиотека, которая содержит определения `Object` и основную функциональность.
 
-### What to do with the Build
+Все сгенерированные журналы помещаются в `artifacts/log`, а все промежуточные выходные данные, используемые сборкой, помещаются в директорию `artifacts/obj/coreclr`.
+
+### Что делать со сборкой
 
 *CoreCLR* is one of the most important components of the runtime repo, as it is one of the main engines of the .NET product. That said, while you can test and use it on its own, it is easiest to do this when used in conjunction with the *Libraries* subset. When you build both subsets, you can get access to the *Core_Root*. This includes all the libraries and the Clr, alongside other tools like *Crossgen2*, *R2RDump*, and the *ILC* compiler, and the main command-line host executable `corerun`, all bundled together. The *Core_Root* is one of the most reliable ways of testing changes to the runtime, running external apps with your build, and it is the way Clr tests are run in the CI pipelines.
 

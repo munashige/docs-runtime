@@ -66,10 +66,15 @@ nav:
     - Редактирование и отладка: workflow/editing-and-debugging.md
     - Работа с Docker: workflow/using-docker.md
     - Сборка:
-      - CoreCLR: workflow/building/coreclr/README.md
+      - CoreCLR: 
+        - Сборка CoreCLR: workflow/building/coreclr/README.md
+        - Кросс-сборка: workflow/building/coreclr/cross-building.md
+        - Android на Linux: workflow/building/coreclr/android.md
+        - NativeAOT: workflow/building/coreclr/nativeaot.md
+        - FreeBSD: workflow/building/coreclr/freebsd-instructions.md
       - Сборка Mono: workflow/building/mono/README.md
       - Библиотеки: 
-        - Cборка: workflow/building/libraries/README.md
+        - Сборка библиотек: workflow/building/libraries/README.md
         - Code Coverage: workflow/building/libraries/code-coverage.md
         - Кросс-сборка: workflow/building/libraries/cross-building.md
         - WebAssembly: workflow/building/libraries/webassembly-instructions.md
