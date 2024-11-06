@@ -101,12 +101,12 @@ nav:
       - Инструменты управления: workflow/testing/testing-managed-tools.md
       - Рабочие нагрузки: workflow/testing/testing-workloads.md
       - Работа с Corerun: workflow/testing/using-corerun-and-coreroot.md
-      - Сборка с Dev Shipping Package: /workflow/testing/using-dev-shipping-packages.md
-      - Сборка с .NET SDK: workflow/testing/using-your-build-with-installed-sdk.md
+      - Пакеты поставки для разработчиков: workflow/testing/using-dev-shipping-packages.md
+      - .NET SDK: workflow/testing/using-your-build-with-installed-sdk.md
       - Visual Studio: workflow/testing/visualstudio.md
-      - CodeCLR:
-        - Общая структура тестов: workflow/testing/coreclr/test-configuration.md 
-        - Сборка и запуск CoreCLR тестов: workflow/testing/coreclr/testing.md
+      - CoreCLR:
+        - Общая структура: workflow/testing/coreclr/test-configuration.md 
+        - Сборка и запуск: workflow/testing/coreclr/testing.md
         - Инструкции для Windows: workflow/testing/coreclr/unix-test-instructions.md
         - Инструкции для Unix: workflow/testing/coreclr/unix-test-instructions.md
         - AutoTrace: workflow/testing/coreclr/automated-stress-testing-diagnostic-server.md

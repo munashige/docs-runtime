@@ -26,121 +26,111 @@
 
 ### Что делать со сборкой
 
-*CoreCLR* is one of the most important components of the runtime repo, as it is one of the main engines of the .NET product. That said, while you can test and use it on its own, it is easiest to do this when used in conjunction with the *Libraries* subset. When you build both subsets, you can get access to the *Core_Root*. This includes all the libraries and the Clr, alongside other tools like *Crossgen2*, *R2RDump*, and the *ILC* compiler, and the main command-line host executable `corerun`, all bundled together. The *Core_Root* is one of the most reliable ways of testing changes to the runtime, running external apps with your build, and it is the way Clr tests are run in the CI pipelines.
+*CoreCLR* является одним из самых важных компонентов runtime, так как это один из основных движков самой платформы. Этот компонент можно тестировать отдельно, но проще запускать тесты в сочетании с подмножеством *библиотек* (libs). Если оба подмножества собраны, будет получен доступ к *Core_Root*, который включает в себя все библиотеки и сам *CLR*, а также другие инструменты, среди которых  *Crossgen2*, *R2RDump*, компилятор *ILC* и основной исполняемый файл командной строки`corerun`. *Core_Root* является одним из самых надежных способов тестирования изменений в репозитории и запуска внешних приложений. Также через него запускаются тесты Clr в CI-пайплайнах.
 
-#### The Core_Root for Testing Your Build
+#### Core_Root для тестирования билдов
 
-As described in the [workflow README](/docs/workflow/README.md#building-the-repo), you can build multiple subsets by concatenating them with a `+` sign in the `-subset` argument. To prepare to build the *Core_Root*, we need to build the libraries and CoreCLR. Thus, the `-subset` argument would be `clr+libs`. Usually, the recommended workflow is to build the clr in *Debug* configuration and the libraries in *Release*:
+Как описано в главе [Работа с репозиторием](../../README.md), команда сборки может использовать несколько подмножеств, которые должны быть разделены знаком `+`.  Таким образом, чтобы собрать CoreCLR с библиотеками и подготовить *Сore_Root*, необходимо использовать флаг `-subset` и передать значение `clr+libs`. Рекомендуется собирать *clr* в конфигурации *Debug* и *libs* в конфигурации *Release*:
 
 ```bash
 ./build.sh -subset clr+libs -runtimeConfiguration Debug -librariesConfiguration Release
 ```
 
-Once you have both subsets built, you can generate the *Core_Root*, which as mentioned above, is the most flexible way of testing your changes. You can generate the *Core_Root* by running the following command, assuming a *Checked* clr build on an x64 machine:
+После сборки этих подмножеств можно сгенерировать *Core_Root*, выполнив следующую команду (пример сборки в конфигурации *Checked* для архитектуры х64):
 
 ```bash
 ./src/tests/build.sh -x64 -checked -generatelayoutonly
 ```
 
-Since this is more related to testing, you can find the full details and instructions in the CoreCLR testing doc [over here](/docs/workflow/testing/coreclr/testing.md).
+Больше информации о тестах CoreCLR см. главе [Сборка и запуск тестов CoreCLR](testing/coreclr/testing.md).
 
-**WARNING:** When building CoreCLR, the `apphost` will also get constructed as part of the build. However, `apphost` belongs to the `host` subset. This means that if you only pass the `runtimeConfiguration` and/or the `librariesConfiguration` flag to your builds, then the `apphost` will get built in `Debug`. This will result in issues when trying to build the tests. Because of this, it is highly recommended to always also include the `-c` or `-hc` flags when building `clr` to ensure all of its related components are constructed in the same configuration.
+**ПРИМЕЧАНИЕ:** В процессе сборки CoreCLR будет создан `apphost`. Однако `apphost` принадлежит подмножеству `host`. Это означает, что если вы передадите только флаг `runtimeConfiguration` и/или `librariesConfiguration` в команду сборки, то `apphost` будет собран в конфигурации *Debug*. Это приведет к проблемам при попытке собрать тесты. Поэтому настоятельно рекомендуется всегда включать флаги `-c` или `-hc` для подмножества `clr`. Это гарантирует, что все взаимосвязанные компоненты будут собраны в одной конфигурации.
 
-#### The Dev Shipping Packs
+#### Пакеты поставки для разработчиков
 
-It is also possible to generate the full runtime NuGet packages and installer that you can use to test in a more production-esque scenario. To generate these shipping artifacts, you have to build the `clr`, `libs`, `host`, and `packs` subsets:
+Репозиторий также дает возможность генерировать установщик и пакеты NuGet, которые можно использовать для тестирования в предрелизных сценариях. Чтобы сгенерировать эти артефакты поставки необходимо использовать подмножества `clr`, `libs`, `host`, и `packs`:
 
 ```bash
 ./build.sh -subset clr+libs+host+packs -configuration Release
 ```
 
-The shipping artifacts are placed in the `artifacts/packages/<Configuration>/Shipping` directory. Here, you will find several NuGet packages, as well as their respective symbols packages, generated from your build. More importantly, you will find a zipped archive with the full contents of the runtime, organized in the same layout as they are in the official dotnet installations. This archive includes the following files:
+Артефакты находятся в папке `artifacts/packages/<Configuration>/Shipping`. Здесь вы найдете несколько пакетов NuGet, а также пакеты с символами, сгенерированные из вашего билда. Кроме этого, в этой папке находится zip-архив с полным содержимым runtime. Архив включает в себя следующие файлы: 
 
-- `host/fxr/<net-version>-dev/hostfxr` (`hostfxr` is named differently depending on the platform: `hostfxr.dll` on Windows, `libhostfxr.dylib` on macOS, and `libhostfxr.so` on Linux)
-- `shared/Microsoft.NETCore.App/<net-version>-dev/*` (The `*` here refers to all the libraries dll's, as well as all the binaries necessary for the runtime to function)
-- `dotnet (dotnet.exe on Windows)` (The main `dotnet` executable you usually use to run your apps)
+- `host/fxr/<net-version>-dev/hostfxr` (`hostfxr` называется по-разному в зависимости от платформы: `hostfxr.dll` для Windows, `libhostfxr.dylib` для macOS и `libhostfxr.so` для Linux)
+- `shared/Microsoft.NETCore.App/<net-version>-dev/*` (Символ `*` относится ко всем библиотекам dll, а также ко всем бинарным файлам, необходимым для работы платформы)
+- `dotnet (dotnet.exe для Windows)` (исполняемый файл, который используется для запуска приложений)
 
-Note that this package only includes the runtime, therefore you will only be able to run apps but not build them. For that, you would need the full SDK.
+Обратите внимание, что этот пакет включает в себя только runtime, поэтому вы сможете запускать приложения, но не сможете их собирать. Для этого вам потребуется полный SDK.
 
-**NOTE:** On Windows, this will also include `.exe` and `.msi` installers, which you can use in case you want to test your build machine-wide. This is the closest you can get to an official build installation.
+**ПРИМЕЧАНИЕ:** На Windows пакет включает в себя установщики `.exe` и `.msi`, которые можно использовать, чтобы протестировать установку всего билда.
 
-For a full guide on using the shipping packages for testing checkout the doc we have dedicated to it [over here](/docs/workflow/testing/using-dev-shipping-packages.md).
+Больше информации о тестировании пакетов поставки см. главу [Тестирование -> Пакеты поставки для разработчиков](../testing/using-dev-shipping-packages.md).
 
-### Cross Compilation
+### Кросс-компиляция
 
-Using an x64 machine, it is possible to generate builds for other architectures. Not all architectures are supported for cross-compilation however, and it's also dependent on the OS you are using to build and target. Refer to the table below for the compatibility matrix.
+Используя машину с архитектурой x64, можно генерировать билды и для других архитектур. Однако не все архитектуры поддерживаются для кросс-компиляции. Это также зависит от ОС-и системы сборки и конечной системы. Матрица совместимости систем представлена в таблице ниже:
 
-| Operating System | To x86   | To Arm32 | To Arm64 |
+| Операционная система | На x86   | На Arm32 | На Arm64 |
 | :--------------: | :------: | :------: | :------: |
 | Windows          | &#x2714; |          | &#x2714; |
 | macOS            |          |          | &#x2714; |
 | Linux            |          | &#x2714; | &#x2714; |
 
-**NOTE:** On macOS, it is also possible to cross-compile from ARM64 to x64 using an Apple Silicon Mac.
+**ПРИМЕЧАНИЕ:** На macOS возможна кросс-сборка с ARM64 на x64, используя Mac с Apple Silicon.
 
-Detailed instructions on how to do cross-compilation can be found in the cross-building doc [over here](/docs/workflow/building/coreclr/cross-building.md).
+Подробные инструкции для кросс-сборки представлены [в соответствующей главе](cross-building.md).
 
-## Other Features
+## Другие функции
 
-### Build Drivers
+### Драйверы сборки
 
-By default, the CoreCLR build uses *Ninja* as the native build driver on Windows, and *Make* on non-Windows platforms. You can override this behavior by passing the appropriate flags to the build script:
-
-To use Visual Studio's *MSBuild* instead of *Ninja* on Windows:
+По умолчанию сборка CoreCLR использует *Ninja* в качестве нативного драйвера сборки на Windows и *Make* на других системах. Это можно изменить, передав соответствующие флаги в скрипт сборки. Например, чтобы использовать *MSBuild* вместо *Ninja* на Windows:
 
 ```cmd
 ./build.cmd -subset clr -msbuild
 ```
 
-It is recommended to use *Ninja* on Windows, as it uses the build machine's resources more efficiently in comparison to Visual Studio's *MSBuild*.
+Рекомендуется использовать *Ninja* на Windows, так как этот драйвер более эффективно использует ресурсы машины по сравнению с *MSBuild* от Visual Studio.
 
-To use *Ninja* instead of *Make* on non-Windows:
+Чтобы использовать *Ninja* вместо *Make* на Linux или Mac:
 
 ```bash
 ./build.sh -subset clr -ninja
 ```
 
-### Extra Flags
+### Дополнительные флаги
 
-You can also pass some extra compiler/linker flags to the CoreCLR build. Set the `EXTRA_CFLAGS`, `EXTRA_CXXFLAGS`, and `EXTRA_LDFLAGS` as you see fit for this purpose. The build script will consume them and then set the environment variables that will ultimately affect your build (i.e. those same ones without the `EXTRA_` prefix). Don't set the final ones directly yourself, as that is known to lead to potential failures in configure-time tests.
+Можно использовать и другие флаги для компилятора или линковщика сборки CoreCLR. Для этого установите `EXTRA_CFLAGS`, `EXTRA_CXXFLAGS` или `EXTRA_LDFLAGS` по своему усмотрению. При использовании одного из этих флагов скрипт сборки установит переменные окружения, которые в конечном итоге повлияют на работу вашего билда (т.е. те же самые, но без префикса `EXTRA_`). Не устанавливайте переменные напрямую, так как это может привести к потенциальным сбоям в тестах конфигурации.
 
-### Native ARM64 Building on Windows
+### Нативная сборка ARM64 на Windows
 
-Currently, the runtime repo supports building CoreCLR directly on Windows ARM64 without the need to cross-compile, albeit it is still in an experimental phase. To do this, you need to install the ARM64 build tools and Windows SDK for Visual Studio, in addition to all the requirements outlined in the [Windows Requirements doc](/docs/workflow/requirements/windows-requirements.md).
+На данный момент репозиторий поддерживает сборку CoreCLR на Windows ARM64 без кросс-компиляции, но на экспериментальной стадии. Для этого вам нужно установить инструменты сборки ARM64 и Windows SDK для Visual Studio, а также все требования, которые описаны [в соответствующей главе](../requirements/windows-requirements.md)
 
-Once those requirements are fulfilled, you have to tell the build script to compile for Arm64 using *MSBuild*. *Ninja* is not yet supported on Arm64 platforms:
+Далее необходимо использовать специальный флаг, чтобы собрать билд для Arm64, используя *MSBuild* (*Ninja* не поддерживается на системах Arm64):
 
 ```cmd
 ./build.cmd -subset clr -arch arm64 -msbuild
 ```
 
-While this is functional at the time of writing this doc, it is still recommended to cross-compile from an x64 machine, as that's the most stable and tested method.
+Использование этого метода может привести к нестабильным результатам. Поэтому рекомендуется использовать систему x64 и кросс-компиляцию, так как это наиболее стабильный и проверенный метод.
 
-### Debugging Information for macOS
+### Информация отладки на macOS
 
-When building on macOS, the build process puts native component symbol and debugging information into `.dwarf` files, one for each built binary. This is not the native format used by macOS, and debuggers like LLDB can't automatically find them. The format macOS uses is `.dSYM` bundles. To generate them and get a better inner-loop developer experience (e.g. have the LLDB debugger automatically find program symbols and display source code lines, etc.), make sure to enable the `DCLR_CMAKE_APPLE_DYSM` flag when calling the build script:
+Процесс сборки на macOS помещает символы компонентов и информацию для отладки в файлы `.dwarf` по одному для каждой собранной бинарной версии. Это не нативный формат, который используется в macOS. Поэтому отладчики (напр. LLDB) не могут их находить автоматически. Нативный формат, используемый macOS — это пакеты в формате `.dSYM`. Чтобы сгенерировать их и значительно облегчить разработку (напр., чтобы отладчик LLDB автоматически находил символы программы, а также отображал строки исходного кода, и т.д.) необходимо включить флаг `DCLR_CMAKE_APPLE_DYSM` при вызове скрипта сборки:
+
 
 ```bash
 ./build.sh -subset clr -cmakeargs "-DCLR_CMAKE_APPLE_DYSM=TRUE"
 ```
 
-**NOTE:** Converting the entire build process to build and package `.dSYM` bundles on macOS by default is on the table and tracked by issue #92911 [over here](https://github.com/dotnet/runtime/issues/92911).
 
-### Native Sanitizers
 
-CoreCLR is also in the process of supporting the use of native sanitizers during the build to help catch memory safety issues. To apply them, add the `-fsanitize` flag followed by the name of the sanitizer as argument. As of now, these are the supported sanitizers with plans of adding more in the future:
+### Нативные санитизаторы
 
-- Sanitizer Name: `AddressSanitizer`
+CoreCLR поддерживает работу с нативными санитизаторами во время сборки, чтобы помочь выявить проблемы с безопасным использованием памяти. Чтобы запустить их используйте флаг `-fsanitize` и добавьте имя санитизатора в качестве аргумента. На данный момент поддерживается только `AddressSanitizer`, который регулярно тестируется на х64 системах Windows, Linux и macOS. Чтобы его использовать используйте следующую команду:
 
-  Argument to `-fsanitize`: `address`
 
-| Platform | Support Status          |
-| :------: | :---------------------: |
-| Windows  | Regularly Tested on x64 |
-| macOS    | Regularly Tested on x64 |
-| Linux    | Regularly Tested on x64 |
 
-And to use it, the command would look as follows:
 
 ```bash
 ./build.sh -subset clr -fsanitize address
