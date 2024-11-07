@@ -1,128 +1,115 @@
-# Cross-Building for Different Architectures and Operating Systems
+# Кросс-сборка для разных архитектур и операционных систем
 
-* [Windows Cross-Building](#windows-cross-building)
-  * [Cross-Compiling for ARM64 on Windows](#cross-compiling-for-arm64-on-windows)
-  * [Cross-Compiling for x86 on Windows](#cross-compiling-for-x86-on-windows)
-* [macOS Cross-Building](#macos-cross-building)
-* [Linux Cross-Building](#linux-cross-building)
-  * [Generating the ROOTFS](#generating-the-rootfs)
-    * [ROOTFS for FreeBSD](#rootfs-for-freebsd)
-  * [Cross-Compiling CoreCLR](#cross-compiling-coreclr)
-    * [CoreCLR for FreeBSD](#coreclr-for-freebsd)
-    * [Cross-Compiling CoreCLR for other VFP Configurations](#cross-compiling-coreclr-for-other-vfp-configurations)
-  * [Building the Cross-Targeting Tools](#building-the-cross-targeting-tools)
-* [Cross-Building using Docker](#cross-building-using-docker)
-  * [Cross-Compiling for ARM32 and ARM64 with Docker](#cross-compiling-for-arm32-and-arm64-with-docker)
-  * [Cross-Compiling for FreeBSD with Docker](#cross-compiling-for-freebsd-with-docker)
+Инструкции ниже демонстрируют как выполнять кросс-сборку на нескольких операционных системах и архитектурах. Стоит отметить, что поддерживаются только те комбинации для кросс-сборки, которые описаны в этой документации. Если будут обнаружены другие комбинации, этот документ будет обновлен соответствующим образом.
 
-This guide will go more in-depth on how to do cross-building across multiple operating systems and architectures. It's worth mentioning this is not an any-to-any scenario. Only the combinations explained here are possible/supported. If/When any other combinations get supported/discovered, this document will get updated accordingly.
+## Кросс-сборка на Windows
 
-## Windows Cross-Building
+Этот раздел покрывает кросс-компиляцию на Windows. В настоящее время Windows позволяет выполнять кросс-компиляцию с x64 на практически любую другую архитектуру. 
 
-This section will go over cross-compiling on Windows. Currently, Windows allows you to cross-compile from x64 to basically any other architecture.
+### Кросс-компиляция для ARM64 на Windows
 
-### Cross-Compiling for ARM64 on Windows
+Для начала работы с кросс-компиляцией ARM64 на Windows, необходимо установить соответствующие инструменты и Windows SDK. Подробные инструкции можно найти в главе [Требования для Windows](../requirements/windows-requirements.md).
 
-To do cross-compilation for ARM64 on Windows, first make sure you have the appropriate tools and Windows SDK installed. This is described in detail in the [Windows requirements doc](/docs/workflow/requirements/windows-requirements.md#visual-studio).
-
-Once you have all the required dependencies, it is a straightforward process. Windows knows how to cross-build behind curtains, so all you have to do is specify which architecture you want to build for:
+После установки требуемых зависимостей, достаточно использовать следующую команду и указать требуемую архитектуру для сборки:
 
 ```cmd
 .\build.cmd -s clr -c Release -arch arm64
 ```
 
-### Cross-Compiling for x86 on Windows
+### Кросс-компиляция для х86 на Windows
 
-Building for x86 doesn't require any additional software installed or configured, since all the x64 build tools also have the capability of building for x86. Just specify it when calling the build script:
+Сборка для x86 не требует установки или настройки дополнительного программного обеспечения, так как все инструменты сборки для x64 также могут выполнять сборку для x86. Достаточно использовать следующий скрипт сборки::
 
 ```cmd
 .\build.cmd -s clr -c Release -arch x86
 ```
 
-## macOS Cross-Building
+## Кросс-сборка на macOS
 
-This section will go over cross-compiling on macOS. Currently, macOS allows you to cross-compile between x64 and ARM64.
+Раздел покрывает кросс-компиляцию на macOS. На данный момент macOS позволяет выполнять кросс-компиляцию между x64 и ARM64.
 
-Similarly to targeting Windows x86, the native tooling you installed back in the [macOS requirements doc](/docs/workflow/requirements/macos-requirements.md) has the capabilities to effectuate the cross-compilation. You have simply to pass the `-cross` flag, along with the designated architecture. For example, for an arm64 build on an Intel x64 Mac:
+Нативные инструменты, которые описаны в [Требованиях для macOS](/docs/workflow/requirements/macos-requirements.md), могут быть использованы для кросс-компиляции. Достаточно передать флаг `-cross` и требуемую архитектуру. Например, для сборки ARM64 на Intel x64 Mac:
 
 ```bash
 ./build.sh -s clr -c Release --cross -a arm64
 ```
 
-## Linux Cross-Building
+## Кросс-сборка на Linux
 
-This section will go over cross-compiling on Linux. Currently, Linux allows you to cross-compile from x64 to ARM32 and ARM64, as well as to other Unix-based operating systems, like FreeBSD and Alpine.
+Раздел посвящен кросс-компиляции на Linux. В настоящее время Linux позволяет выполнять кросс-компиляцию с x64 на ARM32 и ARM64, а также на другие операционные системы на базе Unix, такие как FreeBSD и Alpine.
 
-### Generating the ROOTFS
+### Генерация ROOTFS
 
-Before you can attempt to do any Linux cross-building, you will need to generate the _ROOTFS_ corresponding to the platform you want to target. The script located in `eng/common/cross/build-rootfs.sh` is in charge of effectuating this task. Note that this script must be run with `sudo`, as it needs to make some symlinks to the system that would not be allowed otherwise.
+Для начала работы с кросс-компиляцией на Linux необходимо сгенерировать ROOTFS, который соответствует конечной системе. Скрипт находится в `eng/common/cross/build-rootfs.sh` и отвечает за выполнение кросс-компиляции. Обратите внимание, что этот скрипт необходимо запускать с правами sudo, так как он требует создания некоторых символических ссылок в системе.
 
-For example, let's try generating a _ROOTFS_ targeting Ubuntu 18 (Bionic) for ARM64:
+Например, чтобы сгенерировать ROOTFS для конечной системы Ubuntu 18 (Bionic) на ARM64:
+
 
 ```bash
 sudo ./eng/common/cross/build-rootfs.sh arm64 bionic
 ```
 
-The _rootfs_ binaries will be placed in `.tools/rootfs/<arch>`. So, for this example, it would be `.tools/rootfs/arm64`. Note that the Linux codename argument is optional, and if you omit it, the script will pick its default one.
+Бинарные файлы *rootfs* находятся в папке `.tools/rootfs/<arch>`. В этом примере это папка `.tools/rootfs/arm64`. Обратите внимание, что указывать аргумент с кодовым именем Linux (напр. bionic) не обязательно. Если кодовое имя не указано, скрипт выберет значение по умолчанию.
 
-It is also possible to have `build-rootfs.sh` generate its output elsewhere. For that, you have to set the environment variable `ROOTFS_DIR` to the path where you want your _rootfs_ binaries to be placed in.
+Также можно указать вывод в другом место. Для этого нужно установить переменную окружения `ROOTFS_DIR` в папку, где вы хотите разместить свои бинарные файлы *rootfs*.
 
-#### ROOTFS for FreeBSD
 
-Generating the _ROOTFS_ for FreeBSD cross-compiling is virtually the same as for other Linux distributions in other architectures. The only difference is you have to specify it so. For example, for an x64 cross-compilation for FreeBSD 13:
+#### ROOTFS для FreeBSD
+
+Генерация ROOTFS для кросс-компиляции FreeBSD такая же, как и для других дистрибутивов Linux на других архитектурах. Единственное отличие заключается в том, что нужно указать версию freebsd. Например, для кросс-компиляции x64 для FreeBSD 13:
 
 ```bash
 sudo ./eng/common/cross/build-rootfs.sh x64 freebsd13
 ```
 
-### Cross-Compiling CoreCLR
+### Кросс-компиляция CoreCLR
 
-Once you have your _ROOTFS_ generated, make sure to set the environment variable `ROOTFS_DIR` to where your binaries are located if you didn't do so in the previous step. Then, build normally and pass the `--cross` flag to the build script:
+После генерации _ROOTFS_, убедитесь, что вы установили переменную окружения `ROOTFS_DIR` в папку, где находятся ваши бинарные файлы. Затем запустите сборку в обычном режиме и передайте флаг `--cross`:
 
 ```bash
 export ROOTFS_DIR=/path/to/runtime/.tools/rootfs/arm64
 ./build.sh --subset clr --configuration Release --arch arm64 --cross
 ```
 
-Like with any other build, you'll find the built binaries at `artifacts/bin/coreclr/Linux.<arch>.<configuration>`. For our example, it would be `artifacts/bin/coreclr/Linux.arm64.Release`.
+Собранные бинарные файлы находятся в папке `artifacts/bin/coreclr/Linux.<arch>.<configuration>`. Для примера выше папка будет называться `artifacts/bin/coreclr/Linux.arm64.Release`.
 
-#### CoreCLR for FreeBSD
+#### CoreCLR для FreeBSD
 
-Very similarly to generating the _ROOTFS_, cross-building for FreeBSD follows the same process as for other architectures, which is described above. The only difference is that, in addition to the `--cross` flag, you also have to specify it is for FreeBSD by means of the `--os` flag:
+Кросс-сборка для FreeBSD следует тому же процессу, что и для других архитектур. Необходимо использовать флаг `--cross`, а также добавить флаг `--os` и указать FreeBSD. Например:
 
 ```bash
 export ROOTFS_DIR=/path/to/runtime/.tools/rootfs/x64
 ./build.sh --subset clr --configuration Release --cross --os freebsd
 ```
 
-#### Cross-Compiling CoreCLR for other VFP Configurations
+#### Кросс-компиляция CoreCLR для других конфигураций VFP
 
-The default ARM compilation configuration for CoreCLR is armv7-a with thumb-2 instruction set, and VFPv3 floating point with 32 64-bit FPU registers.
+По умолчанию конфигурация компиляции ARM для CoreCLR — это _armv7-a_ с набором инструкций _thumb-2_, а также _VFPv3 floating point_ c 32 64-битными регистрами FPU.
 
-CoreCLR JIT requires 16 64-bit or 32 32-bit FPU registers.
+CoreCLR JIT требует 16 64-битных или 32 32-битных регистров FPU.
 
-A set of FPU configuration options have been provided in the build scripts to accommodate different CPU types. These FPU configuration options are:
+В скриптах сборки предоставлен набор параметров конфигурации FPU для поддержки различных типов процессоров. Параметры конфигурации включают в себя: 
 
-* _CLR\_ARM\_FPU\_TYPE_: Translates to a value given to the `-mfpu` compiler option. Please refer to your compiler documentation for possible options.
-* _CLR\_ARM\_FPU\_CAPABILITY_: Used by the PAL code to decide which FPU registers should be saved and restored during context switches (the supported options are 0x3 and 0x7):
-  * Bit 0 unused always set to 1.
-  * Bit 1 corresponds to 16 64-bit FPU registers.
-  * Bit 2 corresponds to 32 64-bit FPU registers.
+* _CLR\_ARM\_FPU\_TYPE_: Соответствует значению, которое передается в опции компилятора `-mfpu`. Cм. документацию вашего выбранного компилятора для получения списка опций.
+* _CLR\_ARM\_FPU\_CAPABILITY_: Используется PAL-кодом для определения, в какие регистры FPU должны быть сохранены и восстановлены во время переключений контекста (поддерживаемые опции — 0x3 и 0x7):
+  * Bit 0 не используется, всегда установлен на 1.
+  * Bit 1 соответствует 16 64-битным регистрам FPU.
+  * Bit 2 соответствует 32 64-битным регистрам FPU
 
-For example, if you wanted to support armv7 CPU with VFPv3-d16, you'd use the following compile options:
+Например для поддержки armv7 CPU с VFPv3-d16 нужно использовать следующие параметры компиляции:
 
 ```bash
 ./build.sh --subset clr --configuration Release --cross --arch arm --cmakeargs "-DCLR_ARM_FPU_CAPABILITY=0x3" --cmakeargs "-DCLR_ARM_FPU_TYPE=vfpv3-d16"
 ```
 
-### Building the Cross-Targeting Tools
+### Сборка инструментов кросс-таргетинга
 
-Certain parts of the build process need some native components that are built for the current machine architecture, regardless of whichever you are targeting. These tools are referred to as cross-targeting tools or "cross tools". There are two categories of these tools today:
+Некоторые операции процесса сборки требуют наличия нативных компонентов для архитектуры текущей машины, независимо от архитектуры конечной системы. Эти инструменты называются инструментами для кросс-таргетинга или "_кросс-инструментами_". В настоящее время существует две категории таких инструментов:
 
-* Crossgen2 JIT Tools
-* Diagnostic Libraries
+* Crossgen2 JIT
+* Библиотеки диагностики (Diagnostic Libraries)
 
-The Crossgen2 JIT tools are used to run Crossgen2 on libraries built during the current build, such as during the `clr.nativecorelib` stage. Under normal circumstances, you should have no need to worry about this, since these tools are automatically built when using the `.\build.cmd` or `./build.sh` scripts at the root of the repo to build any of the CoreCLR native files.
+Инструменты Crossgen2 JIT используются для запуска Crossgen2 в библиотеках , которые собраны в процессе libraries built during the current build, such as during the `clr.nativecorelib` stage. Under normal circumstances, you should have no need to worry about this, since these tools are automatically built when using the `.\build.cmd` or `./build.sh` scripts at the root of the repo to build any of the CoreCLR native files.
 
 However, you might find yourself needing to (re)build them because either you made changes to them, or you built CoreCLR in a different way using `build-runtime.sh` instead of the usual default script at the root of the repo. To build these tools, you need to run the `src/coreclr/build-runtime.sh` script, and pass the `-hostarch` flag with the architecture of the host machine, alongside the `-component crosscomponents` flag to specify that you only want to build the cross-targeting tools. Retaking our previous example of building for ARM64 using an x64 Linux machine:
 
