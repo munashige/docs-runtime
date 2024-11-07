@@ -26,7 +26,7 @@
 
 ## Кросс-сборка на macOS
 
-Раздел покрывает кросс-компиляцию на macOS. На данный момент macOS позволяет выполнять кросс-компиляцию между x64 и ARM64.
+Раздел описывает кросс-компиляцию на macOS. На данный момент macOS позволяет выполнять кросс-компиляцию между x64 и ARM64.
 
 Нативные инструменты, которые описаны в [Требованиях для macOS](/docs/workflow/requirements/macos-requirements.md), могут быть использованы для кросс-компиляции. Достаточно передать флаг `-cross` и требуемую архитектуру. Например, для сборки ARM64 на Intel x64 Mac:
 
@@ -36,7 +36,7 @@
 
 ## Кросс-сборка на Linux
 
-Раздел посвящен кросс-компиляции на Linux. В настоящее время Linux позволяет выполнять кросс-компиляцию с x64 на ARM32 и ARM64, а также на другие операционные системы на базе Unix, такие как FreeBSD и Alpine.
+Раздел описывает процесс кросс-компиляции на Linux. В настоящее время Linux позволяет выполнять кросс-компиляцию с x64 на ARM32 и ARM64, а также на другие операционные системы на базе Unix, такие как FreeBSD и Alpine.
 
 ### Генерация ROOTFS
 
@@ -109,33 +109,33 @@ CoreCLR JIT требует 16 64-битных или 32 32-битных реги
 * Crossgen2 JIT
 * Библиотеки диагностики (Diagnostic Libraries)
 
-Инструменты Crossgen2 JIT используются для запуска Crossgen2 в библиотеках , которые собраны в процессе libraries built during the current build, such as during the `clr.nativecorelib` stage. Under normal circumstances, you should have no need to worry about this, since these tools are automatically built when using the `.\build.cmd` or `./build.sh` scripts at the root of the repo to build any of the CoreCLR native files.
+Инструменты Crossgen2 JIT используются для запуска Crossgen2 в библиотеках, которые собираются на разных этапах, например `clr.nativecorelib`. Обычно эти инструменты собираются автоматически при запуске скрипта `.\build.cmd` (или`./build.sh`) для сборки нативных файлов CoreCLR из корня репозитория.
 
-However, you might find yourself needing to (re)build them because either you made changes to them, or you built CoreCLR in a different way using `build-runtime.sh` instead of the usual default script at the root of the repo. To build these tools, you need to run the `src/coreclr/build-runtime.sh` script, and pass the `-hostarch` flag with the architecture of the host machine, alongside the `-component crosscomponents` flag to specify that you only want to build the cross-targeting tools. Retaking our previous example of building for ARM64 using an x64 Linux machine:
+Однако, эти файлы необходимо пересобрать, если вы внесли в них изменения или собрали CoreCLR другим способом (напр. используя `build-runtime.sh` вместо обычного скрипта по умолчанию в корне репозитория). Чтобы собрать эти инструменты, нужно запустить скрипт `src/coreclr/build-runtime.sh` и передать флаг `-hostarch` с архитектурой машины-хоста. Также нужно использовать флаг `-component crosscomponents` и указать, что вы хотите собрать только инструменты для кросс-таргетинга. Возьмем наш предыдущий пример сборки для ARM64 с использованием x64 Linux машины:
 
 ```bash
 ./src/coreclr/build-runtime.sh -arm64 -hostarch x64 -component crosscomponents -cmakeargs "-DCLR_CROSS_COMPONENTS_BUILD=1"
 ```
 
-The output of running this command is placed in `artifacts/bin/coreclr/linux.<target_arch>.<configuration>/<host_arch>`. For our example, it would be `artifacts/bin/coreclr/linux.arm64.Release/x64`.
+Результат выполнения этой команды будет помещен в папку `artifacts/bin/coreclr/linux.<target_arch>.<configuration>/<host_arch>`. Для примера выше эта папка `artifacts/bin/coreclr/linux.arm64.Release/x64`.
 
-On Windows, you can build these cross-targeting diagnostic libraries with the `linuxdac` and `alpinedac` subsets from the root `build.cmd` script. That said, you can also use the `build-runtime.cmd` script, like with Linux. These builds also require you to pass the `-os` flag to specify the target OS. For example:
+На Windows сборка диагностических библиотек для кросс-таргетинга осуществляется с помощью подмножеств `linuxdac` и `alpinedac` и запуском скрипта `build.cmd` из корня репозитория. Можно также использовать скрипт `build-runtime.cmd`, как и с Linux. В этом случае необходимо использовать флаг `-os` и указать конечную систему. Например:
 
 ```cmd
 .\src\coreclr\build-runtime.cmd -arm64 -hostarch x64 -os linux -component crosscomponents -cmakeargs "-DCLR_CROSS_COMPONENTS_BUILD=1"
 ```
 
-If you're building the cross-components in powershell, you'll need to wrap `"-DCLR_CROSS_COMPONENTS_BUILD=1"` with single quotes (`'`) to ensure things are escaped correctly for CMD.
+Если вы используете Powershell, для сборки кросс-компонентов требуется обернуть флаг `"-DCLR_CROSS_COMPONENTS_BUILD=1"` в одинарные кавычки (`'`).
 
-## Cross-Building using Docker
+## Кросс-сборка с использованием Docker
 
-When it comes to building, Docker offers the most flexibility when it comes to targeting different Linux platforms and other similar Unix-based ones, like FreeBSD. This is thanks to the multiple existing Docker images already configured for doing such cross-platform building, and Docker's ease of use of running out of the box on Windows machines with [WSL](https://learn.microsoft.com/windows/wsl/about) enabled, installed, and up and running, as well as Linux machines.
+Docker предлагает наибольшую гибкость при работе с кросс-компиляцией систем Linux и других Unix-подобных систем, так как существует достаточное количество образов Docker. Такие образы уже настроены для кросс-платформенной сборки. С Docker также довольно легко работать как на системах Linux, так и на Windows с включенным [WSL](https://learn.microsoft.com/windows/wsl/about).
 
-### Cross-Compiling for ARM32 and ARM64 with Docker
+### Кросс-компиляция для ARM32 и ARM64 с помощью Docker
 
-As mentioned in the [Linux Cross-Building section](#linux-cross-building), the `ROOTFS_DIR` environment variable has to be set to the _crossrootfs_ location. The prereqs Docker images already have _crossrootfs_ built, so you only need to specify it when creating the Docker container by means of the `-e` flag. These locations are specified in the [Docker Images table](/docs/workflow/building/coreclr/linux-instructions.md#docker-images).
+Как упоминалось ранее в этой главе, для кросс-компиляции на системах Linux необходимо настроить переменную окружения `ROOTFS_DIR` и указать _crossrootfs_. Образы Docker имеют настроенный _crossrootfs_ по умолчанию, поэтому его нужно указать только при создании контейнера Docker с помощью флага `-e`. Расположение _crossrootfs_ указаны в таблице образов [по этой ссылке](linux-instructions.md#docker-images).
 
-In addition, you also have to specify the `--cross` flag with the target architecture. For example, the following command would create a container to build CoreCLR for Linux ARM64:
+Кроме того, нужно указать флаг `--cross` с архитектурой конечной системы. Например, следующая команда создаст контейнер для сборки CoreCLR на Linux ARM64:
 
 ```bash
 docker run --rm \
@@ -146,9 +146,9 @@ docker run --rm \
   ./build.sh --subset clr --cross --arch arm64
 ```
 
-### Cross-Compiling for FreeBSD with Docker
+### Кросс-компиляция для FreeBSD с помощью Docker
 
-Using Docker to cross-build for FreeBSD is very similar to any other Docker Linux build. You only need to use the appropriate image and pass `--os` as well to specify this is not an architecture(-only) build. For example, to make a FreeBSD x64 build:
+Работа с Docker для кросс-компиляции на FreeBSD во многом похожа работу с Docker для Linux. Достаточно использовать соответствующий образ и добавить флаг `--os`, указав *freebsd*. Например, для сборки FreeBSD x64:
 
 ```bash
 docker run --rm \
