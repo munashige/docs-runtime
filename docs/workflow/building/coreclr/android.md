@@ -53,10 +53,10 @@ adb push src/pal/tests/palsuite/runpaltests.sh /data/local/tmp/coreclr/
 LD_LIBRARY_PATH=/data/local/tmp/coreclr/lib ./runpaltests.sh /data/local/tmp/coreclr/
 ```
 
-Отладка coreclr на Android
+Отладка CoreCLR на Android
 --------------------------
 
-Для отладки coreclr на Android используется удаленный сервер lldb, который запускается с устройства на Android.
+Для отладки CoreCLR на Android используется удаленный сервер lldb, который запускается с устройства на Android.
 
 Сначала загрузите сервер lldb на Android командой:
 
