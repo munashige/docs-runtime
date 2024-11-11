@@ -1,46 +1,45 @@
-Cross Compilation for Android on Linux
+Кросс-компиляция для Android на Linux
 ======================================
 
-Through cross compilation, on Linux it is possible to build CoreCLR for arm64 Android.
+С помощью кросс-компиляции на Linux можно собрать CoreCLR для arm64 Android.
 
-Requirements
+Требования
 ------------
 
-You'll need to generate a toolchain and a sysroot for Android. There's a script which takes care of the required steps.
+Нужно сгенерировать набор инструментов и `sysroot` для Android. Для этого существует скрипт, который выполняет все необходимые шаги.
 
-Generating the rootfs
+Генерация rootfs
 ---------------------
 
-To generate the rootfs, run the following command in the `coreclr` folder:
+Чтобы сгенерировать rootfs, выполните следующую команду в папке `coreclr`:
 
 ```
 cross/init-android-rootfs.sh
 ```
 
-This will download the NDK and any packages required to compile Android on your system. It's over 1 GB of data, so it may take a while.
+Эта команда загрузит NDK и все пакеты, необходимые для компиляции Android на вашей машине. Размер данных более 1 ГБ, поэтому процесс может занять некоторое время.
 
 
-Cross compiling CoreCLR
------------------------
-Once the rootfs has been generated, it will be possible to cross compile CoreCLR.
+Кросс-компиляция CoreCLR
+------------------------
+После генерации rootfs станет доступна кросс-компиляция CoreCLR.
 
-When cross compiling, you need to set both the `CONFIG_DIR` and `ROOTFS_DIR` variables.
+При кросс-компиляции необходимо установить переменные `CONFIG_DIR` и `ROOTFS_DIR`.
 
-To compile for arm64, run:
+Используйте команду ниже, чтобы скомпилировать CoreCLR для arm64:
 
 ```
 CONFIG_DIR=`realpath cross/android/arm64` ROOTFS_DIR=`realpath cross/android-rootfs/toolchain/arm64/sysroot` ./build.sh cross arm64 cmakeargs -DENABLE_LLDBPLUGIN=0
 ```
 
-The resulting binaries will be found in `artifacts/bin/coreclr/Linux.BuildArch.BuildType/`
+Скомпилированные бинарные файлы будут находиться в папке `artifacts/bin/coreclr/Linux.BuildArch.BuildType/`
 
-Running the PAL tests on Android
+Запуск PAL-тестов на Android
 --------------------------------
 
-You can run the PAL tests on an Android device. To run the tests, you first copy the PAL tests to your Android phone using
-`adb`, and then run them in an interactive Android shell using `adb shell`:
+Для запуска PAL-тестов необходимо использовать устройство Android. Также необходимо скопировать PAL-тесты на телефон Android с помощью `adb` и далее запустить их в интерактивной оболочке Android через `adb shell`.
 
-To copy the PAL tests over to an Android phone:
+Чтобы скопировать PAL-тесты на телефон Android:
 ```
 adb push artifacts/obj/coreclr/Linux.arm64.Debug/src/pal/tests/palsuite/ /data/local/tmp/coreclr/pal/tests/palsuite
 adb push cross/android/toolchain/arm64/sysroot/usr/lib/libandroid-support.so /data/local/tmp/coreclr/lib/
@@ -49,23 +48,23 @@ adb push src/pal/tests/palsuite/paltestlist.txt /data/local/tmp/coreclr
 adb push src/pal/tests/palsuite/runpaltests.sh /data/local/tmp/coreclr/
 ```
 
-Then, use `adb shell` to launch a shell on Android. Inside that shell, you can launch the PAL tests:
+Далее используйте `adb shell`, чтобы запустить оболочку на Android. Внутри этой оболочки запустите PAL-тесты, используя команду ниже:
 ```
 LD_LIBRARY_PATH=/data/local/tmp/coreclr/lib ./runpaltests.sh /data/local/tmp/coreclr/
 ```
 
-Debugging coreclr on Android
-----------------------------
+Отладка coreclr на Android
+--------------------------
 
-You can debug coreclr on Android using a remote lldb server which you run on your Android device.
+Для отладки coreclr на Android используется удаленный сервер lldb, который запускается с устройства на Android.
 
-First, push the lldb server to Android:
+Сначала загрузите сервер lldb на Android командой:
 
 ```
 adb push cross/android/lldb/2.2/android/arm64-v8a/lldb-server /data/local/tmp/
 ```
 
-Then, launch the lldb server on the Android device. Open a shell using `adb shell` and run:
+Далее запустите сервер lldb на устройстве Android. Откройте оболочку через `adb shell` и выполните команды:
 
 ```
 adb shell
@@ -73,12 +72,12 @@ cd /data/local/tmp
 ./lldb-server platform --listen *:1234
 ```
 
-After that, you'll need to forward port 1234 from your Android device to your PC:
+После этого нужно перенаправить порт 1234 с вашего устройства Android на ваш ПК:
 ```
 adb forward tcp:1234 tcp:1234
 ```
 
-Finally, install lldb on your PC and connect to the debug server running on your Android device:
+Установите lldb на своем ПК и подключитесь к серверу отладки, который работает на вашем устройстве Android:
 
 ```
 lldb-3.9
