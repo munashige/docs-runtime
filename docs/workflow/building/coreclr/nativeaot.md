@@ -68,11 +68,11 @@ AOT-компилятор принимает приложение, основны
 2. Откройте файл `ilc.sln`, который упомянут выше. Это решение содержит компилятор, а также несвязанный проект под названием "repro". Проект repro — это небольшой Hello World для компилятора. Поместите в него любой кусок кода на C#, который хотите скомпилировать. Проект скомпилирует исходный код в IL, а также сгенерирует файл ответа, который подходит для передачи AOT-компилятору.
 3. Убедитесь, что вы установили конфигурацию решения в VS на ту конфигурацию, которую вы только что собрали (напр. *x64 Debug*).
 4. Откройте свойства проекта ILCompiler и перейдите во вкладку *Debug*. Далее укажите в Application arguments: `@$(ArtifactsBinDir)repro\$(TargetArchitecture)\$(Configuration)\compile-with-Release-libs.rsp`. Символ `@` в начале аргумента указывает на то, что это путь к файлу ответа, который был сгенерирован при сборке "repro". Замените "*compile-with-Release-libs*" на "*compile-with-Debug-libs*" если собраны соответствующие библиотеки (аргумент `-lc` для `build.cmd`).  Visual Studio расширит путь, например: `@C:\runtime\artifacts\bin\repro\x64\Debug\compile-with-Release-libs.rsp`.
-* Build & run ILCompiler using **F5**. This will compile the repro project into an `.obj` file. You can debug the compiler and set breakpoints in it at this point.
-* The last step is linking the object file into an executable so that we can launch the result of the AOT compilation.
-* Open the src\coreclr\tools\aot\ILCompiler\reproNative\reproNative.vcxproj project in Visual Studio. This project is configured to pick up the `.obj` file we just compiled and link it with the rest of the runtime.
-* Set the solution configuration to the tuple you've been using so far (e.g. x64 Debug)
-* Build & run using **F5**. This will run the platform linker to link the obj file with the runtime and launch it. At this point you can debug the runtime and the various System.Private libraries.
+5. Соберите и запустите ILCompiler при помощи **F5**. Проект *repro* скомпилируется в файл `.obj`. На этом этапе вы можете отлаживать компилятор и создавать точки прерывания (breakpoints).
+6. Далее необходимо связать файл `obj` с исполняемым файлом, чтобы запустить результат AOT-компиляции:
+- Откройте проект `src\coreclr\tools\aot\ILCompiler\reproNative\reproNative.vcxproj` в Visual Studio. Этот проект предназначен для использования вашего скомпилированного файла `.obj` и связывания этого файла с runtime.
+- Установите конфигурацию решения на ту пару, которую вы использовали ранее (например, *x64 Debug*).
+- Запустите компиляцию при помощи **F5**. Этот процесс также запустит платформенный компоновщик для связывания файла `obj` с runtime, а также запустит runtime. На этом этапе вы можете отлаживать runtime и различные библиотеки `System.Private`.
 
 ## Running tests
 
