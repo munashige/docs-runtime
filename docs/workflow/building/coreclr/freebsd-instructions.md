@@ -1,130 +1,101 @@
-# Build CoreCLR on FreeBSD
+# Cборка CoreCLR на FreeBSD
 
-* [Build using Docker](#build-using-docker)
-* [Build using cross-compilation on Linux](#build-using-cross-compilation-on-linux)
-* [Build directly on FreeBSD](#build-directly-on-freebsd)
-* [Old Documentation](#old-documentation)
-  * [Environment](#environment)
-    * [Toolchain Setup](#toolchain-setup)
-  * [Debugging CoreCLR (Optional)](#debugging-coreclr-optional)
-  * [Git Setup](#git-setup)
-  * [Build the Runtime](#build-the-runtime)
-  * [Build the Framework Native Components](#build-the-framework-native-components)
-  * [Build the Framework Managed Components](#build-the-framework-managed-components)
-  * [Download Dependencies](#download-dependencies)
-  * [Install Mono](#install-mono)
-  * [Download the NuGet Client](#download-the-nuget-client)
-  * [Download NuGet Packages](#download-nuget-packages)
-  * [Compile an App](#compile-an-app)
-  * [Run your App](#run-your-app)
-  * [Run the test suite](#run-the-test-suite)
-  * [Note on Clang/LLVM versions](#note-on-clangllvm-versions)
+Инструкция ниже демонстрирует процесс сборки CoreCLR на FreeBSD.
 
-This guide will walk you through building CoreCLR on FreeBSD.
+Как указано в главе [Требования для FreeBSD](../../../requirements/freebsd-requirements), есть три способа сборки CoreCLR на FreeBSD:
 
-As mentioned in the [FreeBSD requirements doc](/docs/workflow/requirements/freebsd-requirements.md), there are three ways to go on about to build CoreCLR for FreeBSD:
+* Сборка с помощью Docker
+* Кросс-компиляция на Linux
+* Сборка на FreeBSD
 
-* Build using Docker
-* Build using cross-compilation on your own Linux environment
-* Build directly on FreeBSD
+## Сборка с помощью Docker
 
-## Build using Docker
+Сборка с помощью Docker на FreeBSD похожа на работу с Docker на Linux. Поскольку этот процесс включает в себя сценарии кросс-сборки, инструкции по работе с Docker на FreeBSD можно найти в главе [Кросс-сборка](../coreclr/cross-building/).
 
-Building for FreeBSD with Docker follows a very similar workflow to using Docker for Linux. Since this is also a cross-building scenario, the instructions are found in the [Docker section of the cross-building doc](/docs/workflow/building/coreclr/cross-building.md#cross-compiling-for-freebsd-with-docker).
+## Кросс-компиляция на Linux
 
-## Build using cross-compilation on Linux
+Установите все зависимости из главы [Требования для Linux](../../../requirements/linux-requirements), а также зависимости, перечисленные в главе [Требования для FreeBSD](../../requirements/freebsd-requirements/).
 
-Ensure you have all of the prerequisites installed from the [Linux Requirements](/docs/workflow/requirements/linux-requirements.md), and the additional ones listed in the [FreeBSD Requirements](/docs/workflow/requirements/freebsd-requirements.md#linux-environment).
+Далее следуйте инструкции для Linux из главы [Кросс-сборка](../coreclr/cross-building.md). В этой главе представлены подробные инструкции по кросс-компиляции на Linux, включая раздел, посвященный сборке для FreeBSD.
 
-Once that is done, refer to the [Linux section of the cross-building doc](/docs/workflow/building/coreclr/cross-building.md#linux-cross-building). There are detailed instructions on how to cross-compile using your Linux environment, including a section dedicated to FreeBSD building.
+## Сборка на FreeBSD
 
-## Build directly on FreeBSD
+Установите все зависимости из главы [Требования для FreeBSD](../../requirements/freebsd-requirements/). Инструкции ниже могут устареть для вашего случая, поэтому следите за обновлениями в этой документации.
 
-Ensure you have all of the prerequisites installed from the [FreeBSD Requirements](/docs/workflow/requirements/freebsd-requirements.md).
+### Среда
 
-Instructions for building directly on FreeBSD coming soon!
+Инструкции ниже предполагают, что вы используете `pkg` (аналог *apt-get* или *yum* для Linux). Установка зависимостей из других источников через древо портов может сработать, но не тестировалась.
 
-Meanwhile, here are the old instructions.
+Минимально необходимый объем оперативной памяти для сборки — 1 ГБ. Сборка завершается неудачей на виртуальных машинах с 512 МБ  ([Issue 4069](https://github.com/dotnet/runtime/issues/4069)).
 
-## Old Documentation
+#### Настройка инструментария
 
-These instructions were written quite a while ago, and they may or may not work today. Updated instructions coming soon.
-
-### Environment
-
-These instructions assume you use the binary package tool `pkg` (analog to `apt-get` or `yum` on Linux) to install the environment. Compiling the dependencies from source using the ports tree might work too, but is untested.
-
-Minimum RAM required to build is 1GB. The build is known to fail on 512 MB VMs ([Issue 4069](https://github.com/dotnet/runtime/issues/4069)).
-
-#### Toolchain Setup
-
-Install the following packages for the toolchain:
+Установите следующие пакеты для подготовки инструментария:
 
 - bash
 - cmake
-- llvm37 (includes LLVM 3.7, Clang 3.7 and LLDB 3.7)
+- llvm37 (включая LLVM 3.7, Clang 3.7 и LLDB 3.7)
 - libunwind
 - gettext
 - icu
-- ninja (optional)
+- ninja (опционально)
 - lttng-ust
 - python27
 
-To install the packages you need:
+Чтобы установить необходимые пакеты используйте команду:
 
 ```sh
 janhenke@freebsd-frankfurt:~ % sudo pkg install bash cmake libunwind gettext llvm37 icu
 ```
 
-The command above will install Clang and LLVM 3.7. For information on building CoreCLR with other versions, see section on [Clang/LLVM versions](#note-on-clangllvm-versions).
+Команда выше установит Clang и LLVM 3.7. Для получения информации о сборке CoreCLR с другими версиями смотрите раздел о версиях Clang/LLVM ниже.
 
-### Debugging CoreCLR (Optional)
+### Отладка CoreCLR (опционально)
 
-Note: This step is not required to build CoreCLR itself. If you intend on hacking or debugging the CoreCLR source code, you need to follow these steps. You must follow these steps *before* starting the build itself.
+Примечание: операция ниже не требуется для сборки самого CoreCLR, но требуется, если вы планируете изменять или отлаживать исходный код CoreCLR. Операция должна быть выполнена *перед запуском скрипта сборки*.
 
-In order to debug CoreCLR you will also need to install [LLDB](http://lldb.llvm.org/), the LLVM debugger.
+Для отладки CoreCLR необходимо установить [LLDB](http://lldb.llvm.org/) - отладчик LLVM.
 
-To build with clang 3.7 from coreclr project root:
+Для работы с clang 3.7 выполните следующую команду из корневой папки coreclr:
 
 ```sh
 LLDB_LIB_DIR=/usr/local/llvm37/lib LLDB_INCLUDE_DIR=/usr/local/llvm37/include ./build.sh clang3.7 debug
 ```
 
-Run tests:
+Для запуска тестов используйте:
 
 ```sh
 ./src/pal/tests/palsuite/runpaltests.sh $PWD/artifacts/obj/FreeBSD.x64.Debug $PWD/artifacts/paltestout
 ```
 
-### Git Setup
+### Настройка Git
 
-This guide assumes that you've cloned the corefx and coreclr repositories into `~/git/corefx` and `~/git/coreclr` on your FreeBSD machine and the corefx and coreclr repositories into `D:\git\corefx` and `D:\git\coreclr` on Windows. If your setup is different, you'll need to pay careful attention to the commands you run. In this guide, I'll always show what directory I'm in on both the FreeBSD and Windows machine.
+Инструкция предполагает, что вы склонировали репозитории *corefx* и *coreclr* в директории `~/git/corefx` и `~/git/coreclr` на FreeBSD. (`D:\git\corefx` и `D:\git\coreclr` на Windows). Если ваша настройка отличается, необходимо перепроверять команды, которые вы выполняете. Инструкции ниже показывают нужную директорию как на FreeBSD, так и на Windows.
 
-### Build the Runtime
+### Сборка Runtime
 
-To build the runtime on FreeBSD, run build.sh from the root of the coreclr repository:
+Чтобы собрать runtime on FreeBSD запустите build.sh из корневой папки репозитория coreclr:
 
 ```sh
 janhenke@freebsd-frankfurt:~/git/coreclr % ./build.sh
 ```
 
-Note: FreeBSD 10.1-RELEASE system's Clang/LLVM is 3.4, the minimum version to compile CoreCLR runtime is 3.5. See [Note on Clang/LLVM versions](#note-on-clangllvm-versions).
+Примечание:  Для системы FreeBSD 10.1-RELEASE версия Clang/LLVM — 3.4, минимальная версия для компиляции CoreCLR runtime — 3.5. См. примечание о версиях Clang/LLVM ниже.
 
-If the build fails with errors about resolving LLVM-components, the default Clang-version assumed (3.5) may not be appropriate for your system.
-Override it using the following syntax. In this example LLVM 3.6 is used:
+Если сборка завершается с ошибками, связанными с компонентами LLVM, предполагаемая версия Clang (3.5) может быть неподходящей для вашей системы. Перепишите версию, используя синтаксис ниже. В этом примере используется LLVM 3.6:
 
 ```sh
 janhenke@freebsd-frankfurt:~/git/coreclr % ./build.sh clang3.6
 ```
 
 
-After the build is completed, there should some files placed in `artifacts/Product/FreeBSD.x64.Debug`.  The ones we are interested in are:
+После завершения сборки должны появиться файлы в папке `artifacts/Product/FreeBSD.x64.Debug`. Наиболее важными являются:
 
-* `corerun`: The command line host.  This program loads and starts the CoreCLR runtime and passes the managed program you want to run to it.
-* `libcoreclr.so`: The CoreCLR runtime itself.
-* `libcoreclrpal.so`: The platform abstraction library for the CoreCLR runtime. This library is temporary and the functionality will be merged back into `libcoreclr.so`
+* `corerun`: Хост командной строки. Эта программа запускает CoreCLR runtime и передает ей программу, которую вы хотите запустить.
+* `libcoreclr.so`: Сам CoreCLR runtime.
+* `libcoreclrpal.so`: Библиотека абстракций платформы (platform abstraction library) для CoreCLR runtime. Присутствует временно, в будущем библиотека будет объединена с `libcoreclr.so`
 
-In order to keep everything tidy, let's create a new directory for the runtime and copy the runtime and corerun into it.
+Рекомендуется создать отдельную папку и скопировать в нее файлы runtime и corerun:
 
 ```sh
 janhenke@freebsd-frankfurt:~/git/coreclr % mkdir -p ~/coreclr-demo/runtime
@@ -132,75 +103,75 @@ janhenke@freebsd-frankfurt:~/git/coreclr % cp artifacts/Product/FreeBSD.x64.Debu
 janhenke@freebsd-frankfurt:~/git/coreclr % cp artifacts/Product/FreeBSD.x64.Debug/libcoreclr*.so ~/coreclr-demo/runtime
 ```
 
-### Build the Framework Native Components
+### Сборка нативных компонентов фреймворка
 
 ```sh
 janhenke@freebsd-frankfurt:~/git/corefx$ ./build-native.sh
 janhenke@freebsd-frankfurt:~/git/corefx$ cp artifacts/FreeBSD.x64.Debug/Native/*.so ~/coreclr-demo/runtime
 ```
 
-### Build the Framework Managed Components
+### Сборка управляемых компонентов фреймворка
 
-We don't _yet_ have support for building managed code on FreeBSD, so you'll need a Windows machine with clones of both the CoreCLR and CoreFX projects.
+На данный момент нет поддержки сборки кода на FreeBSD, поэтому вам понадобится машина на Windows с клонами как репозитория CoreCLR, так и CoreFX.
 
-You will build `System.Private.CoreLib.dll` out of the coreclr repository and the rest of the framework that out of the corefx repository.  For System.Private.CoreLib (from a regular command prompt window) run:
+Необходимо собрать `System.Private.CoreLib.dll` из репозитория coreclr и остальную часть фреймворка из репозитория corefx. Для сборки `System.Private.CoreLib` (из обычного окна командной строки) выполните:
 
 ```
 D:\git\coreclr> build.cmd freebsdmscorlib
 ```
 
-The output is placed in `bin\Product\FreeBSD.x64.Debug\System.Private.CoreLib.dll`.  You'll want to copy this to the runtime folder on your FreeBSD machine. (e.g. `~/coreclr-demo/runtime`)
+Результаты команды доступен в папке `bin\Product\FreeBSD.x64.Debug\System.Private.CoreLib.dll`.  Скопируйте этот файл в папку runtime на вашей машине с FreeBSD (например, `~/coreclr-demo/runtime`).
 
-For the rest of the framework, you need to pass some special parameters to build.cmd when building out of the CoreFX repository.
+Для остальной части фреймворка вам нужно будет передать специальные параметры в скрипт build.cmd при сборке из репозитория CoreFX.
 
 ```
 D:\git\corefx> build-managed.cmd -os=Linux -target-os=Linux -SkipTests
 ```
 
-Note: We are using the Linux build currently, as CoreFX does not yet know about FreeBSD.
+Примечание: необходимо использовать Linux для сборки, так как CoreFX еще не поддерживает FreeBSD.
 
-It's also possible to add `/t:rebuild` to the build.cmd to force it to delete the previously built assemblies.
+Также можно добавить `/t:rebuild` к скрипту build.cmd, чтобы принудительно удалить ранее собранные сборки.
 
-For the purposes of Hello World, you need to copy over both `bin\Linux.AnyCPU.Debug\System.Console\System.Console.dll` and `bin\Linux.AnyCPU.Debug\System.Diagnostics.Debug\System.Diagnostics.Debug.dll`  into the runtime folder on FreeBSD. (e.g `~/coreclr-demo/runtime`).
+Для Hello World-тестирования , нужно скопировать `bin\Linux.AnyCPU.Debug\System.Console\System.Console.dll` и `bin\Linux.AnyCPU.Debug\System.Diagnostics.Debug\System.Diagnostics.Debug.dll` в папку runtime на FreeBSD. (напр. `~/coreclr-demo/runtime`).
 
-After you've done these steps, the runtime directory on FreeBSD should look like this:
+После выполнения всех шагов выше папка runtime на FreeBSD должна выглядеть следующим образом:
 
 ```
 janhenke@freebsd-frankfurt:~/git/coreclr % ls ~/coreclr-demo/runtime/
 System.Console.dll  System.Diagnostics.Debug.dll  corerun  libcoreclr.so  libcoreclrpal.so  System.Private.CoreLib.dll
 ```
 
-### Download Dependencies
+### Загрузка зависимостей
 
-The rest of the assemblies you need to run are presently just facades that point to System.Private.CoreLib.  We can pull these dependencies down via NuGet (which currently requires Mono).
+Остальные сборки, необходимые для запуска, в настоящее время являются просто заглушками, которые ссылаются на `System.Private.CoreLib`. Эти зависимости можно загрузить через NuGet (на данный момент требует Mono).
 
-Create a folder for the packages:
+Создайте папку для необходимых пакетов:
 
 ```sh
 janhenke@freebsd-frankfurt:~/git/coreclr % mkdir ~/coreclr-demo/packages
 janhenke@freebsd-frankfurt:~/git/coreclr % cd ~/coreclr-demo/packages
 ```
 
-### Install Mono
+### Установка Mono
 
-If you don't already have Mono installed on your system, use the pkg tool again:
+Если в вашей системе еще не установлен Mono, используйте pkg для установки:
 
 ```sh
 janhenke@freebsd-frankfurt:~/coreclr-demo/packages % sudo pkg install mono
 ```
 
-### Download the NuGet Client
+### Загрузка клиента NuGet
 
-Grab NuGet (if you don't have it already)
+Скачайте NuGet, если клиент еще не установлен:
 
 ```sh
 janhenke@freebsd-frankfurt:~/coreclr-demo/packages % curl -L -O https://nuget.org/nuget.exe
 ```
-### Download NuGet Packages
+### Загрузка пакетов NuGet
 
-With Mono and NuGet in hand, you can use NuGet to get the required dependencies.
+С Mono и NuGet вы можете использовать NuGet для получения необходимых зависимостей.
 
-Make a `packages.config` file with the following text. These are the required dependencies of this particular app. Different apps will have different dependencies and require a different `packages.config` - see [Issue #4053](https://github.com/dotnet/runtime/issues/4053).
+Создайте файл `packages.config` с содержимым сниппита ниже. Здесь представлены необходимые зависимости для данного приложения. У разных приложений могут быть и другие зависимости, а также требоваться другой `packages.config` - смотрите [Issue #4053](https://github.com/dotnet/runtime/issues/4053).
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -226,90 +197,87 @@ Make a `packages.config` file with the following text. These are the required de
 
 ```
 
-And restore your packages.config file:
+Восстановите файл `packages.config`:
 
 ```sh
 janhenke@freebsd-frankfurt:~/coreclr-demo/packages % mono nuget.exe restore -Source https://www.myget.org/F/dotnet-corefx/ -PackagesDirectory .
 ```
 
-NOTE: This assumes you already installed the default CA certs. If you have problems downloading the packages please see [Issue #4089](https://github.com/dotnet/runtime/issues/4089#issuecomment-88203778). The command for FreeBSD is:
+ПРИМЕЧАНИЕ: Сертификаты CA должны быть установлены по умолчанию. Если у вас возникли проблемы с загрузкой пакетов, см. [Issue #4089](https://github.com/dotnet/runtime/issues/4089#issuecomment-88203778). Команда для FreeBSD:
 
 ```sh
 janhenke@freebsd-frankfurt:~/coreclr-demo/packages % mozroots --import --sync
 ```
 
-Finally, you need to copy over the assemblies to the runtime folder.  You don't want to copy over System.Console.dll or System.Diagnostics.Debug however, since the version from NuGet is the Windows version.  The easiest way to do this is with a little find magic:
+Наконец, вам нужно скопировать сборки в папку среды выполнения. Однако не копируйте System.Console.dll или System.Diagnostics.Debug, так как версия из NuGet является версией для Windows. Самый простой способ сделать это — использовать команду find:
 
 ```sh
 janhenke@freebsd-frankfurt:~/coreclr-demo/packages % find . -wholename '*/aspnetcore50/*.dll' -exec cp -n {} ~/coreclr-demo/runtime \;
 ```
 
-### Compile an App
+### Сборка приложения
 
-Now you need a Hello World application to run.  You can write your own, if you'd like.  Personally, I'm partial to the one on corefxlab which will draw Tux for us.
+Ниже показано как запустить тестовое Hello World-приложение. За основу взято приложение из corefxlab - оно рисует пингвина Tux (маскота Linux). Можно использовать и свое приложение для запуска.
 
 ```sh
 janhenke@freebsd-frankfurt:~/coreclr-demo/packages % cd ~/coreclr-demo/runtime
 janhenke@freebsd-frankfurt:~/coreclr-demo/runtime % curl -O https://raw.githubusercontent.com/dotnet/corefxlab/master/demos/CoreClrConsoleApplications/HelloWorld/HelloWorld.cs
 ```
 
-Then you just need to build it, with `mcs`, the Mono C# compiler. FYI: The Roslyn C# compiler will soon be available on FreeBSD.  Because you need to compile the app against the .NET Core surface area, you need to pass references to the contract assemblies you restored using NuGet:
+Соберите приложение при помощи `mcs` (компилятора Mono C#). Поскольку нужно скомпилировать приложение с учетом *.NET Core*, вам нужно передать ссылки на ваши восстановленные контрактные сборки (contract assemblies) через NuGet:
 
 ```sh
 janhenke@freebsd-frankfurt:~/coreclr-demo/runtime % mcs /nostdlib /noconfig /r:../packages/System.Console.4.0.0-beta-22703/lib/contract/System.Console.dll /r:../packages/System.Runtime.4.0.20-beta-22703/lib/contract/System.Runtime.dll HelloWorld.cs
 ```
 
-### Run your App
+### Запуск приложения
 
-You're ready to run Hello World!  To do that, run corerun, passing the path to the managed exe, plus any arguments.  The HelloWorld from corefxlab will print a daemon if you pass "freebsd" as an argument, so:
+Все готово для запуска приложения Hello World! Для  запустите corerun, передав путь папки к exe-файлу и любые другие аргументы. Приложение из corefxlab отобразит чертенка Beastie, если использовать флаг "freebsd":
 
 ```sh
 janhenke@freebsd-frankfurt:~/coreclr-demo/runtime % ./corerun HelloWorld.exe freebsd
 ```
 
-If all works, you should be greeted by a friendly daemon you know well.
+Если все работает правильно, вас встретит маскот систем FreeBSD.
 
-Over time, this process will get easier. We will remove the dependency on having to compile managed code on Windows. For example, we are working to get our NuGet packages to include both the Windows and FreeBSD versions of an assembly, so you can simply nuget restore the dependencies.
-
-A sample that builds Hello World on FreeBSD using the correct references but via XBuild or MonoDevelop would be great! Some of our processes (e.g. the System.Private.CoreLib build) rely on Windows-specific tools, but we want to figure out how to solve these problems for FreeBSD as well. There's still a lot of work ahead, so if you're interested in helping, we're ready for you!
+Со временем процесс станет проще. Поэтому следите за обновлениями в документации.
 
 
-### Run the test suite
+### Запуск тестового набора
 
-If you've made changes to the CoreCLR PAL code, you might want to run the PAL tests directly to validate your changes.
-This can be done after a clean build, without any other dependencies.
+Если вы внесли изменения в PAL-код  CoreCLR, вам может понадобится запустить PAL-тесты PAL, чтобы проверить работоспособность ваших изменений. Запустить эти тесты можно после чистой сборки, без каких-либо других зависимостей.
 
-From the coreclr project directory:
+Из директории проекта coreclr запустите команду:
 
 ```sh
 janhenke@freebsd-frankfurt:~/coreclr % ./src/pal/tests/palsuite/runpaltests.sh  ~/coreclr/artifacts/obj/FreeBSD.x64.Debug ~/coreclr/artifacts/paltestout
 ```
 
-This should run all the tests associated with the PAL.
+Эта команда запустит все тесты, которые связаны с PAL.
 
-### Note on Clang/LLVM versions
+### Примечание о версиях Clang/LLVM
 
-The minimum version to build CoreCLR is Clang 3.5 or above.
+Минимальная версия для сборки CoreCLR — Clang 3.5 или выше.
 
-FreeBSD 10.X releases ship with Clang 3.4.
+Релизы FreeBSD 10.X поставляются с Clang 3.4
 
-If you intend on building CoreCLR with LLDB debug support, pick llvm37 or llvm-devel.
+Если вам необходимо собирть CoreCLR с поддержкой отладки LLDB, выберите llvm37 или llvm-devel.
 
-To install clang 3.5: `sudo pkg install clang35`
+Для установки clang 3.5: `sudo pkg install clang35`
 
-To install clang 3.6: `sudo pkg install clang36`
+Для установки clang 3.6: `sudo pkg install clang36`
 
-To install clang 3.7: `sudo pkg install llvm37`
+Для установки clang 3.7: `sudo pkg install llvm37`
 
-To install clang development snapshot: `sudo pkg install llvm-devel`
+Для установки clang development snapshot: `sudo pkg install llvm-devel`
 
-clang35 and clang36 download llvm35 and llvm36 packages as a dependency.
+clang35 и clang36 загружают пакеты llvm35 и llvm36 в качестве зависимостей.
 
-llvm37 and llvm-devel include clang and lldb. Since clang is included with llvm 3.7 and onward, there is no clang37 package.
+llvm37 и llvm-devel включают в себя clang и lldb. Поскольку clang включен в llvm 3.7 и выше, пакетов clang37 не существует.
 
-After you have installed your desired version of LLVM you will need to specify the version to the build.sh script.
+После установки желаемой версии LLVM вам необходимо уКазать версию в скрипте build.sh.
 
-For example, if you chose to install llvm37 you would add the clangX.X to your build command as follows.
+Например, если нужно установить llvm37, нужно добавить clangX.X к команде сборки как показано ниже:
 ```sh
 janhenke@freebsd-frankfurt:~/git/coreclr % ./build.sh clang3.7
 ```
