@@ -70,42 +70,44 @@ AOT-компилятор принимает приложение, основны
 4. Откройте свойства проекта ILCompiler и перейдите во вкладку *Debug*. Далее укажите в Application arguments: `@$(ArtifactsBinDir)repro\$(TargetArchitecture)\$(Configuration)\compile-with-Release-libs.rsp`. Символ `@` в начале аргумента указывает на то, что это путь к файлу ответа, который был сгенерирован при сборке "repro". Замените "*compile-with-Release-libs*" на "*compile-with-Debug-libs*" если собраны соответствующие библиотеки (аргумент `-lc` для `build.cmd`).  Visual Studio расширит путь, например: `@C:\runtime\artifacts\bin\repro\x64\Debug\compile-with-Release-libs.rsp`.
 5. Соберите и запустите ILCompiler при помощи **F5**. Проект *repro* скомпилируется в файл `.obj`. На этом этапе вы можете отлаживать компилятор и создавать точки прерывания (breakpoints).
 6. Далее необходимо связать файл `obj` с исполняемым файлом, чтобы запустить результат AOT-компиляции:
-- Откройте проект `src\coreclr\tools\aot\ILCompiler\reproNative\reproNative.vcxproj` в Visual Studio. Этот проект предназначен для использования вашего скомпилированного файла `.obj` и связывания этого файла с runtime.
-- Установите конфигурацию решения на ту пару, которую вы использовали ранее (например, *x64 Debug*).
-- Запустите компиляцию при помощи **F5**. Этот процесс также запустит платформенный компоновщик для связывания файла `obj` с runtime, а также запустит runtime. На этом этапе вы можете отлаживать runtime и различные библиотеки `System.Private`.
+    - Откройте проект `src\coreclr\tools\aot\ILCompiler\reproNative\reproNative.vcxproj` в Visual Studio. Этот проект предназначен для использования вашего скомпилированного файла `.obj` и связывания этого файла с runtime.
+    - Установите конфигурацию решения на ту пару, которую вы использовали ранее (например, *x64 Debug*).
+    - Запустите компиляцию при помощи **F5**. Этот процесс также запустит платформенный компоновщик для связывания файла `obj` с runtime, а также запустит сам runtime. На этом этапе можно отлаживать runtime и различные библиотеки `System.Private`.
 
-## Running tests
+## Запуск тестов
 
-If you haven't built the tests yet, run `src\tests\build.cmd nativeaot [Debug|Release] tree nativeaot` on Windows, or `src/tests/build.sh -nativeaot [Debug|Release] -tree:nativeaot` on Linux. This will build the smoke tests only - they usually suffice to ensure the runtime and compiler is in a workable shape. To build all Pri-0 tests, drop the `tree nativeaot` parameter. The `Debug`/`Release` parameter should match the build configuration you used to build the runtime.
+Соберите тесты командой  `src\tests\build.cmd nativeaot [Debug|Release] tree nativeaot` на Windows или `src/tests/build.sh -nativeaot [Debug|Release] -tree:nativeaot` на Linux. Эта команда соберет только smoke-тесты, так как их обычно хватает для проверки работоспособности компилятора и runtime. Чтобы собрать все тесты *Pri-0*, уберите из команды параметр `tree nativeaot`. Параметр `Debug/Release` должен соответствовать конфигурации сборки runtime.
 
-To run all the tests that got built, run `src\tests\run.cmd runnativeaottests [Debug|Release]` on Windows, or `src/tests/run.sh --runnativeaottests [Debug|Release]` on Linux. The `Debug`/`Release` flag should match the flag that was passed to `build.cmd` in the previous step.
+Чтобы запустить все собранные тесты, выполните команду `src\tests\run.cmd runnativeaottests [Debug|Release]` на Windows или `src/tests/run.sh --runnativeaottests [Debug|Release]` на Linux. Флаг `Debug/Release` должен соответствовать флагу, который был передан скрипту `build.cmd`.
 
-To build an individual test, follow the instructions for compiling a individual test project located in [Building an Individual Test](/docs/workflow/testing/coreclr/testing.md#building-an-individual-test), but add `/t:BuildNativeAot /p:TestBuildMode=nativeaot` to the build command.
+Чтобы собрать конкретный тест отдельно, следуйте инструкциям сборки отдельного теста в главе [Сборка и запуск тестов](../../../testing/coreclr/testing). Также к команде сборки нужно добавить `/t:BuildNativeAot /p:TestBuildMode=nativeaot`.
 
-To run an individual test (after it was built), navigate to the `artifacts\tests\coreclr\[windows|linux|osx[.x64.[Debug|Release]\$path_to_test` directory. `$path_to_test` matches the subtree of `src\tests`. You should see a `[.cmd|.sh]` file there. This file is a script that will compile and launch the individual test for you. Before invoking the script, set the following environment variables:
+Чтобы запустить отдельный тест (после его сборки), перейдите в папку `artifacts\tests\coreclr\[windows|linux|osx[.x64.[Debug|Release]\$path_to_test`. Здесь `$path_to_test` должен соответствовать древу `src\tests`. Тут также находится файл с расширением `[.cmd|.sh]`. Этот файл является скриптом, который скомпилирует и запустит выбранный тест. Перед вызовом скрипта установите следующие переменные окружения:
 
 * CORE_ROOT=$repo_root\artifacts\tests\coreclr\[windows|linux|osx].x64.[Debug|Release]\Tests\Core_Root
 * CLRCustomTestLauncher=$repo_root\src\tests\Common\scripts\nativeaottest[.cmd|.sh]
 
-`$repo_root` is the root of your clone of the repo.
+`$repo_root` — корневая папка вашего склонированного репозитория.
 
-Sometimes it's handy to be able to rebuild the managed test manually or run the compilation under a debugger. A response file that was used to invoke the ahead of time compiler can be found in `$repo_root\artifacts\tests\coreclr\obj\[windows|linux|osx].x64.[Debug|Release]\Managed`.
+Иногда полезно иметь возможность вручную пересобрать конкретный тест или запустить компиляцию под отладчиком. Файл, который использовался для запуска компилятора, можно найти в папке `$repo_root\artifacts\tests\coreclr\obj\[windows|linux|osx].x64.[Debug|Release]\Managed`.
 
-For more advanced scenarios, look for at [Building the Tests](/docs/workflow/testing/coreclr/testing.md#building-the-tests) and [Building the Core_Root](../../testing/coreclr/testing.md#building-the-coreroot)
+Для более комплексных сценариев см. *инструкцию по сборке тестов* и *инструкцию по сборке Core_Root* в главе [Сборка и запуск тестов](../../../testing/coreclr/testing).
 
-### Running library tests
+### Запуск тестов библиотек
 
-Build library tests by passing the `libs.tests` subset together with the `/p:TestNativeAot=true` to build the libraries, i.e. `clr.aot+libs+libs.tests /p:TestNativeAot=true` together with the full arguments as specified [above](#building). Then, to run a specific library, go to the tests directory of the library and run the usual command to run tests for the library (see [Running tests for a single library](/docs/workflow/testing/libraries/testing.md#running-tests-for-a-single-library)) but add the `/p:TestNativeAot=true` and the build configuration that was used, i.e. `dotnet.cmd build /t:Test /p:TestNativeAot=true -c Release`.
+Соберите тесты библиотек добавив флаги  `libs.tests` и  `/p:TestNativeAot=true` к скрипту сборки библиотек. Например, выполните `clr.aot+libs+libs.tests /p:TestNativeAot=true` вместе c другими аргументами, как указано в инструкции по сборке выше. 
 
-## Design Documentation
+Чтобы запустить конкретную библиотеку, перейдите в директорию тестов библиотеки и выполните обычную команду для запуска тестов библиотеки (см. [Запуск тестов для одной библиотеки](../../../testing/libraries/testing/)). Также нужно добавить `/p:TestNativeAot=true` и указать конфигурацию сборки. Например, `dotnet.cmd build /t:Test /p:TestNativeAot=true -c Release`.
 
-* [ILC Compiler Architecture](/docs/design/coreclr/botr/ilc-architecture.md)
-* [Managed Type System](/docs/design/coreclr/botr/managed-type-system.md)
+## Дизайн-документация
 
-## Native Sanitizers
+* [Архитектура компилятора ILC](../../../../design/coreclr/botr/ilc-architecture/)
+* [Типовая система](../../../../design/coreclr/botr/managed-type-system.md)
 
-Using native sanitizers with NativeAOT requires additional care compared to using them with CoreCLR. In addition to passing the `-fsanitize` flag to the command that builds NativeAOT, you must also pass the `EnableNativeSanitizers` MSBuild property to any commands that build projects with a sanitized NativeAOT build to ensure that any sanitizer runtimes are correctly linked with the project.
+## Нативные санитайзеры
 
-## Further Reading
+Работа с нативными санитайзерами NativeAOT похожа на работу с санитайзерами CoreCLR, но требует дополнительных действий. В команду сборки NativeAOT необходимо добавить флаг `-fsanitize`. После использования этого флага необходимо также передавать свойство MSBuild `EnableNativeSanitizers` к любым командам сборки для того, чтобы санитайзеры были связан с проектом правильно.
 
-If you want to know more about working with _NativeAOT_ in general, you can check out their [more in-depth docs](/src/coreclr/nativeaot/docs/README.md) in the `src/coreclr/nativeaot` subtree.
+## Дополнительно
+
+Если вы хотите узнать больше о работе с NativeAOT, вы можете ознакомиться с документацией в папке `/src/coreclr/nativeaot/docs/README.md`.
