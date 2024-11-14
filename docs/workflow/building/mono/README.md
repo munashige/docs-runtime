@@ -1,119 +1,119 @@
-# Building Mono
+# Cборка Mono
 
-## Build Requirements
+## Требования к сборке
 
 | Windows  | Linux    | macOS    | FreeBSD  |
 | :------: | :------: | :------: | :------: |
-| [Requirements](../../requirements/windows-requirements.md) | [Requirements](../../requirements/linux-requirements.md) | [Requirements](../../requirements/macos-requirements.md) |
+| [Требования](../../requirements/windows-requirements.md) | [Требования](../../requirements/linux-requirements.md) | [Требования](../../requirements/macos-requirements.md) | [Требования](../../requirements/freebsd-requirements.md) |
 
-Before proceeding further, please click on the link above that matches your machine and ensure you have installed all the prerequisites for the build to work.
+Прежде чем продолжить, используйте одну из ссылок выше, которая соответствует вашей системе. Для корректной сборки необходимо установить все перечисленные пакеты и требования.
 
-## Concept
+## Общие сведения
 
-To build a complete runtime environment, you need to build both the Mono runtime and libraries.  At the repo root, simply execute:
+Чтобы начать работу, нужно собрать runtime Mono и библиотеки. Выполните команду из корня репозитория:
 
 ```bash
 ./build.sh mono+libs
 ```
-or on Windows,
+на Windows:
+
 ```cmd
 build.cmd mono+libs
 ```
-Note that the debug configuration is the default option. It generates a 'debug' output and that includes asserts, fewer code optimizations, and is easier for debugging. If you want to make performance measurements, or just want tests to execute more quickly, you can also build the 'release' version which does not have these checks by adding the flag `-configuration release` (or `-c release`).
+Обратите внимание, что по умолчанию собирается конфигурация *Debug*. Она генерирует выходные данные 'debug', которые включают утверждения (asserts), меньше оптимизаций кода и облегчают отладку. Для проверки производительности или для ускоренного выполнения тестов можно собрать версию 'release', добавив флаг `-configuration release` (или `-c release`).
 
 
-Once you've built the complete runtime and assuming you want to work with just mono, you want to use the following command:
+После сборки Mono и библиотек, если вам необходимо работать только с Mono, нужно использовать следующую команду:
 
 ```bash
 ./build.sh mono
 ```
-or on Windows,
+на Windows:
 ```cmd
 build.cmd mono
 ```
-When the build completes, product binaries will be dropped in the `artifacts\bin\mono\<OS>.<arch>.<flavor>` folder.
+Бинарные файлы будут доступны в папке `artifacts\bin\mono\<OS>.<arch>.<flavor>` после сборки.
 
-If you need to run library tests or run HelloWorld sample with your change to mono, you want to build mono with this command instead:
+Если вам нужно запустить тесты библиотек или запустить HelloWorld-пример с вашим изменениями в Mono, соберите Mono с помощью этой команды:
 
 ```bash
 ./build.sh mono+libs.pretest
 ```
-or on Windows,
+на Windows:
 ```cmd
 build.cmd mono+libs.pretest
 ```
 
-If you want to skip restoring nuget packages, when only making change to mono, you want to use this command:
+Если вы хотите пропустить восстановление пакетов nuget и внести изменения только в Mono, вам нужно использовать эту команду:
 ```bash
 ./build.sh mono --build
 ```
-or on Windows,
+на Windows:
 ```cmd
 build.cmd mono --build
 ```
 
-### Useful Build Arguments
-Here are a list of build arguments that may be of use:
+### Полезные аргументы сборки
+Ниже представлен список полезных аргументов сборки:
 
-`/p:MonoEnableLLVM=true` - Builds mono w/ LLVM
+`/p:MonoEnableLLVM=true` - Собирает Mono с LLVM
 
-`/p:MonoEnableLLVM=true /p:MonoLLVMDir=path/to/llvm` - Builds mono w/ LLVM from a custom path
+`/p:MonoEnableLLVM=true /p:MonoLLVMDir=path/to/llvm` - Собирает Mono с LLVM в указанной папке
 
-`/p:MonoEnableLLVM=true /p:MonoLLVMDir=path/to/llvm /p:MonoLLVMUseCxx11Abi=true` - Builds mono w/ LLVM
-from a custom path (and that LLVM was built with C++11 ABI)
+`/p:MonoEnableLLVM=true /p:MonoLLVMDir=path/to/llvm /p:MonoLLVMUseCxx11Abi=true` - Собирает Mono с LLVM
+в указанной папке (LLVM собирается вместе с C++11 ABI)
 
-For `build.sh`
+Для `build.sh`
 
-`/p:DisableCrossgen=true` - Skips building the installer if you don't need it (builds faster)
+`/p:DisableCrossgen=true` - Пропускает сборку установщика, если он не нужен (ускоряет операцию)
 
-`/p:KeepNativeSymbols=true` - Keep the symbols in the binary instead of stripping them out to a separate file. This helps with debugging Mono with lldb.
+`/p:KeepNativeSymbols=true` - Сохраняет символы в бинарном файле вместо того, чтобы выносить их в отдельный файл. Это помогает при отладке Mono с помощью lldb.
 
-The build has a number of options that you can learn about using build -?.
+Сборка имеет и другие аргументы. Используйте `build -?` для ознакомления.
 
 ### WebAssembly
 
-See the instructions for [Building WebAssembly](../../../../src/mono/browser/README.md).
+См. главу [Сборка WebAssembly](../../../../src/mono/browser/README.md).
 
 ### Android
 
-See the instructions for [Testing Android](../../testing/libraries/testing-android.md)
+См. главу [Тестирование Android](../../testing/libraries/testing-android.md)
 
 ### iOS
 
-See the instructions for [Testing iOS](../../testing/libraries/testing-apple.md)
+См. главу [Тестирование iOS](../../testing/libraries/testing-apple.md)
 
-## Packages
+## NuGet пакеты
 
-To generate nuget packages:
+Сгенерируйте пакеты NuGet при помощи команды:
 
 ```bash
 ./build.sh packs -runtimeFlavor mono (with optional release configuration)
 ```
-or on Windows,
+на Windows:
 ```cmd
 build.cmd packs -runtimeFlavor mono (with optional release configuration)
 ```
 
-The following packages will be created under `artifacts\packages\<configuration>\Shipping`:
+В папке `artifacts\packages\<configuration>\Shipping` будут созданы следующие пакеты:
 
 - `Microsoft.NETCore.Runtime.Mono.<version>-dev.<number>.1.nupkg`
 - `runtime.<OS>.Microsoft.NETCore.Runtime.Mono.<version>-dev.<number>.1.nupkg`
 - `transport.Microsoft.NETCore.Runtime.Mono.<version>-dev.<number>.1.nupkg`
 - `transport.runtime.<OS>.Microsoft.NETCore.Runtime.Mono.<version>-dev.<number>.1.nupkg`
 
-## To get started with "Hello World"
+## Пример "Hello World"
 
-Try the sample at `src/mono/sample/HelloWorld`.
-To run this sample, from the above folder
+Этот пример доступен в папке `src/mono/sample/HelloWorld`.
+Для запуска выполните следующую команду из этой папки:
 ```cd ../..
 make run
 ```
 
-## Important Notes
+## Примечание
 
-Test binaries are not yet available for mono.
+Тестовые бинарные файлы недоступны для Mono на данный момент.
 
-The build places logs in `artifacts\log` and these are useful when the build fails.
+Сборка помещает логи в папку `artifacts\log`. Информация в логах может помочь, если сборка возвращает ошибку.
 
-The build places all of its output in the `artifacts\obj\mono` directory, so if you remove that directory you can force a
-full rebuild.
+Сборка помещает все выходные данные в папку `artifacts\obj\mono`. Если эта папка удалена, запущенный скрипт начнет полную сборку Mono.
