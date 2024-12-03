@@ -1,257 +1,262 @@
-# Build
+# Cборка библиотек
 
-## Quick Start
+## Быстрый старт
 
-Here is one example of a daily workflow for a developer working mainly on the libraries, in this case using Windows:
+Ниже представлен пример работы с библиотеками на Windows:
 
 ```cmd
-:: From root:
+:: Из корневой папки:
 git clean -xdf
 git pull upstream main & git push origin main
-:: Build Debug libraries on top of Release runtime:
+:: Сборка библиотек в режиме Debug поверх runtime в режиме Release:
 build.cmd clr+libs -rc Release
-:: Performing the above is usually only needed once in a day, or when you pull down significant new changes.
+:: Операция выше обычно выполняется раз в день или при значительных изменений в коде.
 
-:: If you use Visual Studio, you might open System.Collections.Concurrent.sln here.
+:: При использовании Visual Studio откройте System.Collections.Concurrent.sln.
 build.cmd -vs System.Collections.Concurrent
 
-:: Switch to working on a given library (System.Collections.Concurrent in this case)
+:: Переключитесь на нужную библиотеку (в данном случае System.Collections.Concurrent):
 cd src\libraries\System.Collections.Concurrent
 
-:: Change to test directory
+:: Переключитесь на папку тестов:
 cd tests
 
-:: Then inner loop build / test
-:: (If using Visual Studio, you might run tests inside it instead)
+:: Inner loop build / test
+:: (При использовании Visual Studio можно запустить тесты c папки)
 pushd ..\src & dotnet build & popd & dotnet build /t:test
 ```
 
-Instructions for Unix-like operating systems are essentially the same:
+Инструкции для Unix-систем в основном такие же:
 
 ```bash
 #!/usr/bin/env bash
 
-# From root:
+# Из корневой папки:
 git clean -xdf
 git pull upstream main; git push origin main
-# Build Debug libraries on top of Release runtime:
+# Сборка библиотек в режиме Debug поверх runtime в режиме Release:
 ./build.sh clr+libs -rc Release
-# Performing the above is usually only needed once in a day, or when you pull down significant new changes.
+# Операция выше обычно выполняется раз в день или при значительных изменений в коде.
 
-# Switch to working on a given library (System.Collections.Concurrent in this case)
+# Переключитесь на нужную библиотеку (в данном случае System.Collections.Concurrent)
 cd src/libraries/System.Collections.Concurrent
 
-# Change to test directory
+# Переключитесь на папку тестов:
 cd tests
 
-# Then inner loop build / test:
+# Inner loop build / test:
 pushd ../src; dotnet build; popd; dotnet build /t:test
 ```
 
-The steps above may be all you need to know to make a change. Want more details about what this means? Read on.
+Для работы c библиотеками и внесения изменений достаточно использовать инструкции выше. Больше информации об использованных командах представлено ниже.  
 
-## Building everything
+## Общая сборка
 
-This document explains how to work on libraries. In order to work on library projects or run library tests it is necessary to have built the runtime to give the libraries something to run on. You should normally build CoreCLR runtime in release configuration and libraries in debug configuration. If you haven't already done so, please read [this document](../../README.md#Configurations) to understand configurations.
+Этот документ объясняет, как работать с библиотеками. Для работы с проектами библиотек или запуска тестов библиотек необходимо сначала собрать runtime. 
+Обычно нужно собирать CoreCLR в конфигурации Release, а библиотеки — в конфигурации Debug. 
+Больше информации в главе [Инструкция по работе с репозиторием](../../README.md#Configurations).
 
-These example commands will build a release CoreCLR (and CoreLib), debug libraries, and debug installer:
+Следующая команда соберет Release-версию CoreCLR (и CoreLib), а также библиотеки и установщик в режиме Debug:
 
-For Linux:
+Для Linux:
 ```bash
 ./build.sh -rc Release
 ```
 
-For Windows:
+Для Windows:
 ```cmd
 ./build.cmd -rc Release
 ```
+Ниже представлена подробная информация о сборке и тестировании runtime и библиотек.
 
-Detailed information about building and testing runtimes and the libraries is in the documents linked below.
+### Подробная информация
 
-### More details if you need them
+Вышеуказанные команды собирают библиотеки в режиме _Debug_ (по умолчанию), используя ранее собранный runtime в конфигурации _Release_.
 
-The above commands will give you libraries in "debug" configuration (the default) using a runtime in "release" configuration which hopefully you built earlier.
+Сборка библиотек состоит из двух логических компонентов: 
+1. Нативная сборка, которая производит "_шимы_" ("_shims_") (нужны для интерфейса между ОС и управляемым кодом);
+2. Управляемая сборка, которая производит код MSIL и пакеты NuGet.
 
-The libraries build has two logical components, the native build which produces the "shims" (which provide a stable interface between the OS and managed code) and the managed build which produces the MSIL code and NuGet packages that make up Libraries. The commands above will build both.
+Указанные выше команды соберут оба компонента.
 
-The build settings (BuildTargetFramework, TargetOS, Configuration, Architecture) are generally defaulted based on where you are building (i.e. which OS or which architecture) but we have a few shortcuts for the individual properties that can be passed to the build scripts:
+Настройки сборки (BuildTargetFramework, TargetOS, Configuration и Architecture) имеют установки по умолчанию в зависимости от того, где выполняется сборка (т.е. какая ОС или архитектура используется). Есть несколько сокращений для отдельных параметров, которые можно передать скриптам сборки:
 
-- `-framework|-f` identifies the target framework for the build. Possible values include `net10.0` (currently the latest .NET version) or `net48` (the latest .NET Framework version). (msbuild property `BuildTargetFramework`)
-- `-os` identifies the OS for the build. It defaults to the OS you are running on but possible values include `windows`, `unix`, `linux`, or `osx`. (msbuild property `TargetOS`)
-- `-configuration|-c Debug|Release` controls the optimization level the compilers use for the build. It defaults to `Debug`. (msbuild property `Configuration`)
-- `-arch` identifies the architecture for the build. It defaults to `x64` but possible values include `x64`, `x86`, `arm`, or `arm64`. (msbuild property `TargetArchitecture`)
+- `-framework|-f` указывает фреймворк для сборки. Возможные значение включают `net10.0` (последняя версия .NET ) и `net48` (последняя версия .NET Framework). (настройка msbuild `BuildTargetFramework`);
+- `-os` указывает OC для сборки. По умолчанию используется ОС, на которой вы работаете, но возможные значения включают `windows`, `unix`, `linux` или `osx`. (настройка msbuild `TargetOS`);
+- `-configuration|-c Debug|Release` управляет уровнем оптимизации, который компиляторы используют для сборки. По умолчанию используется `Debug`(настройка msbuild `Configuration`);
+- `-arch` определяет архитектуру для сборки. По умолчанию используется `x64`, но возможные значения включают `x64`, `x86`, `arm` и `arm64`. (настройка msbuild `TargetArchitecture`)
 
-For more details on the build settings see [project-guidelines](../../../coding-guidelines/project-guidelines.md#build-pivots).
+Подробную информацию о настройках билда см. в [этой главе](../../../coding-guidelines/project-guidelines.md#build-pivots).
 
-If you invoke the `build` script without any actions, the default action chain `-restore -build` is executed.
+При вызове скрипта `build` без каких-либо действий по умолчанию выполняется цепочка действий `-restore -build`.
 
-By default the `build` script only builds the product libraries and none of the tests. If you want to include tests, you want to add the subset `libs.tests`. If you want to run the tests you want to use the `-test` action instead of the `-build`, e.g. `build.cmd/sh libs.tests -test`. To specify just the libraries, use `libs`.
+По умолчанию скрипт `build` собирает только продуктовые библиотеки и не собирает тесты. Чтобы включить в сборку тесты нужно использовать подмножество `libs.tests`. Для запуска тестов используйте флаг `-test` вместо `-build`. Например, `build.cmd/sh libs.tests -test`. 
 
-**Examples**
-- Building in release mode for platform x64 (restore and build are implicit here as no actions are passed in)
+Чтобы указать только библиотеки, используйте `libs`.
+
+**Примеры**
+- Сборка в режиме _Release_ для архитектуры x64 (подразумеваются восстановление и сборка, так как никаких действий не передается):
 ```bash
 ./build.sh libs -c Release -arch x64
 ```
 
-- Building the src assemblies and build and run tests (running all tests takes a considerable amount of time!)
+- Сборка src assemblies, сборка и запуск тестов. Обратите внимание, что запуск всех тестов занимает много времени:
 ```bash
 ./build.sh libs -test
 ```
 
-- Clean the entire artifacts folder
+- Очистка всей папки артефактов
 ```bash
 ./build.sh -clean
 ```
 
-For Windows, replace `./build.sh` with `build.cmd`.
+Замените `./build.sh` на `build.cmd` для Windows.
 
-### Building the native components with native sanitizers
+### Сборка нативных компонентов и санитайзеров
 
-The libraries native components can be built with native sanitizers like AddressSanitizer to help catch memory safety issues. To build the project with native sanitizers, add the `-fsanitize` argument to the build script like the following:
+Нативные компоненты библиотек могут быть собраны с использованием нативных санитайзеров, таких как AddressSanitizer, чтобы помочь выявить проблемы с работой памяти. Чтобы собрать проект с нативными санитайзерами используйте флаг `-fsanitize`, например:
 
 ```bash
 build.sh -s libs -fsanitize address
 ```
 
-When building the repo with any native sanitizers, you should build all native components in the repo with the same set of sanitizers.
+При сборке репозитория с любыми нативными санитайзерами нужно собирать все нативные компоненты в репозитории с одним и тем же набором санитайзеров.
 
-### How to build native components only
+### Как собрать только нативные компоненты
 
-The libraries build contains some native code. This includes shims over libc, openssl, gssapi, and zlib. The build system uses CMake to generate Makefiles using clang. The build also uses git for generating some version information.
+Сборка библиотек частично содержит нативный код, что включает в себя шимы для libc, openssl, gssapi и zlib. Скрипт сборки использует CMake для генерации Makefile с использованием clang. Сборка также использует git для генерации некоторой информации о версиях.
 
-**Examples**
+**Примеры**
 
-- Building in debug mode for platform x64
+- Сборка в режиме отладки для x64 архитектур:
 ```bash
 ./src/native/libs/build-native.sh debug x64
 ```
 
-- Building and updating the binplace (for e.g. the testhost), which is needed when iterating on native components
+- Сборка и обновление binplace (напр. для testhost) - необходимо при итерациях нативных компонентов:
 ```bash
 dotnet.sh build src/native/libraries/build-native.proj
 ```
 
-- The following example shows how you would do an arm cross-compile build
+- Следующий пример показывает, как выполнить кросс-компиляцию для arm - архитектур:
 ```bash
 ./src/native/libs/build-native.sh debug arm cross verbose
 ```
 
-For Windows, replace `build-native.sh` with `build-native.cmd`.
+Замените `./build.sh` на `build.cmd` для Windows.
 
-## Building individual libraries
+## Сборка отдельных библиотек
 
-Similar to building the entire repo with `build.cmd` or `build.sh` in the root you can build projects based on our directory structure by passing in the directory. We also support shortcuts for libraries so you can omit the root `src` folder from the path. When given a directory we will build all projects that we find recursively under that directory. Some examples may help here.
+Аналогично сборке всего репозитория с помощью `build.cmd` или `build.sh` из корневой папки можно собрать отдельные проекты, опираясь на структуру репозитория и передавая соответствующие директории в скрипт сборки. Также поддерживается и сокращения для библиотек, поэтому корневую папку `src` можно не указывать. При работе с отдельной директорией скрипт рекурсивно находит и собирает все проекты, которые там находятся. Примеры находятся ниже.
 
-**Examples**
+**Примеры**
 
-- Build all projects for a given library (e.g.: System.Collections) including running the tests
+- Сборка всех проектов для указанной библиотеки (например, System.Collections), а также запуск тестов:
 
 ```bash
  ./build.sh -projects src/libraries/*/System.Collections.sln
 ```
 
-- Build just the tests for a library project
+- Сборка тестов для проекта библиотеки:
 ```bash
  ./build.sh -projects src/libraries/System.Collections/tests/*.csproj
 ```
 
-- All the options listed above like framework and configuration are also supported (note they must be after the directory)
+- Поддерживаются также и все вышеперечисленные параметры, такие как фреймворк или конфигурация. Обратите внимание, что эти параметры должны быть указаны после папки, например:
 ```bash
  ./build.sh -projects src/libraries/*/System.Collections.sln -f net472 -c Release
 ```
 
-As `dotnet build` works on both Unix and Windows and calls the restore target implicitly, we will use it throughout this guide.
+Поскольку `dotnet build` работает на Unix и Windows, эта команда будет использоваться в командах ниже.
 
-Under the `src` directory is a set of directories, each of which represents a particular assembly in Libraries. See Library Project Guidelines section under [project-guidelines](../../../coding-guidelines/project-guidelines.md) for more details about the structure.
+В папке `src` находятся другие папки, которые представляет разные ассамблеи в Библиотеках. Больше информации см. в главе [Руководство по проекту](../../../coding-guidelines/project-guidelines.md).
 
-For example the `src\libraries\System.Diagnostics.DiagnosticSource` directory holds the source code for the System.Diagnostics.DiagnosticSource.dll assembly.
+Например папка `src\libraries\System.Diagnostics.DiagnosticSource` содержит исходный код для ассамблея _System.Diagnostics.DiagnosticSource.dll_.
 
-You can build the DLL for System.Diagnostics.DiagnosticSource.dll by going to the `src\libraries\System.Diagnostics.DiagnosticsSource\src` directory and typing `dotnet build`. The DLL ends up in `artifacts\bin\System.Diagnostics.DiagnosticSource` as well as `artifacts\bin\runtime\[$(BuildTargetFramework)-$(TargetOS)-$(Configuration)-$(TargetArchitecture)]`.
+Вы можете собрать DLL для _System.Diagnostics.DiagnosticSource.dll_ из папки `src\libraries\System.Diagnostics.DiagnosticsSource\src`, используя команду `dotnet build`. Собранный DLL находится в папке `artifacts\bin\System.Diagnostics.DiagnosticSource`, а также в папке `artifacts\bin\runtime\[$(BuildTargetFramework)-$(TargetOS)-$(Configuration)-$(TargetArchitecture)]`.
 
-You can build the tests for System.Diagnostics.DiagnosticSource.dll by going to
-`src\libraries\System.Diagnostics.DiagnosticSource\tests` and typing `dotnet build`.
+Тесты для _System.Diagnostics.DiagnosticSource.dll_ могут быть собраны из папки
+`src\libraries\System.Diagnostics.DiagnosticSource\tests`, используя команду `dotnet build`.
 
-Some libraries might also have a `ref` and/or a `pkg` directory and you can build them in a similar way by typing `dotnet build` in that directory.
+Некоторые библиотеки также могут иметь папки `ref` и/или `pkg`. Их можно собрать аналогичным образом, введя команду `dotnet build` в соответствующих директорияъ.
 
-For libraries that have multiple target frameworks the target frameworks will be listed in the `<TargetFrameworks>` property group. When building the csproj for a BuildTargetFramework the most compatible target framework in the list will be chosen and set for the build. For more information about `TargetFrameworks` see [project-guidelines](../../../coding-guidelines/project-guidelines.md).
+Для библиотек, которые имеют несколько целевых фреймворков, необходимые фреймворки должны быть перечислены в настройках <TargetFrameworks>. При сборке csproj для _BuildTargetFramework_ будет выбрана и установлена наиболее совместимый фреймворк. Для получения дополнительной информации см. в главе [Руководство по проекту](../../../coding-guidelines/project-guidelines.md).
 
-**Examples**
+**Примеры**
 
-- Build project for Linux
+- Сборка проекта на Linux:
 ```bash
 dotnet build System.Net.NetworkInformation.csproj /p:TargetOS=linux
 ```
 
-- Build Release version of library
+-Сборка Release-версии библиотеки:
 ```bash
 dotnet build -c Release System.Net.NetworkInformation.csproj
 ```
 
-### Iterating on System.Private.CoreLib changes
-When changing `System.Private.CoreLib` after a full build, in order to test against those changes, you will need an updated `System.Private.CoreLib` in the testhost. In order to achieve that, you can build the `libs.pretest` subset which does testhost setup including copying over `System.Private.CoreLib`.
+### Итерация изменений System.Private.CoreLib
+После полной сборки и после внесения изменений в `System.Private.CoreLib` для тестирования вам потребуется обновленная версия `System.Private.CoreLib` в `testhost`. Для этого нужно собрать подмножество `libs.pretest`, которое выполняет настройку `testhost`, включая копирование `System.Private.CoreLib`.
 
-After doing a build of the runtime:
+После этого запустите сборку runtime:
 
 ```cmd
 build.cmd clr -rc Release
 ```
 
-You can iterate on `System.Private.CoreLib` by running:
+Итерация изменений `System.Private.CoreLib` выполняется следующей командой:
 
 ```cmd
 build.cmd clr.corelib+clr.nativecorelib+libs.pretest -rc Release
 ```
 
-When this `System.Private.CoreLib` will be built in Release mode, then it will be crossgen'd and we will update the testhost to the latest version of corelib.
+При этом `System.Private.CoreLib` будет собран в режиме Release. Затем будет выполнена кроссгенерация и `testhost` будет обновлен до последней версии corelib.
 
-You can use the same workflow for mono runtime by using `mono.corelib+libs.pretest` subsets.
+Тот же процесс используется для Mono runtime и подмножетства `mono.corelib+libs.pretest`.
 
-### Building for Mono
-By default the libraries will attempt to build using the CoreCLR version of `System.Private.CoreLib.dll`. In order to build against the Mono version you need to use the `/p:RuntimeFlavor=Mono` argument.
+### Сборка Mono
+По умолчанию библиотеки собираются с использованием СoreCLR – `System.Private.CoreLib.dll`. Для сборки Mono нужно передать аргумент `/p:RuntimeFlavor=Mono`.
 
 ```cmd
 .\build.cmd libs /p:RuntimeFlavor=Mono
 ```
 
-### Building all for other OSes
+### Сборка для других ОС-ей
 
-By default, building from the root will only build the libraries for the OS you are running on. One can
-build for another OS by specifying `./build.sh libs -os [value]`.
+По умолчанию сборка из корневой директории будет собирать только библиотеки для той ОС, на которой вы работаете. Вы можете собрать для другой ОС, используя соответствующий флаг `./build.sh libs -os [value]`.
 
-Note that you cannot generally build native components for another OS but you can for managed components so if you need to do that you can do it at the individual project level or build all via passing `/p:BuildNative=false`.
+Обратите внимание, что обычно собрать нативные компоненты для другой ОС невозможно, но можно собрать управляемые компоненты. Для этого используйте отдельный проект и скрипт сборки, передав `/p:BuildNative=false`.
 
-### Building in Release or Debug
+### Сборка в режиме Release или Debug
 
-By default, building from the root or within a project will build the libraries in Debug mode.
-One can build in Debug or Release mode from the root by doing `./build.sh libs -c Release` or `./build.sh libs`.
+По умолчанию сборка из корневой папки или внутри проекта соберет библиотеки в режиме _Debug_. Можно собрать библиотеки в режиме _Release_, используя `./build.sh libs -c Release`.
 
-### Building other Architectures
+### Сборка для других архитектур
 
-One can build 32- or 64-bit binaries or for any architecture by specifying in the root `./build.sh libs -arch [value]` or in a project `/p:TargetArchitecture=[value]` after the `dotnet build` command.
+Вы можете собирать 32 или 64-битные бинарные файлы, а также работать и с другими архитектурами, указав в корне `./build.sh libs -arch [value]` или в проекте `/p:TargetArchitecture=[value]` после команды `dotnet build`.
 
-## Working in Visual Studio
+## Работа в Visual Studio
 
-If you are working on Windows, and use Visual Studio, you can open individual libraries projects into it. From within Visual Studio you can then build, debug, and run tests.
+Если вы работаете на Windows и используете Visual Studio, вы можете открыть отдельные проекты с библиотеками. Visual Studio можно использовать для сборки, отладки и запуска тестов.
 
-## Debugging
+## Отладка
 
-Starting with Visual Studio 2022 version 17.5, Visual Studio will validate that the debugging libraries that shipped with the .NET Runtime are correctly signed before loading them. See https://aka.ms/vs/unsigned-dotnet-debugger-lib for more information.
+Visual Studio 2022 версии 17.5 и выше можно использовать для проверки подписей перед загрузкой библиотек отладки. Дополнительную информацию можно найти по ссылке: https://aka.ms/vs/unsigned-dotnet-debugger-lib.
 
-## Running tests
+## Запуск тестов
 
-For more details about running tests inside Visual Studio, [go here](../../testing/visualstudio.md).
+Для получения подробной информации о запуске тестов в Visual Studio, [перейдите в эту главу](../../testing/visualstudio.md).
 
-For more about running tests, read the [running tests](../../testing/libraries/testing.md) document.
+Больше информации о запуске тестов см. в [этой главе](../../testing/libraries/testing.md) document.
 
-## Build packages
-To build a library's package, simply invoke `dotnet pack` on the src project after you successfully built the .NETCoreApp vertical from root:
+## Сборка пакетов   
+Для сборки этого пакета достаточно выполнить команду `dotnet pack` из проекта `src` после успешной сборки _.NETCoreApp_ из корневой папки:
 
 ```cmd
 build libs
 dotnet.cmd pack src\libraries\System.Text.Json\src\
 ```
 
-Same as for `dotnet build` or `dotnet publish`, you can specify the desired configuration via the `-c` flag:
+Для команд `dotnet build` или `dotnet publish` также можно указать желаемую конфигурацию с помощью флага `-c`, например:
 
 ```cmd
 dotnet.cmd pack src\libraries\System.Text.Json\src\ -c Release
