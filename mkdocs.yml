@@ -75,7 +75,7 @@ nav:
       - Сборка Mono: workflow/building/mono/README.md
       - Библиотеки: 
         - Сборка библиотек: workflow/building/libraries/README.md
-        - Code Coverage: workflow/building/libraries/code-coverage.md
+        - Покрытие кода: workflow/building/libraries/code-coverage.md
         - Кросс-сборка: workflow/building/libraries/cross-building.md
         - WebAssembly: workflow/building/libraries/webassembly-instructions.md
     - Continuous Integration:

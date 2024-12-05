@@ -1,61 +1,68 @@
-Code Coverage
+Покрытие кода
 =============
 
-"Code coverage" is a measure that indicates how much of our library code is exercised by our test suites. We measure code coverage using the [Coverlet](https://github.com/tonerdo/coverlet) global tool and use [ReportGenerator](https://github.com/danielpalme/ReportGenerator) to visualize that data. Daily/regular reports are currently not available.
+"Покрытие кода" ("Code coverage") — это метрика, которая показывает, какая часть кода библиотеки покрывается в тестовых наборах. Для вычисления этой метрики используется глобальный инструмент [Coverlet](https://github.com/tonerdo/coverlet), для визуализации данных используется [ReportGenerator](https://github.com/danielpalme/ReportGenerator).
 
-This report shows each library currently being tested with code coverage and provides statistics around the quality of the code coverage for the library.  It also provides a line-by-line breakdown of what lines are being covered and what lines are not.
+Генерируемые отчеты демонстрируют все библиотеки, которые тестируются с покрытием кода, а также представляют статистику о качестве покрытия для каждой библиотеки. Помимо этого имеется и построчный анализ, который показывает, какие строки кода покрыты тестами, а какие нет. На данный момент ежедневные и регулярные отчеты недоступны.
 
-## Goals
+## Цели
 
-The code coverage report provides a percentage value per library of the number of source lines exercised by the tests.  There is no hard and fast percentage that must be obtained per library, as every library is unique and comes with its own set of intricacies and constraints.  While in some cases it's possible and reasonable to achieve 100% code coverage, this is rare.  There are many valid reasons certain pieces of code won't be exercised in tests, e.g.:
-- A code file is compiled into multiple projects, and only some of the code is used in each project.
-- Code exists to handle rare race conditions too costly to simulate in normal conditions.
-- Code exists to handle particular machine/OS configurations that are not used during code coverage runs.
+Предоставленные отчеты также выводят процентное соотношение для каждой библиотеки, которое указывает количество исходных строк, использованных в тестах. Фиксированного процента, который необходимо достичь для каждой библиотеки, не имеется, так как каждая библиотека уникальна и имеет свои особенности и ограничения. В некоторых случаях возможно достичь и 100% покрытия кода, но это бывает редко. Существуют множество причин, по которым определенные части кода не будут использоваться в тестах, например:
+- Файлы кода компилируется в несколько проектов. Только некоторая часть кода может использоваться в нескольких проектах.
+- Код редко должен использоваться для срочной работы. Моделировать такие условия дорого и нелогично.
+- Код работает с определенными конфигурациями машин и ОС-ей, которые не используются во время запуска покрытия кода.
+- И так далее.
 
-Etc.  What's important is that the right set of tests exist to ensure that the code is behaving properly and that regressions in functionality can be caught quickly, and code coverage metrics are a way to help guide us to that end.
+Важно иметь правильный набор тестов, который гарантирует корректное поведение кода и позволяет быстро выявлять регрессии в функциональности. Метрики покрытия кода могут помочь с этим.
 
-Our default, somewhat-arbitrary initial goal for a library is 90% code coverage.  That doesn't mean we're done with testing once a library hits 90%, nor does it mean we must keep going with a library until it hits 90%.  We use this metric and the associated coverage information to help guide us towards the ideal for a given library.
+Начальная (и несколько произвольная) цель для библиотеки — 90% покрытия кода. Это не означает, что тестирование будет завершено, как только библиотека достигает 90%. И это также не значит, что нужно продолжать работу с библиотекой, пока она покрытие не достигнет этого процента. Эта метрика и вся предоставленная информация необходимы для того, чтобы обеспечить оптимальное покрытие для каждой библиотеки.
 
-(Note that we do not want to arbitrarily inflate our code coverage numbers.  Tests must provide value in and of themselves and should not simply be written in a haphazard manner meant to execute more lines of code without providing real value.)
+Обратите внимание, что показатели покрытия кода не завышены. Тесты должны приносить ценность сами по себе и не должны писаться беспорядочно с целью увеличения количества выполняемых строк кода без какой-либо пользы.
 
-## Issues
+## Проблемы
 
-Issues are opened for a library when a cursory examination of its code coverage reveal that there are likely still some meaningful gaps that need to be addressed.  We welcome contributions to our test suites to help address these gaps and close these issues.  Many of these issues are marked as [help wanted](https://github.com/dotnet/runtime/labels/help%20wanted).
+Проблемы для библиотек появляются, если результаты покрытия кода возвращают значительные пробелы, на которые необходимо обратить внимание. Приветствуется любой вклад в работу с предоставленными тестовыми наборами для закрытия таких пробелов и решения указанных проблем. Некоторые из таких проблем указаны в [этом списке](https://github.com/dotnet/runtime/labels/help%20wanted).
 
-An issue need not be addressed in its entirety. We happily accept contributions that improve our tests and work towards improving code coverage numbers even if they only incrementally improve the situation.
+Проблему не обязательно решать полностью. Приветствуется любая работа, которая улучшит тесты и поспособствует даже незначительному повышению показателей покрытия кода.
 
-## Local Code Coverage Runs
+## Локальный запуск покрытия кода
 
-You can perform code coverage runs for the entire repository locally by adding the `coverage` switch (assuming that  source and test assemblies are already built):
+Локальный запуск покрытия кода для всего репозитория осуществляется при помощи флага `coverage` (при условии, что исходники и тесты уже собраны):
 
     build libs.tests -test -coverage
 
-This runs the tests and generates the full code coverage report. The resulting index.htm file providing the results of the run should be available at:
+Эта команда запускает тесты и генерирует отчет о покрытии кода. Файл `index.htm` с результатами доступен в следующей папке:
 
     artifacts\coverage\index.htm
 
-You can also build and test with code coverage for a particular test project rather than for the whole repo with the `/p:Coverage=true` property:
+Также можно собрать и запустить тесты с покрытием кода для отдельного проекта, а не для всего репозитория при помощи параметра `/p:Coverage=true`:
 
     dotnet build /t:Test /p:Coverage=true
 
-By default, coverage is only provided for the library being tested.  However, if you want coverage data also gathered for the tests themselves, you can add `/p:CoverageIncludeTests=true`:
+По умолчанию покрытие предоставляется только для тестируемой библиотеки. Чтобы данные о покрытии также собирались и для самих тестов нужно добавить параметр `/p:CoverageIncludeTests=true`:
 
     dotnet build /t:test /p:Coverage=true /p:CoverageIncludeTests=true
 
-The results for this one library will then be available in this index.htm file, where $(OutDir) is the directory where the binaries were generated.
+Результаты для этой отдельной библиотеки будут доступны в файле `index.htm`, где `$(OutDir)` — это каталог, в котором были сгенерированы бинарные файлы:
 
     $(OutDir)\report\index.htm
 
-For example, to build, test, and get code coverage results for the System.Diagnostics.Debug library, from the root of the repo one can do:
+Например, чтобы собрать, запустить тесты и получить результаты покрытия кода для библиотеки `System.Diagnostics.Debug`, выполните следующую команду из корня репозитория:
 
     dotnet build src\libraries\System.Diagnostics.Debug\tests /t:Test /p:Coverage=true
 
-And then once the run completes:
+По завершению результаты будут доступны в папке:
 
     $(OutDir)\report\index.htm
 
-## Code coverage with System.Private.CoreLib code
+## Покрытие кода и код System.Private.CoreLib
 
-Some of the libraries for which contracts and tests live in libraries are actually fully or partially implemented in the core runtime library, e.g. the implementation that backs the System.Runtime contract is in System.Private.CoreLib.dll. Test projects for code that lives, fully or partially, in System.Private.CoreLib, should have the property `TestRuntime` set to `true` in order to obtain proper code coverage reports.
+Some of the libraries for which contracts and tests live in libraries are actually Некоторые библиотеки, для которых контракты и тесты находятся в других библиотеках, на самом деле полностью или частично встроены в основной библиотеке runtime. Например, структура для `System.Runtime` встроена в `System.Private.CoreLib.dll`. Тестовые проекты для кода (который полностью или частично находится в `System.Private.CoreLib`) должны иметь параметр `TestRuntime`, установленный на `true`, чтобы получить корректные отчеты о покрытии кода.
 
-If the test project does not set the property `TestRuntime` to `true` and you want to collect code coverage that includes types in System.Private.CoreLib.dll add `/p:TestRuntime=true` to the coverage build command listed above.
+Если нужный проект не устанавливает `TestRuntime` на `true`, но вам необходимо собрать результаты покрытия кода с данными, которые включают в себя типы из `System.Private.CoreLib.dll`, добавьте `/p:TestRuntime=true` к вышеуказанной команде сборки покрытия кода.
+
+
+
+
+
+
