@@ -1,52 +1,50 @@
-Cross compile native runtime libraries on Linux
-==================================
+# Кросс-компиляция
 
-It is possible to build libraries on Linux for arm, armel, arm64 or other architectures by cross compiling. It is very similar to the cross compilation procedure of CoreCLR.
+## Кросс-компиляция нативных библиотек runtime на Linux
 
-Requirements
-------------
+Кросс-компиляция библиотек на Linux возможна для `arm`, `armel`, `arm64` и други хархитектур. Этот процесс во многом схож с кросс-компиляцией CoreCLR.
 
-You need a Debian based host, and the following packages need to be installed:
+### Требования
+
+Для хостов на базе Debian нужно установить следующие пакеты:
 
     $ sudo apt-get install qemu qemu-user-static binfmt-support debootstrap
 
-In addition, to cross compile libraries, the binutils for the target are required. So for arm you need:
+Кроме того, для кросс-компиляции библиотек требуются утилиты `binutils`. Для `arm` архитектур нужно установить следующий пакет:
 
     $ sudo apt-get install binutils-arm-linux-gnueabihf
 
-for armel:
+для `armel`:
 
     $ sudo apt-get install binutils-arm-linux-gnueabi
 
-and for arm64 you need:
+для `arm64`:
 
     $ sudo apt-get install binutils-aarch64-linux-gnu
 
-and similar ones for other architectures.
+И аналогичные пакеты для других архитектур.
 
-Generate the rootfs
----------------------
-The `eng/common/cross/build-rootfs.sh` script can be used to download the files needed for cross compilation. It can generate rootfs for different operating systems and architectures, see `eng/common/cross/build-rootfs.sh --help` for more details.
+### Генерация rootfs
 
-The `build-rootfs.sh` script might need to be launched as root, as it has to make some symlinks to the system. By default it generates the rootfs in `.tools/rootfs/<BuildArch>`, however this can be changed by setting the `ROOTFS_DIR` environment variable or by using `--rootfsdir`.
+Скрипт `eng/common/cross/build-rootfs.sh` используется для загрузки файлов, которые необходимы для кросс-компиляции. Этот скрипт генерирует `rootfs` для различных операционных систем и архитектур. Для получения дополнительных сведений см. `eng/common/cross/build-rootfs.sh --help`.
 
-For example, to generate an arm Ubuntu 18.04 rootfs:
+Скрипт `build-rootfs.sh` требует запуска от имени суперпользователя, так как ему нужно создать некоторые символические ссылки в системе. По умолчанию этот скрипт генерирует rootfs в папке `.tools/rootfs/<BuildArch>`. Папку можно изменить, установив переменную окружения `ROOTFS_DIR` или используя флаг `--rootfsdir`.
+
+Например, используйте следующую команду, чтобы сгенерировать rootfs для Ubuntu 18.04 arm- архитектуры:
 
     $ ./eng/common/cross/build-rootfs.sh arm bionic
 
-And to generate the rootfs elsewhere:
+Чтобы сгенерировать rootfs в другой папке:
 
     $ ./build-rootfs.sh arm bionic --rootfsdir /mnt/rootfs/arm
 
+### Компиляция нативных библиотек
 
-Compile native runtime libraries
----------------------------------
-
-To build native runtime libraries for arm:
+Используйте следующую команду, чтобы собрать библиотеки runtime для arm-архитектур:
 
     $ ROOTFS_DIR=`pwd`/.tools/rootfs/arm ./build.sh libs.native --cross --arch arm --librariesConfiguration Release
 
-Build artifacts can be found in `artifacts/bin/native/net10.0-<TargetOS>-<BuildArch>-<BuildType>/`:
+Артефакты сборки можно найти в папке `artifacts/bin/native/net10.0-<TargetOS>-<BuildArch>-<BuildType>/`:
 
     $ ls artifacts/bin/native/net10.0-Linux-Release-arm/*
     artifacts/bin/native/net10.0-Linux-Release-arm/libSystem.Globalization.Native.a
@@ -71,25 +69,24 @@ Build artifacts can be found in `artifacts/bin/native/net10.0-<TargetOS>-<BuildA
     $ file artifacts/bin/native/net10.0-linux-release-arm/libSystem.Native.so
     artifacts/bin/native/net10.0-linux-release-arm/libSystem.Native.so: ELF 32-bit LSB shared object, ARM, EABI5 version 1 (SYSV), dynamically linked, BuildID[sha1]=5f6f6f9c4012dffed133624867adf32ac2af130d, stripped
 
+## Компиляция управляемых библиотек на Linux
 
-Compile managed runtime libraries on Linux
-============================
-The managed components of libraries are architecture-independent and, thus, do not require a special build for arm, armel, arm64 or other architectures (this is true if ILLinker trimming is disabled with `/p:ILLinkTrimAssembly=false`).
+Компоненты библиотек независимы от версий архитектур и поэтому не требуют кросс-компиляции для `arm`, `armel`, `arm64` и других архитектур. Но для этого требуется отключить`ILLinker` с помощью параметра `/p:ILLinkTrimAssembly=false`).
 
-Many of the managed binaries are also OS-independent, e.g. System.Linq.dll, while some are OS-specific, e.g. System.IO.FileSystem.dll, with different builds for Windows and Linux.
+Большая часть бинарных файлов также не зависит от ОСи (напр. `System.Linq.dll`). Однако некоторые файлы (напр. `System.IO.FileSystem.dll`) зависят и имеют разные версии для Windows и Linux.
 
-Build of managed runtime libraries requires presence of built native runtime libraries.
+Компиляция управляемых библиотек runtime требует наличия собранных нативных библиотек runtime.
 
-To build managed runtime libraries for arm (architecture-dependent, can't be used on other architectures):
+Чтобы собрать управляемые библиотеки runtime для `arm` (зависят от архитектуры, не могут быть использованы для других архитектур):
 
     $ ./build.sh libs.sfx --arch arm --librariesConfiguration Release
 
-Note that by default ILLinker trimming is enabled and libraries built above for arm can't be used on other arches. To build architecture-independent managed runtime libraries for arm:
+Обратите внимание, что `ILLinker` включен по умолчанию. Поэтому эти библиотеки не могут быть использованы на других архитектурах. Чтобы собрать управляемые библиотеки runtime для arm, которые не зависят от архитектуры:
 
     $ ./build.sh libs.sfx --arch arm --librariesConfiguration Release /p:ILLinkTrimAssembly=false
 
-Build artifacts can be found in `artifacts/bin/microsoft.netcore.app.runtime.<TargetOS>-<BuildArch>/<BuildType>/runtimes/<TargetOS>-<BuildArch>/lib/net10.0/`. For more details on the build configurations see [project-guidelines](/docs/coding-guidelines/project-guidelines.md).
+Артефакты сборки находятся в папке `artifacts/bin/microsoft.netcore.app.runtime.<TargetOS>-<BuildArch>/<BuildType>/runtimes/<TargetOS>-<BuildArch>/lib/net10.0/`. Больше информации о конфигурациях сборке см. [в этой главе](/docs/coding-guidelines/project-guidelines.md).
 
-Both native and managed runtime libraries can be built at the same time with:
+Нативные и управляемые библиотеки runtime могут быть собраны одновременно с помощью команды:
 
     $ ROOTFS_DIR=`pwd`/.tools/rootfs/arm ./build.sh --cross --arch arm --librariesConfiguration Release --subset libs.native+libs.sfx

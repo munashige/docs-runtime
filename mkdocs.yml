@@ -76,7 +76,7 @@ nav:
       - Библиотеки: 
         - Сборка библиотек: workflow/building/libraries/README.md
         - Покрытие кода: workflow/building/libraries/code-coverage.md
-        - Кросс-сборка: workflow/building/libraries/cross-building.md
+        - Кросс-компиляция: workflow/building/libraries/cross-building.md
         - WebAssembly: workflow/building/libraries/webassembly-instructions.md
     - Continuous Integration:
       - Состояние и анализ: workflow/ci/coreclr-ci-health.md
