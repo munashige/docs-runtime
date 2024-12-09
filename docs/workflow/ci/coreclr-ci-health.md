@@ -1,48 +1,41 @@
-# CI Health and Investigation
+# CI: Состояние и аналитика
 
-`dotnet/runtime` runs testing across many different architectures and operating systems. The breadth of testing that happens lends itself to a complex system which is susceptible to different points of failure.
+Платформа поддерживает тестирование на различных архитектурах и операционных системах. Тестирования создают сложную систему, которая подвержена различным точкам отказа.
 
-Note that this document focuses on coreclr testing in `dotnet/runtime`.
+Обратите внимание, что инструкция ниже описывает тестирование coreclr.
 
-## TOC
+## Терминология
 
-1. [Terminology](#Terminology)
-2. [CI Overview](#CI-Overview)
-3. [Analytics](#Analytics)
-4. [Resources](#Resources)
+Для работы с CI требуется знакомство с терминологией, а также с Azure DevOps. Подробное руководство по созданию пайплайнов Azure DevOps см. на сайте [learn.microsoft.com](https://learn.microsoft.com/azure/devops/pipelines/yaml-schema?view=azure-devops&tabs=schema).
 
-#### Terminology
+Наиболее распространенная и важная терминология связана с различными контейнерами, в которых происходит работа.
 
-In order to follow some of the terminology used, there is an expected familiarity of Azure DevOps required. For an in depth guide with Azure DevOps pipeline definitions, please see: https://learn.microsoft.com/azure/devops/pipelines/yaml-schema?view=azure-devops&tabs=schema.
+`Pipeline`(_пайплайн_): Самый большой юнит в работе CI. Пайплайн обычно содержит несколько стадий (stages), заданий(jobs) и шагов(steps).
 
-The most common terminology and most important are the different containers work happens in.
+`Stage`(_стадия_): Представляет собой коллекцию заданий. По умолчанию стадии не выполняются параллельно.
 
-`pipeline`: This is the largest unit of work. A pipeline contains many or no stages, jobs, and steps
+`Job`(_задание_ или _джоба_): Наименьший юнит в работе CI, __который выполняется на конкретной машине__. По умолчанию задания выполняются параллельно, но могут зависеть от другого задания.
 
-`Stage`: A stage is a collection of jobs. By default, stages do not run in parallel.
+`Steps`(_шаги_): Это наименьшая единица работы, которая обычно соответствует одной команде, которая будет выполнена в задании. Обычно одно задание содержит несколько шагов, которые выполняются последовательно.
 
-`Job`: Jobs are the smallest unit of work which happen on a unique machine. Jobs by default run in parallel, but may be set to depend on another job. **Every job executes its work on a unique machine**.
+## Обзор CI
 
-`Steps`: Steps are the smallest unit of work, they generally correspond to one command that will happen in a job. Normally a job contains steps, which execute serially.
+Coreclr имеет различные пайплайны, которые нужны для стресс-тестирования конфигураций runtime и JIT. Пайплайны, которые не относятся к стресс-тестированию: [runtime-coreclr](https://dev.azure.com/dnceng/public/_build?definitionId=649) и [runtime-coreclr outerloop](https://dev.azure.com/dnceng/public/_build?definitionId=655).
 
-## CI Overview
+#### **Внутренний цикл (Inner Loop)**
 
-Coreclr has many different pipelines. These exist to test stress configurations of the runtime and JIT. The two non-stress related pipelines are [runtime-coreclr](https://dev.azure.com/dnceng/public/_build?definitionId=649), and [runtime-coreclr outerloop](https://dev.azure.com/dnceng/public/_build?definitionId=655).
+CI внутреннего цикла запускается для каждого PR, в котором изменяются файлы в котором изменяются файлы `src/coreclr/*`. Сборка определяется запуском [runtime-coreclr](https://dev.azure.com/dnceng/public/_build?definitionId=649). В настоящее время цикл настроен на запуск и выполнение сборок и тестов. Обратите внимание, что каждая строка в столбце выполняется на одной машине, а если проводятся тесты, они масштабируется на нескольких тестовых машин в Helix. Для каждого запуска тестов в настоящее время включается и отключается `TieredCompilation`. Таким образом, если у вас есть 2,000 тестов внутреннего цикла, запустятся 4,000 тестов для этой архитектуры/ОС. Если также запускается тестирование R2R для платформы, прибавляются еще 2,000 тестов внутреннего цикла, которые выполняются путем запуска crossgen, а затем вызова скомпилированного исполняемого файла R2R. В таблице ниже столбец __количество тестов__ указывает общее количество всех тестов, которые могут быть запущены для платформы.
 
-#### **Inner Loop**
 
-Our innerloop CI runs on each PR where `src/coreclr/*` is modified. The build definition that is run is [runtime-coreclr](https://dev.azure.com/dnceng/public/_build?definitionId=649). Currently this is defined to run the following builds and tests. Note that each row in the column runs on one build machine, and if there are tests runs, they scale to many test machines in Helix. For each test run we currently run with TieredCompilation and TieredCompilation off. Therefore if we have 2,000 innerloop tests we will run 4,000 tests total for that architecture/os. If we also run R2R testing for the platform, it is another 2,000 innerloop tests that run by running crossgen on the test, then invoking the R2R compiled executable. In the table the Test Count is an aggregate of all tests run for the platform.
+*Примечание*
 
-*Note*
+Столбец __сборка тестов__ обозначает одну из самых значительных и долгосрочных задач. Если есть комментарий _"общая"_, это означает, что тесты собираются на OSX за ~15 минут вместо системы, на которой они выполняются, а также имеют общие компоненты с другими системами. Если этот комментарий отсутствует, тесты собираются ~25 минут и запускаются параллельно с другими системами.
 
-The **Build Tests** column is important to call out as one of the most important long running jobs. If there is
-a "Shared" comment it signifies that our tests are built on OSX in ~15 minutes instead of the platform they run on and share the managed components with every other shared test platform. If "Shared" is missing, the platform takes ~25 minutes and happens in parallel with other platforms.
+*Особые задания*
 
-*Special Jobs*
+`Formatting Linux x64` и `Formatting Windows x64` запускают clang-tidy в `src/coreclr/jit/*`. Если происходит сбой, создается файл патча, который можно применить для исправления форматирования исходного кода.
 
-`Formatting Linux x64` and `Formatting Windows x64` are special jobs which run clang-tidy of `src/coreclr/jit/*`. If there is a failure, there is a patch file that is created that can be applied to fix the source formatting.
-
-| OS      | Architecture | Build Type | Product Build | Build Tests | Run coreclr Tests | Test Count | R2R   |
+| OС      | Aрхитектура | Тип сборки | Продуктовая сборка | Сборка тестов | Запуск тестов coreclr | Количество тестов | R2R   |
 | --      | ------------ | ---------- | ------------- | ----------- | ----------------- | ---------- | ----- |
 | Windows | x64          | Debug      | - [x]         | - [ ]       | - [ ]             | 0          | - [ ] |
 | Windows | x86          | Debug      | - [x]         | - [ ]       | - [ ]             | 0          | - [ ] |
@@ -55,16 +48,16 @@ a "Shared" comment it signifies that our tests are built on OSX in ~15 minutes i
 | Windows | arm64        | Release    | - [x]         | - [x]       | - [ ]             | 0          | - [ ] |
 | Linux   | arm          | Checked    | - [x]         | - [x]       | - [x]             | 4k         | - [ ] |
 | Linux   | arm64        | Checked    | - [x]         | - [x]       | - [x]             | 4k         | - [ ] |
-| Linux   | x64_musl     | Checked    | - [x]         |   Shared    | - [x]             | 4k         | - [ ] |
-| Linux   | x64          | Checked    | - [x]         |   Shared    | - [x]             | 6k         | - [x] |
-| OSX     | x64          | Checked    | - [x]         |   Shared    | - [x]             | 6k         | - [x] |
+| Linux   | x64_musl     | Checked    | - [x]         |   Общая    | - [x]             | 4k         | - [ ] |
+| Linux   | x64          | Checked    | - [x]         |   Общая    | - [x]             | 6k         | - [x] |
+| OSX     | x64          | Checked    | - [x]         |   Общая    | - [x]             | 6k         | - [x] |
 | Linux   | x64_musl     | Release    | - [x]         | - [ ]       | - [ ]             | 0          | - [ ] |
 | Linux   | x64_rhel     | Release    | - [x]         | - [ ]       | - [ ]             | 0          | - [ ] |
 | OSX     | x64          | Release    | - [x]         | - [ ]       | - [ ]             | 0          | - [ ] |
 
-#### **Outerloop Loop**
+#### **Внешний цикл (outerloop loop)**
 
-| OS      | Architecture | Build Type | Product Build | Build Tests | Run coreclr Tests | Test Count | R2R   |
+| OC      | Aрхитектура | Тип сборки | Продуктовая сборка | Сборка тестов | Запуск тестов coreclr | Количество тестов | R2R   |
 | --      | ------------ | ---------- | ------------- | ----------- | ----------------- | ---------- | ----- |
 | Windows | arm          | Debug      | - [x]         | - [ ]       | - [ ]             | 0          | - [ ] |
 | Windows | arm64        | Debug      | - [x]         | - [ ]       | - [ ]             | 0          | - [ ] |
@@ -78,81 +71,79 @@ a "Shared" comment it signifies that our tests are built on OSX in ~15 minutes i
 | Windows | arm64        | Checked    | - [x]         | - [x]       | - [ ]             | 0          | - [ ] |
 | Linux   | arm          | Checked    | - [x]         | - [x]       | - [x]             | 20k        | - [ ] |
 | Linux   | arm64        | Checked    | - [x]         | - [x]       | - [x]             | 30k        | - [x] |
-| Linux   | musl_x64     | Checked    | - [x]         |   Shared    | - [x]             | 30k        | - [x] |
+| Linux   | musl_x64     | Checked    | - [x]         |   Общая    | - [x]             | 30k        | - [x] |
 | Linux   | musl_arm64   | Checked    | - [x]         | - [x]       | - [x]             | 30k        | - [x] |
 | Linux   | x64_rhel     | Checked    | - [x]         | - [x]       | - [x]             | 0          | - [ ] |
-| Linux   | x64          | Checked    | - [x]         |   Shared    | - [x]             | 30k        | - [x] |
-| OSX     | x64          | Checked    | - [x]         |   Shared    | - [x]             | 30k        | - [x] |
+| Linux   | x64          | Checked    | - [x]         |   Общая    | - [x]             | 30k        | - [x] |
+| OSX     | x64          | Checked    | - [x]         |   Общая    | - [x]             | 30k        | - [x] |
 | Linux   | arm          | Release    | - [x]         | - [ ]       | - [ ]             | 0          | - [ ] |
 | Linux   | arm64        | Release    | - [x]         | - [ ]       | - [ ]             | 0          | - [ ] |
 | Linux   | x64          | Release    | - [x]         | - [ ]       | - [ ]             | 0          | - [ ] |
 | OSX     | x64          | Release    | - [x]         | - [ ]       | - [ ]             | 0          | - [ ] |
 | Windows | x86          | Release    | - [x]         | - [ ]       | - [ ]             | 0          | - [ ] |
 
-## Analytics
+## Аналитика
 
-Azure Dev ops gives per pipeline analysis of pass rates. The unfortunate problem about how metrics are measured is the entire pipeline has to complete with a success. If there is a single failure, then the entire pipeline will be marked as a failure and analytics will track a failure.
+Azure DevOps предоставляет анализ коэффициентов успешности для каждого пайплайна. Однако, данный коэффициент указывается только в том случае, если весь пайплайн будет собран успешно. Если происходит хотя бы одна ошибка, весь пайплайн будет отмечен как неудачный и аналитика будет отслеживать это как сбой.
 
-Coreclr's pipeline is complex in that it runs on a distributed system between 50 and 100 machines. This distributed nature makes the end to end success of the pipeline very vulnerable to machine issues.
+Пайплайн Coreclr работает на распределенной системе из 50-100 машин. Это распределение делает работу пайплайна уязвимым к проблемам с машинами.
 
-Azure Dev Ops provides analytics which can help bucket failures into categories. This bucketing requires logging in our build and test steps to be correctly reported.
+Azure DevOps предоставляет аналитику, которая может помочь классифицировать сбои по категориям. Эта классификация требует ведения журналов в шагах сборки и тестирования для корректного отчета.
 
-In order to view the analytics of the pipeline navigate to [runtime-coreclr](https://dev.azure.com/dnceng/public/_build?definitionId=649) and click the [analytics tab](https://dev.azure.com/dnceng/public/_build?definitionId=649&view=ms.vss-pipelineanalytics-web.new-build-definition-pipeline-analytics-view-cardmetrics). There are three different tabs all useful for different reasons.
+Чтобы просмотреть аналитику пайплайна, перейдите на [runtime-coreclr](https://dev.azure.com/dnceng/public/_build?definitionId=649) и нажмите на вкладку [analytics](https://dev.azure.com/dnceng/public/_build?definitionId=649&view=ms.vss-pipelineanalytics-web.new-build-definition-pipeline-analytics-view-cardmetrics). Здесь имеются три вкладки, которые предоставляют различную полезную информацию.
 
-**Pipeline Pass Rate**
+**Коэффициент успешности пайплайна - (Pipeline Pass Rate)**
 
-This is tracking the pipeline pass rate generally over two weeks. This view is not very useful for [runtime-coreclr](https://dev.azure.com/dnceng/public/_build?definitionId=649) as the PR pipeline is expected to break during PR validation. Therefore, it is generally recommended to view [runtime-coreclr outerloop](https://dev.azure.com/dnceng/public/_build?definitionId=655) to get a better idea of what the overall success rate is for [runtime-coreclr](https://dev.azure.com/dnceng/public/_build?definitionId=228). Note that this is not exactly a fair comparison as we run signicantly more tests in [runtime-outerloop](https://dev.azure.com/dnceng/public/_build?definitionId=655) across more platforms. It is however, a good proxy to see the overall CI health.
+Этот показатель отслеживает коэффициент успешности пайплайна в целом за два недели. Показатель может быть не очень полезен для [runtime-coreclr](https://dev.azure.com/dnceng/public/_build?definitionId=649) , так как ожидается, что пайплайна PR-а будет прерываться во время валидации PR-а. Поэтому рекомендуется использовать [runtime-coreclr outerloop](https://dev.azure.com/dnceng/public/_build?definitionId=655) чтобы получить лучшее представление об общем коэффициенте успешности для [runtime-coreclr](https://dev.azure.com/dnceng/public/_build?definitionId=228). Сравнение не совсем правильное, так как для [runtime-outerloop](https://dev.azure.com/dnceng/public/_build?definitionId=655) запускается большее количество тестов на большем количестве систем. Тем не менее, это хороший индикатор для общего состояния CI.
 
-Opening the [runtime-outerloop Pipeline Pass Rate](https://dev.azure.com/dnceng/public/_pipeline/analytics/stageawareoutcome?definitionId=655&contextType=build) there is a presentation of a line graph of the end to end success rate for the pipeline over time.
+С помощью [runtime-outerloop Pipeline Pass Rate](https://dev.azure.com/dnceng/public/_pipeline/analytics/stageawareoutcome?definitionId=655&contextType=build) можно увидеть график, который показывает коэффициент успешности конвейера с течением времени.
 
-The **Failure Trend** graph attempts to show what is failing in bar graph and give a small insight into what is generally failing.
+График **Failure Trend** демонстрирует, что именно выходит из строя в виде столбчатой диаграммы, а также дает краткую информацию о сбоях.
 
-The **Failed Runs** graph is the most interesting for finding specific issues. As of writing the `Top 10 failing tasks` are:
+График **Failed Runs** особенно полезен для поиска конкретных проблем. На момент написания `Top 10 failing tasks` включают в себя:
 
-*Note* that any one of these buckets can include random one off infrastructure failures or systematic Azure Dev Ops failures. For example the build bucket can include issues like:
+_Примечание_: Некоторые бакеты (buckets) могут отображать случайные разовые сбои инфраструктуры или системные сбои Azure DevOps. Например, бакеты сборки может отображать проблему `fips.c(143): OpenSSL internal error`.
 
->  fips.c(143): OpenSSL internal error
-
-**Failure Buckets**
+**Бакеты сбоев**
 
 1. Default\Send tests to Helix
-    - This set can be one of two problems. Either we have tests that failed or Helix has failed with some infrastructure issue.
+    - Обозначает одну из двух возможных проблем. Либо у нас есть тесты, которые не прошли, либо Helix столкнулся с проблемой инфраструктуры.
 2. Default\Build product
-    - Build related failures
+    - Сбои, связанные со сборкой.
 3. Default\Build managed test components
-    - Build failures while building the managed components of our tests
+    - Сбои сборки при сборке управляемых компонентов наших тестов.
 4. Default\Initialize containers
-    - This is an Azure DevOps infrastructure issue. It manifests while setting up the docker container and fails to start the environment correctly.
+    - Это проблема инфраструктуры Azure DevOps. Она проявляется при настройке контейнера Docker и не может правильно запустить окружение.
 5. Send Helix End Telemetry
-    - This is a Helix infrastructure issue
+    - Это проблема инфраструктуры Helix.
 6. Default\Build native test components
-    - This is a failure in the native test build. Generally this is an Azure Dev Ops issue because we do little work inside this step.
+    - Это сбой в сборке нативных тестов. Обычно обозначает проблему Azure DevOps, так как в этом шаге выполняется мало работы.
 7. Default\Download product build
-    - Generally this is an Azure Dev Ops issue because we do little work inside this step.
+    - Обычно обозначает проблему Azure DevOps, так как в этом шаге выполняется мало работы.
 8. Default\Unsize GIT Repository
-    - Generally this is an Azure Dev Ops issue because we do little work inside this step.
+    - Обычно обозначает проблему Azure DevOps, так как в этом шаге выполняется мало работы.
 9. Default\Component Detection
-    - This is an Azure DevOps issue
+    - Проблема Azure DevOps.
 
-Below each of these buckets are tabs which show individual runs which can be drilled through to find specific instances of each failure.
+Под каждым из этих бакетов есть вкладки, которые показывают отдельные запуски, через которые можно пройти, чтобы найти конкретные случаи каждого сбоя.
 
-**Test Pass rate**
+**Коэффициент успешности тестов (Test Pass Rate)**
 
-This drill through is extremely useful for finding individual flakey tests. Coreclr works to keep tests 100% reliable. Tests which appear on this list should be disabled **and** fixed. As even a small amount of unreliability in the tests will equate to a significant percentage of pipeline failure.
+Аналитика в этом разделе крайне полезна для поиска отдельных ненадежных тестов. Coreclr стремится поддерживать 100% надежности тестов. Тесты, которые появляются в этом списке, должны быть отключены и исправлены. Даже небольшое количество ненадежности в тестах может привести к сбоям в пайплайне.
 
-Clicking on an individual test will show its pass/failures for every run. **Looking back through this history is useful for finding a change that may have caused a test to become flakey.**
+При нажатии на отдельный тест можно увидеть его результаты (успехи/неудачи) для каждого запуска. _Просмотр этой истории полезен для поиска изменений, которые могли привести к тому, что тест стал ненадежным_.
 
-**Pipeline Duration**
+**Длительность пайплайна (Pipeline Duration)**
 
-This tracks the overall end to end run time of a pipeline. This graph is useful for looking at machine utilization on a daily cadence. Coreclr has a generous timeout, which generally means that when our pipeline time goes up significantly, we have hit machine load, either with the build or tests.
+Этот показатель отслеживает общее время выполнения пайплайна от начала до конца. Этот график полезен для анализа загрузки машин на ежедневной основе. Тайм-аут для coreclr поставлен с значительным запасом, поэтому когда время выполнения пайплайна значительно увеличивается, увеличивается и нагрузка на машину, как при сборке, так и при тестировании.
 
-## Resources
+## Ресурсы
 
 **Kusto**
 
-[Kusto](https://dataexplorer.azure.com/clusters/engsrvprod/databases/engineeringdata) is a hot data storage we have access to, to help query information from several different locations. There are many uses for Helix, but it involves heavy use of query language. For example below is a query which graphs machine utilization by day.
+[Kusto](https://dataexplorer.azure.com/clusters/engsrvprod/databases/engineeringdata) — это хранилище горячих данных (hot data), к которому у нас есть доступ, чтобы помочь запрашивать информацию из нескольких различных источников. У Kusto много применений для Helix, но это требует активного использования языка запросов. Например, ниже приведен запрос, который отображает загрузку машин по дням.
 
-Specifically the query is useful for finding out whether a specific Helix Queue (a group of machines) is overloaded or not. This is useful for diagnosing arm hardware issues, because we have a fixed amount that is easily overloaded.
+Запрос ниже нужен для определения того, перегружена ли конкретная очередь Helix (группа машин) или нет. Это необходимо для диагностики проблем с аппаратным обеспечением ARM, поскольку у нас есть фиксированное количество машин, которое легко перегрузить.
 
 ```
 WorkItems
