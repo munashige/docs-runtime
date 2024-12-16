@@ -1,91 +1,78 @@
-# Disabling tests
+# Отключение тестов
 
-This document describes how to disable a test from running in the continuous integration (CI) test system.
+Эта документ описывает, как отключать тесты в CI-системе и зачем это нужно.
 
-## Why disable tests?
+## Зачем отключать тесты?
 
-Tests are either disabled permanently or temporarily:
-- Permanently: the test is never expected to run in a certain configuration, due to the design of the test or product.
-- Temporarily: the test is failing, and needs to be disabled so a test run isn't continuously made "noisy" by the
-existence of a failing test in the results. These tests are expected to be re-enabled when a bug is fixed or
-feature is implemented.
+Тесты могут быть отключены навсегда или временно:
+- Навсегда: тесты никогда не будут выполняться в определенной конфигурации из-за особенностей его дизайна или продукта;
+- Временно: тест не проходит и его нужно отключить, чтобы не мешать работе CI. Ожидается, что такие тесты будут повторно включены, когда ошибка будет исправлена или необходимая функция реализована.
 
-## Runtime or libraries?
+## Runtime или библиотека?
 
-There are two main sets of tests in the repo: runtime tests in the src/tests tree, and libraries tests which
-are spread amongst the libraries in the src/libraries tree. (There are also PAL tests in src/coreclr/pal/tests, which
-are ignored here.)
+В репозитории есть два основных набора тестов: тесты runtime в папке `src/tests` и тесты библиотек, которые распределены среди соответствующих библиотек в папке `src/libraries`. (Кроме того, имеются и PAL-тесты в папке `src/coreclr/pal/tests`, но которые не рассматриваются в этом документе.)
 
-The two types have very different mechanisms for disabling.
+Эти два типа имеют разные механизмы отключения.
 
-## Test configuration
+## Конфигурации тестов
 
-You need to determine under which configuration you wish to disable the test:
-- For all configurations
-- For just one processor architecture (x86, x64, arm32, arm64)
-- For just one runtime (coreclr, mono) or mono runtime variant (monointerpreter, llvmaot, llvmfullaot)
-- For just one operating system (Windows, Linux, macOS, Android, iOS)
-- For a particular run type:
+Для начала необходимо определить, для какой конфигурации отключить тест:
+- Для всех конфигураций
+- Только для одной архитектуры процессора (x86, x64, ARM32, ARM64)
+- Для одной версии runtime (Coreclr, Mono) или версии Mono (monointerpreter, llvmaot, llvmfullaot)
+- Только для одной операционной системы (Windows, Linux, MacOS, Android, iOS)
+- Для конкретного типа запуска:
    - GCStress
-   - JIT stress (any type)
-   - ildasm/ilasm round-trip testing
-   - ReadyToRun testing
+   - JIT стресс-тесты (любого типа)
+   - Тестирование ildasm/ilasm
+   - Тестирование ReadyToRun
+   
+Обычно нужно отключать тесты только при конфигурациях, которые вызывают сбои. Таким образом, если тест не проходит только на arm64, не отключайте его для всех архитектур. Если тест не проходит только на macOS, не отключайте его для Windows или Linux.
 
-Generally, you should disable a test under the most specific condition that is causing the test failure.
-Thus, if the test only fails on arm64, don't disable it for all architectures. If the test only fails
-on macOS, don't disable it for Windows or Linux.
+Если неясно, в каких конфигурациях тест не проходит, целесообразно отключить большее количество тестов, чем требуется обычно.
 
-If it is unclear the full set configurations where the test is failing, it is sometimes necessary and
-expedient to disable the test more broadly than possibly required.
-
-## Disabling runtime tests (src/tests)
+## Отключение тестов runtime (src/tests)
 
 
-### Disabling runtime tests (src/tests) with xunit attributes
+### Отключение тестов (src/tests) с помощью атрибутов xunit
 
-The runtime tests use an XUnit-based model for test execution. There are [a number of attributes provided for filtering](../testing/libraries/filtering-tests.md)
-based on different test modes. Here are some examples of attributes that can be applied to tests to prevent them from running in certain configurations:
+Тесты runtime используют модель на основе XUnit. Существует [ряд атрибутов для фильтрации](../testing/libraries/filtering-tests.md)
+на основе различных режимов тестирования. Ниже представлены некоторые примеры атрибутов, которые можно применить к тестам, чтобы предотвратить их запуск для отдельной конфигурации:
 
-- Prevent a test from running on Mono: `[SkipOnMono]`
-- Prevent a test from running on CoreCLR: `[SkipOnCoreClr]`
-- Prevent a test from running under GCStress: `[SkipOnCoreClr("Reason", RuntimeTestModes.AnyGCStress)]`
-- Prevent a test from running under HeapVerify: `[SkipOnCoreClr("Reason", RuntimeTestModes.HeapVerify)]`
-- Prevent a test from running under JIT stress modes: `[SkipOnCoreClr("Reason", RuntimeTestModes.AnyJitStress)]`
+- Запретить запуск теста для Mono: `[SkipOnMono]`
+- Запретить тест для CoreCLR: `[SkipOnCoreClr]`
+- Запретить тест под GCStress: `[SkipOnCoreClr("Reason", RuntimeTestModes.AnyGCStress)]`
+- Запретить тест под HeapVerify: `[SkipOnCoreClr("Reason", RuntimeTestModes.HeapVerify)]`
+- Запретить стресс-тест под режимами JIT: `[SkipOnCoreClr("Reason", RuntimeTestModes.AnyJitStress)]`
 
-Additionally, the `ConditionalFact`, `ConditionalTheory`, `PlatformSpecific`, and `ActiveIssue` attributes are available for usage to disable or enable tests only on specific platforms or configurations.
+Кроме того, доступны атрибуты  `ConditionalFact`, `ConditionalTheory`, `PlatformSpecific` и `ActiveIssue`, которые можно использовать для отключения или включения тестов только на определенных платформах или в определенных конфигурациях.
 
-Some test modes are processed at the assembly level. For these tests, you should mark the tests as `<RequiresProcessIsolation>true</RequiresProcessIsolation>` and set one of the attributes in the following section.
+Некоторые режимы тестирования обрабатываются на уровне сборки. Для этих тестов необходимо пометить тесты как `<RequiresProcessIsolation>true</RequiresProcessIsolation>` и установить один из атрибутов в следующем разделе.
 
-### Disabling runtime tests (src/tests) with issues.targets
+### Отключение тестов (src/tests) с помощью issues.targets
 
-Out-of-process tests are disabled by adding the test to the appropriate place, under the appropriate configuration condition,
-in the [issues.targets](../../../src/tests/issues.targets) file. Additionally, tests that are the only `[Fact]`-attributed method in their assembly may be disabled through issues.targets. All temporarily disabled tests must have a
-link to a GitHub issue in the `<Issue>` element. Disabling a test here can be conditioned on processor
-architecture, runtime, and operating system.
+Тесты _вне процесса_ (_out-of-process_) отключаются через добавление теста в соответствующее место и под соответствующим условием конфигурации в файле [issues.targets](../../../src/tests/issues.targets). Кроме того, тесты с атрибутом `[Fact]`могут быть отключены через `issues.targets`. Все временно отключенные тесты должны содержать ссылку на GitHub issue в элементе `<Issue>`. Отключение теста здесь может зависеть от архитектуры процессора, версии runtime и операционной системы.
 
-### Disabling runtime tests (src/tests) with test configuration properties
+### Отключение тестов (src/tests) с помощью свойств конфигурации
 
-However, some test configurations must be disabled by editing the `.csproj` or `.ilproj` file for the test,
-and inserting a property in a `<PropertyGroup>`, as follows:
+Некоторые конфигурации тестов должны быть отключены через редактирование файла `.csproj` или `.ilproj` и вставки свойства в `<PropertyGroup>`, как показано ниже:
 
-- Prevent a test from running under GCStress: add `<GCStressIncompatible>true</GCStressIncompatible>`
-- Prevent a test from running when testing unloadability: add `<UnloadabilityIncompatible>true</UnloadabilityIncompatible>`
-- Prevent a test from running when testing ildasm/ilasm round-tripping: add `<IlasmRoundTripIncompatible>true</IlasmRoundTripIncompatible>`
-- Prevent a test from running under HeapVerify: add `<HeapVerifyIncompatible>true</HeapVerifyIncompatible>`
-- Prevent a test from running under Mono AOT modes: add `<MonoAotIncompatible>true</MonoAotIncompatible>`
-- Prevent a test from running running under JIT stress modes: add `<JitOptimizationSensitive>true</JitOptimizationSensitive>`
+- Запретить запуск теста под GCStress: добавить `<GCStressIncompatible>true</GCStressIncompatible>`
+- Запретить запуск теста при сбоях: добавить `<UnloadabilityIncompatible>true</UnloadabilityIncompatible>`
+- Запретить тест ildasm/ilasm: добавить `<IlasmRoundTripIncompatible>true</IlasmRoundTripIncompatible>`
+- Запретить тест HeapVerify: добавить `<HeapVerifyIncompatible>true</HeapVerifyIncompatible>`
+- Запустить тест под режимами Mono AOT: добавить `<MonoAotIncompatible>true</MonoAotIncompatible>`
+- Запустить тесты под режимами JIT: добавить `<JitOptimizationSensitive>true</JitOptimizationSensitive>`
 
-Note that these properties can be conditional, e.g.:
+Эти параметры могут быть указаны с условиями, например:
 ```
 <GCStressIncompatible Condition="'$(TargetArchitecture)' == 'arm64' and '$(TargetOS)' == 'osx'">true</GCStressIncompatible>
 ```
 
-(REVIEW: I'm not clear which conditions are allowed, and respected.)
+Больше информации о добавлении тестов для `src/test` см. [в этой главе](../testing/coreclr/test-configuration.md).
 
-More information about writing/adding tests to src/tests can be found [here](../testing/coreclr/test-configuration.md).
+## Отключение тестов библиотек (src/libraries)
 
-## Disabling libraries tests (src/libraries)
+Информация об отключении тестов на библиотеки представлена [в этой главе](../testing/libraries/filtering-tests.md).
 
-Information on disabling libraries tests is found [here](../testing/libraries/filtering-tests.md).
-
-In particular, look at `ActiveIssueAttribute`, `SkipOnCoreClrAttribute`, and `SkipOnMonoAttribute`.
+В частности, стоит обратить внимание на `ActiveIssueatTribute`,` skiponcoreclrattribute` и `skiponmonoattribute`.
