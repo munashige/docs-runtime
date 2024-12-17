@@ -1,16 +1,6 @@
-# Pipelines overview - Architecture and different available pipelines
+# Обзор пайплайнов - архитектура различных пайплайнов 
 
-* [Pipelines used in dotnet/runtime](#pipelines-used-in-dotnetruntime)
-  * [Runtime pipeline](#runtime-pipeline)
-  * [Runtime-dev-inner loop pipeline](#runtime-dev-inner-loop-pipeline)
-  * [Dotnet-linker-tests](#dotnet-linker-tests)
-  * [Runtime-extra-platforms](#runtime-extra-platforms)
-  * [Outer loop pipelines](#outer-loop-pipelines)
-* [Running of different runtime-level tests and their orchestration in Helix](#running-of-different-runtime-level-tests-and-their-orchestration-in-helix)
-  * [Legacy tests](#legacy-tests)
-  * [SourceGen Orchestrated tests](#sourcegen-orchestrated-tests)
-
-The runtime repository counts with a large number of validation pipelines to help assess product quality across different scenarios. Some of them run automatically, and some run per request to accommodate hardware availability and other resource constraints. However, the overall orchestration remains largely the same.
+Репозиторий включает в себя большое количество пайплайнов для валидации. Такие пайплайны помогают оценивать качество продукта в различных сценариях. Некоторые из них запускаются автоматически, а некоторые — по запросу, чтобы учесть доступность оборудования и другие ограничения ресурсов. Работа с пайпланами впрочем остается в целом неизменной.
 
 ```mermaid
 gitGraph
@@ -27,7 +17,8 @@ gitGraph
     commit
 ```
 
-Say there's a PR from `feature/utf8` to `main`. The `Azure DevOps Pipeline` plugin will take the merge commit to `main` and queue all default pipelines and any other requested pipelines to `Azure DevOps`.
+Предположим, что существует PR из ветки `feature/utf8` в ветку `main`. Плагин `Azure DevOps Pipeline` возьмет мердж-коммит в `main` и поставит в очередь все стандартные пайплайны, а также любые другие запрашиваемые пайплайны в `Azure DevOps`.
+
 
 ```mermaid
 gantt
@@ -48,47 +39,47 @@ gantt
     Lookup known strings in issues  : lookup, after testReport, 1d
 ```
 
-Each pipeline will create its own build of the different runtimes, the tests, and will eventually run the tests. We usually run our tests in a separate environment called Helix. This system allows for distribution of the large number of tests across the wide array of platforms supported. Once each worker machine processes its own results, these get reported back to `Azure DevOps` and they become available in the tests tab of the build.
+Каждый пайплайн создаст собственные сборки runtime, соберет тесты и в конечном итоге запустит их. Обычно тесты запускаются в отдельной среде, которая называется `Helix`. Эта система позволяет распределять большое количество тестов по широкому спектру поддерживаемых платформ. Как только каждая рабочая машина обработает свои результаты, они отправляются обратно в `Azure DevOps` и становятся доступными на вкладке тестов сборки.
 
-## Pipelines used in dotnet/runtime
+## Пайплайны в dotnet/runtime
 
-This repository contains several runtimes and a wide range of supported libraries and platforms. This complexity makes it hard to balance resource usage, testing coverage, and developer productivity. In order to try to make build efforts more reliable and spend the least amount of time testing what the PR changes need, we have various pipelines - some required, some optional. You can list the available pipelines by adding a comment like `/azp list` on a PR or get the available commands by adding a comment like `/azp help`.
+Репозиторий содержит несколько версий runtime и широкий спектр поддерживаемых библиотек и систем. Эта сложность затрудняет балансирование использования ресурсов, охвата тестирования (test coverage) и продуктивности разработчиков. Чтобы сделать процессы сборки надежными и минимизировать время, затрачиваемое на тестирование изменений, которые вносятся в PR, имеются различные пайплайны — некоторые обязательные, некоторые опциональные. Вы можете перечислить доступные пайплайны, добавив комментарий вроде `/azp list` в PR, или получить доступные команды, добавив комментарий вроде `/azp help`.
 
-Most of the repository pipelines use a custom mechanism to evaluate paths based on the changes contained in the PR to try and build/test the least that we can without compromising quality. This is the initial step on every pipeline that depends on this infrastructure, called "Evaluate Paths". In this step you can see the result of the evaluation for each subset of the repository. For more details on which subsets we have based on paths, see [here](/eng/pipelines/common/evaluate-default-paths.yml). Also, to understand how this mechanism works, you can read this [comment](/eng/pipelines/evaluate-changed-paths.sh#L3-L12).
+Большинство пайплайнов используют собственный механизм для оценки путей на основе изменений, содержащихся в PR, чтобы запустить сборку/тесты с минимальными возможными ресурсами без ущерба для качества. Такие механизма запускаются прежде всего в каждом пайплайне, который зависит от инфраструктуры "Evaluate Paths". На этом шаге можно увидеть результат оценки для каждого подмножества репозитория. Для получения более подробной информации о таких подмножествах см. [в этом документе](https://github.com/vitacore-company/runtime/blob/main/eng/pipelines/common/evaluate-default-paths.yml). Также, чтобы понять, как работает этот механизм cм. [этот документ](https://github.com/vitacore-company/runtime/blob/main/eng/pipelines/common/evaluate-changed-paths.yml).
 
-### Runtime pipeline
+### Пайплайн runtime 
 
-This is the "main" pipeline for the runtime product. In this pipeline we include the most critical tests and platforms where we have enough test resources in order to deliver results in a reasonable amount of time. The tests executed in this pipeline for runtime and libraries are considered inner loop. These are the same tests that are executed locally when one runs tests locally.
+Это "основной" пайплайн для runtime. В этом пайплайне включены самые важные тесты и платформы, на которых должно быть достаточно ресурсов для тестирования, чтобы предоставить результаты в разумные сроки. Тесты пайплайна для runtime и библиотек считаются внутриацикличными (inner loop). Такие тесты выполняются локально, когда разработчик запускает тесты на своем компьютере.
 
-For mobile platforms and wasm we run some smoke tests that aim to protect the quality of these platforms. We had to move to a smoke test approach given the hardware and time limitations that we encountered, and contributors were affected by this with instability and long wait times for their PRs to finish validation.
+Для мобильных платформ и WebAssembly запускаются smoke-тесты, которые обеспечивают качество этих платформ. Подход со smoke-тестами был вызван из-за ограничений по времени и оборудованию.
 
-### Runtime-dev-inner loop pipeline
+### Пайплайн runtime-dev-inner loop
 
-This pipeline is also required, and its intent is to cover developer inner loop scenarios that could be affected by any change, like running a specific build command or running tests inside Visual Studio, etc.
+Этот пайплайн также является обязательным. Его цель — охватить сценарии внутреннего цикла разработчика, которые могут быть затронуты любыми изменениями, такими как выполнение конкретной команды сборки или запуск тестов в Visual Studio и т.д.
 
-### Dotnet-linker-tests
+### Тесты dotnet-linker
 
-This is also a required pipeline. The purpose of this pipeline is to test that the libraries code is ILLink friendly. Meaning that when we trim our libraries using the ILLink, we don't have any trimming bugs, like a required method on a specific scenario is trimmed away by accident.
+Еще обязательный пайплайн. Цель этого пайплайна — обеспечить совместимость кода библиотек и ILLink. Это означает, что когда мы обрезаем наши библиотеки с помощью ILLink, у нас не возникает ошибок (например, случайное удаление необходимого метода).
 
 ### Runtime-extra-platforms
 
-This pipeline does not run by default as it is not required for a PR, but it runs twice a day, and it can also be invoked in specific PRs by commenting `/azp run runtime-extra-platforms`. However, this pipeline is still an important part of our testing.
+Этот пайплайн не запускается по умолчанию, так как он не является обязательным для PR, но он запускается дважды в день и также может быть вызван в PR с помощью комментария `/azp run runtime-extra-platforms`. Этот пайплайн является важной частью тестирования.
 
-This pipeline runs inner loop tests on platforms where we don't have enough hardware capacity to run tests (mobile, browser) or on platforms where we believe tests should organically pass based on the coverage we have in the "main" runtime pipeline. For example, in the "main" pipeline we run tests on Ubuntu 21.10. Since we also support Ubuntu 18.04 which is an LTS release, we run tests on Ubuntu 18.04 of this pipeline to make sure we have healthy tests on platforms which we are releasing a product for.
+Этот пайплайн выполняет тесты внутреннего цикла на платформах, где может быть недостаточно аппаратных ресурсов для запуска тестов (мобильные устройства, браузеры) или на платформах, где  тесты должны проходить органически на основе охвата, который имеется в "основном" пайплайне runtime. Например, в основном пайплайне запускаются тесты на Ubuntu 21.10. Поскольку также поддерживается и Ubuntu 18.04 (LTS-версии), в этом пайплайне запускаются тесты на Ubuntu 18.04.
 
-This pipeline also runs tests for platforms that are generally stable but we don't have enough hardware to put into the regular runtime pipeline. For example, we run the libraries tests for windows arm64 in this pipeline. We don't have enough hardware to run the JIT tests and libraries tests for windows arm64 on every PR. The JIT is the most important piece to test here, as that is what generates the native code to run on that platform. So, we run JIT tests on arm64 in the "main" pipeline, while our libraries tests are only run on the `runtime-extra-platforms` pipeline.
+Этот пайплайн также выполняет тесты для стабильных платформ, но для включения их в главный пайплайн runtime недостаточно аппаратных ресурсов. Например, при запуске тестов библиотек для Windows arm64 в этом пайплайне может быть недостаточно аппаратных ресурсов для запуска JIT-тестов и тестов библиотек для Windows arm64 на каждом PR. JIT — это самый важный элемент для тестирования, так как именно он генерирует нативный код для выполнения на этой платформе. Поэтому JIT-тесты на arm64 запускаются только в "основном" пайплайне, в то время как тесты библиотек выполняются только в пайплайне `runtime-extra-platforms`.
 
-### Outer loop pipelines
+### Пайплайны внешнего цикла
 
-We have various pipelines that their names contain `Outerloop` in them. These pipelines will not run by default on every PR, they can also be invoked using the `/azp run` comment and will run on a daily basis to analyze test results.
+В репозитории имеются различные пайплайны, в названии которых содержится тэг `Outerloop`. Такие пайплайны не запускаются по умолчанию на каждом PR, но их также можно вызвать с помощью комментария `/azp run`. Они будут запускаться ежедневно для анализа результатов тестирования.
 
-These pipelines will run tests that are long-running, are not very stable (i.e. some networking tests), or that modify machine state.
+Эти пайплайны выполняют тесты, которые требуют длительного времени. Такие тесты также не очень стабильны (например, сетевые тесты), а также изменяют состояние машины.
 
-## Running of different runtime-level tests and their orchestration in Helix
+## Запуск тестов runtime тестов и управление Helix
 
-### Legacy tests
+### Legacy-тесты
 
-In older runtime tests, the classic xUnit console runner runs a generated set of xUnit facts. Each fact invokes a shell/batch script that sets up the environment, then starts the console apps that make up the runtime test bed. The wrapper is also responsible for harvesting all output from the processes that get started. The main advantage of this method is that each test runs in process isolation. This allows xUnit and its child process to have decoupled runtimes, hardening the test harness against native crashes. However, this is extremely expensive since startup costs and process start costs are paid per test. The usual flow for a Helix workitem of this type is as follows:
+В старых тестах runtime классический консольный тестировщик __xUnit__ запускает сгенерированный набор фактов xUnit. Каждый факт вызывает оболочку/пакетный скрипт, который настраивает окружение, а затем запускает консольные приложения, которые составляют тестовую среду runtime. Обертка (wrapper) также отвечает за сбор всех выходных данных из запущенных процессов. Основное преимущество этого метода заключается в том, что каждый тест запускается в изоляции от процессов. Это позволяет xUnit и его дочернему процессу иметь разные версии runtime, что защищает тесты от нативных сбоев. Обычный рабочий процесс в Helix для этого типа выглядит следующим образом:
 
 ```mermaid
 sequenceDiagram
@@ -107,9 +98,9 @@ sequenceDiagram
     deactivate E
 ```
 
-### SourceGen Orchestrated tests
+### Тестирование с помощью SourceGen
 
-Consolidated runtime tests generate an entry point assembly during build. The source generation globs the tests that will run and generates a `Main` method that runs each test in a `try`/`catch` block, while capturing all the necessary output. There are a few tests that require isolation, and instead of calling into them in-proc, the call starts another process as appropriate. The main advantage of this method is that it relies less heavily on process isolation, making testing more cost-efficient. However, this also means the first native or managed unhandled exception will pause all testing - much like what happens with library tests. The merged runner that invokes the tests sequentially is hosted under a watchdog to handle hangs, and there's a log fixer that runs afterwards to try to fixup the corrupted logs in case of a crash, so that Helix can report the workitem progress as much as possible. The usual flow for a Helix workitem of this type is as follows:
+Консолидированные тесты runtime создают точки входа ассемблера во время сборки. Генерация исходного кода собирает тесты, которые будут запущены, а также создает метод `Main`, который выполняет каждый тест в блоке `try`/`catch` и захватывает все необходимые выходные данные. Есть несколько тестов, которые требуют изоляции. То есть вместо вызова таких тестов в процессе запускается другой необходимый процесс. Основное преимущество такого подхода заключается в том, что он меньше зависит от изоляции процессов, что делает тестирование гораздо дешевле. Это также означает, что первое необработанное исключение, как нативное, так и управляемое, приостановит все тесты — аналогично тому, что происходит с тестами библиотек. Тестировщик, который последовательно вызывает тесты, работает под контролем системы наблюдения (watchdog), чтобы обрабатывать зависания. После этого запускается лог-фиксер, который исправляет поврежденные логи в случае сбоя, чтобы Helix мог предоставить как можно больше информации о прогрессе. Работа Helix для этого типа выглядит следующим образом:
 
 ```mermaid
 sequenceDiagram

@@ -81,9 +81,9 @@ nav:
     - Continuous Integration:
       - Состояние и анализ: workflow/ci/coreclr-ci-health.md
       - Отключение тестов: workflow/ci/disabling-tests.md
-      - Анализ сбоев и известные проблемы: workflow/ci/failure-analysis.md
-      - Обзор Pipelines: workflow/ci/pipelines-overview.md
+      - Обзор пайплайнов: workflow/ci/pipelines-overview.md
       - Приоритизация сбоев CI-тестов: workflow/ci/triaging-failures.md
+      - Анализ сбоев и известные проблемы: workflow/ci/failure-analysis.md
     - Отладка: 
       - CoreCLR: 
         - Отладка CoreCLR: workflow/debugging/coreclr/debugging-runtime.md
