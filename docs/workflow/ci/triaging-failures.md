@@ -1,33 +1,19 @@
-# Triaging CI test failures
+# Устранение сбоев CI-тестов
 
-This document describes some things to consider when investigating a test failure in the dotnet/runtime continuous integration (CI) system.
-The focus is on reproducing the test failure and identifying the proper owner for a failure. Specific guidance is given on how to handle
-stress mode test configuration failures, such as failures in a JIT stress test run.
+Этот раздел описывает основные аспекты, которые следует учитывать при анализе сбоев в тестах CI-системы. Также предоставлены рекомендации по обработке сбоев в конфигурации стресс-тестов (сбои в JIT тестах).
 
-## Area ownership
 
-One goal of failure investigation is to quickly route failures to the correct area owner. The ownership of various product areas
-is detailed [here](../../area-owners.md). The GitHub auto-tagging bot uses the ownership information
-in the file [Policy Service configuration](../../../.github/policies).
+## Конфигурация системы
 
-## Platform configuration
+Сначала определите систему, на которой был выполнен тест:
+1. Архитектура процессора (x86, x64, arm32 или arm64)
+2. ОС (Windows, Linux или macOS). В некоторых случаях нужно воспроизвести сбой на конкретной версии операционной системы (например, в "musl" версиях Linux-а, таких как Alpine). Также может потребоваться воспроизвести тест, используя то же окружение, что используется в CI-системе. Для работы с докер-контейнерами coreclr необходимо использовать [этот файл](https://github.com/vitacore-company/runtime/blob/main/eng/pipelines/coreclr/templates/helix-queues-setup.yml), а для работы с библиотеками [файл по этой ссылке](https://github.com/vitacore-company/runtime/blob/main/eng/pipelines/libraries/helix-queues-setup.yml).
 
-First, identify the platform the test was run on:
-1. The processor architecture (x86, x64, arm32, arm64)
-2. The operating system (Windows, Linux, macOS). In some cases, you might need to reproduce a failure under a specific operating system
-version, such as a "musl" version of Linux (e.g., Alpine). You might need to reproduce using the same environment used by the CI system.
-For Docker environments, the Docker container mapping for coreclr runs is defined [here](../../../eng/pipelines/coreclr/templates/helix-queues-setup.yml)
-and for libraries runs is defined [here](../../../eng/pipelines/libraries/helix-queues-setup.yml).
+## Конфигурация теста
 
-## Test configuration
+Большинство тестов используют нестандартную конфигурацию, чтобы повторно использовать ресурсы для проверки различных аспектов системы. Определите конфигурацию теста при которой произошел сбой. Чаще всего достаточно посмотреть на имя джобы. Например, `net10.0-windows-Release-x86-CoreCLR_checked-jitstress1-Windows.10.Amd64.Open`  — это запуск тестов библиотек на Window x86, в конфигурации Release, cборка corecrl в конфигурации Checked, а также с включенной опцией `DOTNET_JitStress=1` в очереди Helix `Windows.10.Amd64.Open`.
 
-Many test runs use a non-default product configuration, to allow re-using existing test assets to stress various aspects of the system.
-Determine the precise test configuration under which the test has failed. This might be evident from the test job name. For example,
-`net10.0-windows-Release-x86-CoreCLR_checked-jitstress1-Windows.10.Amd64.Open` is a libraries test run on Windows with a Release x86 libraries
-build, Checked coreclr build, and setting the `DOTNET_JitStress=1` configuration setting, in the `Windows.10.Amd64.Open` Helix queue.
-
-You need to be careful when reproducing failures to set all the correct environment variables. In the above example, if you look at the
-test failure console log, you find:
+При воспроизведении сбоев необходимо быть внимательным и установить все переменные окружения правильно. В приведенном выше примере, если вы посмотрите на консольный лог сбоя теста, вы найдете:
 
 ```
 C:\h\w\AE88094B\w\B1B409BF\e>set DOTNET
@@ -35,9 +21,9 @@ DOTNET_JitStress=1
 DOTNET_TieredCompilation=0
 ```
 
-Thus, you can see that you also need to set `DOTNET_TieredCompilation=0` when attempting to reproduce the failure.
+Таким образом, вы можете увидеть, что вам также необходимо установить DOTNET_TieredCompilation=0 при попытке воспроизвести сбой.
 
-On non-Windows platforms, you'll see a similar output for the test configuration. E.g.,
+На платформах, отличных от Windows, вы увидите аналогичный вывод для конфигурации теста. Например:
 
 ```
 + printenv
@@ -48,74 +34,50 @@ DOTNET_DbgMiniDumpName=/home/helixbot/dotnetbuild/dumps/coredump.%d.dmp
 DOTNET_DbgEnableMiniDump=1
 ```
 
-You might need to set variables in addition to the `DOTNET_*` variables. For example, you might see:
-```
-set RunCrossGen2=1
-```
-which instructs the coreclr test wrapper script to do crossgen2 compilation of the test.
+Вам может понадобиться установить переменные помимо переменных `DOTNET_*`. Например, вы можете увидеть параметр `set RunCrossGen2=1`, который запускает crossgen2 компиляцию в тестах coreclr.
 
-Similarly,
-```
-set RunningIlasmRoundTrip=1
-```
-triggers an ildasm/ilasm round-trip test (that is, the test assembly is disassembled, then re-assembled, then run).
+Подобным образом `set RunningIlasmRoundTrip=1` активирует round-trip тесты ildasm/ilasm (то есть тестируемая ассамблея сначала разбирается, затем собирается заново и запускается).
 
-And,
-```
-set DoLink=1
-```
-triggers ILLink testing.
+Также `set DoLink=1` активирует тестирование ILLink.
 
-## Product and test assets
+## Продуктовые и тестовые ассеты
 
-To reproduce and/or debug a test failure, you'll need the product and test assets. You can either build these using the normal build processes,
-or you can download the ones used by the CI system. Building your own is often preferable so you can build a Debug flavor for better
-debugging fidelity: the CI typically runs with Checked and sometimes Release components.
+Чтобы воспроизвести и/или отладить сбой в тестах, вам понадобятся продуктовые и тестовые ассеты. Их можно собрать с помощью обычных процессов сборки, либо скачать те, которые использует CI-система. Обычно рекомендуется собирать свои ассеты, чтобы иметь возможность создать отладочную версию для лучшей отладки, так как CI-система  работает с проверенными и иногда с релизными компонентами.
 
-If downloading assets from the CI, it's often easiest to use the `runfo` tool:
+
+Если вы загружаете ресурсы из системы CI, проще всего использовать инструмент `runfo`:
 - [runfo Website](https://runfo.azurewebsites.net)
 - [runfo Documentation](https://github.com/jaredpar/runfo/tree/master/runfo#runfo)
 
-To install `runfo` as a .NET CLI global tool:
+Установите глобальный инструмент`runfo` для .NET CLI:
 
 ```sh
 dotnet tool install --global runfo
 dotnet tool update --global runfo
 ```
 
-Then use the `runfo get-helix-payload` command with the job name and workitem name. You can get these from the `Debug` tab of the
-`Result Details` for a specific test of interest in the Azure DevOps `Tests` view. It looks something like:
+Затем используйте команду `runfo get-helix-payload` с именем джобы (job name) и именем рабочего элемента (workitem name). Вы можете получить эти данные cо вкладки `Result Details` -> `Debug` из раздела Azure DevOps `Tests`. Например:
 ```json
 {
   "HelixJobId": "9d864c94-e6b6-4691-8f7f-36aa9d2053a3",
   "HelixWorkItemName": "JIT.1"
 }
 ```
+Если тест завершается c ошибкой, создается дамп памяти (core crash dump). Ссылку на этот дамп можно найти на странице "Artifacts" в Azure DevOps. Здесь также есть под названием `how-to-debug-dump.md`, который описывает, как использовать `runfo` для загрузки ресурсов и другие инструменты для отладки (в настоящее время только для запусков тестов библиотек). Этот файл создается на основе [этого шаблона](https://github.com/vitacore-company/runtime/blob/main/eng/testing/debug-dump-template.md), который содержит полезную информацию.
 
-Note that if a test fails and produces a core (crash) dump, the Azure DevOps "Artifacts" page will include a link to
-the crash dump. It will also include a `how-to-debug-dump.md` file that describes using `runfo` to download the assets and other
-tools to do the debugging (but currently only for libraries test runs).
-This file is built from the template [here](../../../eng/testing/debug-dump-template.md), which has some useful information.
+## Как определить масштаб сбоя
 
-## Determining the most general case of a failure
+Один и тот же тест может выполняться на многих системах и в различных конфигурациях. Поэтому важно определить, появляется ли ошибка в одной конфигурации или системе, или же она появляется везде. Например, если тест завершается сбоем только при JIT-стрессе на Windows arm64, это почти наверняка указывает на ошибку в JIT. Таким образом, сбой происходит только на платформе Windows arm64 и это значительно ускоряет исправление ошибки. Но если тест завершается сбоем на всех платформах и во всех конфигурациях, это указывает на основную (и независимую от системы) проблему, либо в самом тесте, либо в продукте.
 
-A single test may run on many platforms and in many configurations, as described above. It's important to understand if a
-failure is specific to a single configuration or platform, or is common across many configurations and platforms. For example,
-if a test fails only under JIT stress on Windows arm64, it's almost certainly a JIT bug, and knowing it fails only on
-the Windows arm64 platform expedites the bug fix investigation. However, if a test fails on all platforms and under all
-configurations, then it indicates a core, platform-independent problem, either or in the test itself or in the product.
-
-There are two useful ways to determine the breadth of a failure:
-1. Look at Azure DevOps pipelines test failure information for many test runs, typically using the Azure Data Explorer (Kusto) database
-of test results, or
-2. Manually reproduce the test failure, by downloading the product and test assets or building them, as described above.
+Существует два полезных способа определить масштаб сбоя:
+1. Посмотреть информацию о сбоях тестов в пайплайнах Azure DevOps для множества запусков тестов. Для этого обычно используется база данных результатов Azure Data Explorer (Kusto).
+2. Воспроизвести сбой теста вручную, загрузив продуктовые и тестовые ассеты или собрав их, как описано выше.
 
 ### Kusto
 
-[Kusto](https://dataexplorer.azure.com/clusters/engsrvprod/databases/engineeringdata) is a useful tool
-to mine the CI test execution history, looking for clues as to how frequently a test fails, and in which configurations.
+[Kusto](https://dataexplorer.azure.com/clusters/engsrvprod/databases/engineeringdata) — это полезный инструмент для анализа истории выполнения тестов CI, который позволяет найти информацию о том, как часто тесты завершаются с ошибками и в каких конфигурациях.
 
-A sample query to find this information is:
+Пример запроса для получения этой информации:
 
 ```
 //------------------------------
@@ -133,34 +95,25 @@ Jobs
 | limit 100
 ```
 
-Note that if a test failure is a recent regression, there may not be many results; you may need to manually reproduce the failure.
+Обратите внимание, что если сбой теста является недавней регрессией, этот инструмент может предоставить не так много информации. В таком случае лучше  воспроизвести ошибку вручную.
 
-Using Kusto data is also useful to help determine if a failure is rare, and look for a pattern of failures over time.
+Использование данных Kusto также поможет определить частоту ошибок, а также поможет найти закономерности и паттерны сбоев.
 
-Also note that this database is currently only accessible internal to Microsoft.
+Также обратите внимание, что эта база данных в настоящее время доступна только внутри Microsoft.
 
-## Example: JIT stress failures
+## Пример: Сбои при JIT-стрессе
 
-To extensively test the CLR JIT, there are many automated test runs using the coreclr and libraries tests
-but setting additional configuration settings. Because tests are run in so many JIT stress configurations,
-any flakiness in a test is much more likely to occur in a JIT stress run and not necessarily be due to the
-JIT stress mode itself. This section describes how to determine if a failure is likely due to a JIT bug.
+Для тестирования JIT CLR существует множество автоматизированных запусков, которые используют тесты coreclr и библиотек, а также дополнительные конфигурационные параметры. Так как тесты выполняются в нескольких конфигурациях JIT, любая нестабильность в тесте гораздо более вероятно проявится в запуске стресс-тестов и может быть связана с самим режимом JIT. Информация ниже показывает, как определить вероятность сбоев из-за ошибок в JIT.
 
-### Source of test configurations
+### Источник конфигураций тестов
 
-Note that all you really need to know is the set of environment variables set, as described above.
+Чаще всего достаточно просмотреть только набор установленных переменных окружения, как описано выше. Однако, если вам нужно знать, какие конфигурационные параметры используются и как именно, используйте ссылки ниже.   
 
-However, here are some useful links if you need to dig deeper into what configuration settings are used, and how.
-The mapping from Azure DevOps pipeline to configuration settings is set by the `scenarios` tags for coreclr
-tests [here](../../../eng/pipelines/common/templates/runtimes/run-test-job.yml) and for libraries tests
-[here](../../../eng/pipelines/libraries/run-test-job.yml).
-These tags are converted to configuration variables [here](../../../src/tests/Common/testenvironment.proj).
+Маппинг пайплайнов Azure DevOps и конфигурационными параметрами задается тегами `scenarios` для тестов coreclr представлен [тут](https://github.com/vitacore-company/runtime/blob/main/eng/pipelines/common/templates/runtimes/run-test-job.yml), для тестов библиотек представлен [тут](https://github.com/vitacore-company/runtime/blob/main/eng/pipelines/libraries/run-test-job.yml). Эти теги преобразуются в конфигурационные переменные [здесь](https://github.com/vitacore-company/runtime/blob/main/src/tests/Common/testenvironment.proj).
 
 ### Asserts
 
-Of course, if the failure is due to a JIT assertion failure, the problem is obviously a bug in the JIT.
-
-An example:
+Если сбой вызван ошибками в JIT assertion, проблема явно заключается в баге JIT. Например:
 
 ```
 Assert failure(PID 61 [0x0000003d], Thread: 75 [0x004b]): Assertion failed 'node->DefinesLocalAddr(this, size, &lcl, nullptr) && lvaGetDesc(lcl)->lvHiddenBufferStructArg' in 'System.Reflection.TypeLoading.Ecma.EcmaEvent:ComputeEventRaiseMethod():System.Reflection.TypeLoading.RoMethod:this' during 'Morph - Global' (IL size 37; hash 0x941ee672; FullOpts)
@@ -169,34 +122,27 @@ Assert failure(PID 61 [0x0000003d], Thread: 75 [0x004b]): Assertion failed 'node
     Image: /root/helix/work/correlation/dotnet
 ```
 
-Note, in particular, the `File:` line includes the path `src/coreclr/jit`.
+Обратите внимание, что строка `File:` включает путь `src/coreclr/jit`.
 
-### Repro without JIT stress modes
+### Воспроизведение без стресс-режимов JIT
 
-For other failures, first attempt to reproduce as it failed in the CI, with the same configuration settings. For intermittent failures,
-this might require running the test in a loop, applying artificial load to the machine, running on the exact
-architecture/OS/OS version/Docker container, etc. Note that this applies to reproducing intermittent failures with or without stress
-modes set.
+Для других сбоев сначала попытайтесь воспроизвести сбой так, как он произошел в CI, с теми же конфигурационными параметрами. Для периодических сбоев это может потребовать выполнения теста в цикле, создания искусственной нагрузки на машину, запуска на точной архитектуре/ОС/версии ОС/Docker-контейнере и т.д. Обратите внимание, что это относится к воспроизведению периодических сбоев как с Включенными, так и выключенными стресс-режимами.
 
-Once the problem can be reproduced, attempt to reproduce the problem without setting any of the JIT stress variables, e.g., do not set:
+После воспроизведения проблемы, попытайтесь воспроизвести ее без установки каких-либо переменных стресс-тестов JIT. Например, не устанавливайте:
 - `DOTNET_TieredCompilation`
 - `DOTNET_JitStress`
 - `DOTNET_JitStressRegs`
 
-If the test reliably fails with the JIT stress modes, but passes without, consider it a JIT issue.
+Если тест также завершается ошибками стресс-режимов JIT, но успешно проходит без них, значит это проблема JIT.
 
-## Example: GC stress failures
+## Пример: Сбои при GC-стрессе
 
-Failures that occur only when the `DOTNET_GCStress` variable is set are called "GCStress failures". There are several general kinds
-of failures:
-- Timeouts: tests run under this stress mode run very slowly.
-- A "GC hole": the JIT (or sometimes VM) doesn't properly report all GC object locations to the system.
-- A bug in the GC stress infrastructure.
-- A bug in the GC itself.
+Сбои, которые появляются только при установленной переменной `DOTNET_GCStress`, называются "сбоями GC-стресса". Существует несколько общих типов сбоев:
+- Timeouts: тесты, которые выполняются в стресс-режиме, работают очень медленно.
+- "Дыра в GC" (_GC hole_): JIT (или иногда VM) неправильно сообщает о всех местоположениях объектов GC системе.
+- Ошибка в инфраструктуре GC-стресса.
+- Ошибка в самом GC.
 
-Note the value `DOTNET_GCStress` is set to is a bitmask. Failures with 0x1 or 0x2 (and thus 0x3) are typically VM failures.
-Failures with 0x4 or 0x8 (and thus 0xC) are typically JIT failures. Ideally, a failure can be reduced to fail with only a single
-bit set (that is, either 0x4 or 0x8, which is more specific than just 0xC). That is especially true for 0xF, where we don't know if
-it's likely a VM or a JIT failure without reducing it.
+Обратите внимание, что значение, установленное для `DOTNET_GCStress`, является bitmask-ой. Сбои с 0x1 или 0x2 (также 0x3) обычно являются сбоями VM. Сбои с 0x4 или 0x8 (также 0xC) обычно являются сбоями JIT. В идеале сбой можно свести к ошибке, которая завершается только с одним установленным битом (то есть либо 0x4, либо 0x8, т.к. это более специфичные сценарии, нежели чем просто 0xC). Это особенно важно для 0xF, когда не известно, является ли это скорее сбоем VM или JIT.
 
-A commonly seen assert indicating a "GC hole" is `!CREATE_CHECK_STRING(pMT && pMT->Validate())`.
+Часто встречаемое утверждение, указывающее на "дыру в GC", выглядит следующим образом: `!CREATE_CHECK_STRING(pMT && pMT->Validate())`.

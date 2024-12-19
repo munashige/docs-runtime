@@ -82,7 +82,7 @@ nav:
       - Состояние и анализ: workflow/ci/coreclr-ci-health.md
       - Отключение тестов: workflow/ci/disabling-tests.md
       - Обзор пайплайнов: workflow/ci/pipelines-overview.md
-      - Приоритизация сбоев CI-тестов: workflow/ci/triaging-failures.md
+      - Устроение сбоев: workflow/ci/triaging-failures.md
       - Анализ сбоев и известные проблемы: workflow/ci/failure-analysis.md
     - Отладка: 
       - CoreCLR: 
