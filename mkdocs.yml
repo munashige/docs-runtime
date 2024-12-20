@@ -83,7 +83,7 @@ nav:
       - Отключение тестов: workflow/ci/disabling-tests.md
       - Обзор пайплайнов: workflow/ci/pipelines-overview.md
       - Устроение сбоев: workflow/ci/triaging-failures.md
-      - Анализ сбоев и известные проблемы: workflow/ci/failure-analysis.md
+      - Анализ сбоев и известные ошибки: workflow/ci/failure-analysis.md
     - Отладка: 
       - CoreCLR: 
         - Отладка CoreCLR: workflow/debugging/coreclr/debugging-runtime.md

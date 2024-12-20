@@ -1,76 +1,64 @@
-# Analyzing Failures with Build Analysis and Known Issues
+# Анализ сбоев и известные ошибки
 
-* [Triaging errors seen in CI](#triaging-errors-seen-in-ci)
-  * [Option 1: You have a defect in your PR](#option-1-you-have-a-defect-in-your-pr)
-  * [Option 2: There is a flaky test that is not related to your PR](#option-2-there-is-a-flaky-test-that-is-not-related-to-your-pr)
-  * [Option 3: The state of the main branch HEAD is bad.](#option-3-the-state-of-the-main-branch-head-is-bad)
-  * [Additional information:](#additional-information)
-* [What to do if you determine the failure is unrelated](#what-to-do-if-you-determine-the-failure-is-unrelated)
-  * [Examples of Build Analysis](#examples-of-build-analysis)
-    * [Good usage examples](#good-usage-examples)
-    * [Bad usage examples](#bad-usage-examples)
+## Резюме
 
-## Triaging errors seen in CI
+**Для мерджа изменений необходим успешный анализ сборки (Build Analysis)**.
 
-## Summary
+Для устранения ошибок выполните следующие действия в указанном порядке:
 
-**Passing Build Analysis is required to merge into the runtime repo**.
-
-To resolve failures, do the following, in order:
-
-1. Fix the problem if your PR is the cause.
-2. For all failures not in the "Known test errors" section, [try to file a Known Build Error issue](#what-to-do-if-you-determine-the-failure-is-unrelated).
-3. If all else fails, perform a [manual bypass](#bypassing-build-analysis).
+1. Исправьте проблему с PR, если она является причиной сбоя.
+2. Если ваша ошибка не указана в разделе "Известные ошибки тестов", [откройте issue с вашей ошибкой.](#what-to-do-if-you-determine-the-failure-is-unrelated).
+3. Если ничего из указанного не помогает, попробуйте [обойти анализ сборки вручную](#bypassing-build-analysis).
 
 
-## Details
+## Устранение ошибок в CI
 
-In case of failure, any PR on the runtime will have a failed GitHub check - PR Build Analysis - which has a summary of all failures, including a list of matching  known issues as well as any regressions introduced to the build or the tests. This tab should be your first stop for analyzing the PR failures.
+В случае ошибки любой PR в репозитории будет иметь неудачную проверку GitHub — PR Build Analysis, который содержит сводку всех сбоев, включая список соответствующих известных проблем, а также любые регрессии, внесенные в сборку или тесты. Эта вкладка должна быть вашим первым шагом для анализа сбоев PR.
 
 ![Build analysis check](analysis-check.png)
 
-This check tries to bubble as much useful information about all failures for any given PR and the pipelines it runs. It tracks both build and test failures and provides quick links to the build/test legs, the logs, and other supplemental information that `Azure DevOps` may provide. The idea is to minimize the number of links to follow and tries to surface well known issues that have already been previously identified. It also adds a link to the `Helix Artifacts` tab of a failed test, as it often contains more detailed logs of the execution or a dump that's been collected at fault time.
+Эта вкладка может предоставить полезную информацию о всех ошибках вашего PR, а также пайплайнов, которые он запускает. Здесь отслеживаются как ошибки билда, так и ошибки в тестах. Также предоставляются ссылки на соответствующие этапы сборки/тестирования, логи и другую дополнительную информацию, которую может предоставить `Azure DevOps`. Таким образом, вам нужно просматривать только нужную информацию, а также найти свою проблему в списке известных проблемы. Также добавляется и ссылка на вкладку `Helix Artifacts` для неудачного теста, так как она часто содержит подробные логи выполнения или дамп, созданный в момент сбоя.
 
-Validation may fail for several reasons, and for each one we have a different recommended action:
 
-### Option 1: You have a defect in your PR
+Валидация может завершиться неудачей по нескольким причинам. Для каждой из них имеются отдельные рекомендации:
 
-* Simply push the fix to your PR branch, and validation will start over.
+### Вариант 1: Ошибка в PR
 
-### Option 2: There is a flaky test that is not related to your PR
+Просто внесите исправление в ветку с вашим PR и валидация начнется заново.
 
-* Your assumption should be that a failed test indicates a problem in your PR. (If we don't operate this way, chaos ensues.) However, there are often subtle regressions and flaky bugs that might have slipped into the target branch.
-  * Reruns might help, but we tend to be conservative with them as they tend to spike our resource usage. Opt to use them only if there are no known issue that can be correlated to the failures and it's not clear if the errors could be correlated. Try to rerun only the particular legs if possible, by navigating to the GitHub Checks tab and clicking on `Re-run failed checks`.
-  * There's the possibility someone else has already investigated the issue. In such case, the build analysis tab should report the issue like so:
+### Вариант 2: Нестабильный тест, который не связан с PR
+
+В таком случае нужно предполагать, что ошибки в тестах указывают на проблему в вашем PR. Однако, в случаях неявной регрессии или багов, которые могли попасть в главную ветку, следуйте инструкции ниже:
+  * Повторные запуски могут помочь, но нужнее быть аккуратнее с ними, так как они могут значительно увеличить использование ресурсов. Используйте их только в том случае, если вашей проблемы нет в списке известных проблем или неясно, могут ли ошибки быть взаимосвязаны. Старайтесь перезапускать только отдельные шаги с помощью вкладки GitHub Checks и кнопки на `Re-run failed checks`.
+  * Некоторые проблемы могут быть уже адресованы. В таких случая вкладка анализа сборки должна сообщать о проблеме как показано на скриншоте ниже:
     ![known issue example](known-issue-example.png)
-    There's no additional work required here - the bug is getting tracked and appropriate data is being collected.
-  * If the error is not getting reported as a known issue and you believe it's unrelated, see the [unrelated failure](#what-to-do-if-you-determine-the-failure-is-unrelated) section for next steps.
+    Дополнительных действий здесь не требуются — ошибка отслеживается и соответствующие данные собираются.
+  * Если проблема не была адресована ранее, см. раздел [неадресованные ошибки](#what-to-do-if-you-determine-the-failure-is-unrelated).
 
-### Option 3: The state of the main branch HEAD is bad.
+### Вариант 3: Ошибки в главной ветке HEAD
 
-* This is the very rare case where there was a build break in main, and you got unlucky. Hopefully the break has been fixed, and you want CI to rebase your change and rerun validation.
-* To rebase and rerun all validation:
-  * Add a comment `/azp run runtime`
-  * Or, click on "re-run all checks" in the GitHub Checks tab
-  * Or, simply close and reopen the PR.
-  * Or, amend your commit with `--amend --no-edit` and force push to your branch.
+Это крайне редкий и очень неприятный случай, если в основной ветке произошел сбой билда. После исправления ошибок необходимо rebase-нуть ваши изменения в CI и перезапустить валидацию. Для этого нужно выполнить одно из следующих действий:
+  * Добавить комментарий `/azp run runtime`
+  * Нажать "re-run all checks" во вкладке GitHub Checks
+  * Закрыть и переоткрыть PR
+  * Добавить в коммит `--amend --no-edit` и принудительно запушить изменения в ветку.
 
-### Additional information:
-  * If the license/cla check fails to register a response, the check can be rerun by submitting a `@dotnet-policy-service rerun` comment to the PR.
-  * Reach out to the infrastructure team for assistance on [Teams channel](https://teams.microsoft.com/l/channel/19%3ab27b36ecd10a46398da76b02f0411de7%40thread.skype/Infrastructure?groupId=014ca51d-be57-47fa-9628-a15efcc3c376&tenantId=72f988bf-86f1-41af-91ab-2d7cd011db47) (for corpnet users) or on [Gitter](https://gitter.im/dotnet/community) in other cases.
+### Дополнительная информациюя:
+  * Если проверка лицензии/CLA не зарегистрировала ответ, проверку можно перезапустить, отправив комментарий `@dotnet-policy-service rerun` в PR;
+  * Обратиться к команде за помощью можно через [Teams channel](https://teams.microsoft.com/l/channel/19%3ab27b36ecd10a46398da76b02f0411de7%40thread.skype/Infrastructure?groupId=014ca51d-be57-47fa-9628-a15efcc3c376&tenantId=72f988bf-86f1-41af-91ab-2d7cd011db47).
 
-## What to do if you determine the failure is unrelated
+## Неадресованные ошибки
 
-An issue that has not been reported before will look like this in the `Build Analysis` check tab:
+Проблема, которая не была ранее зарегистрирована, будет выглядеть следующим образом на вкладке Build Analysis:
 
 ![failed test](failed-test.png)
 
-You can use the console log, any potential attached dumps in the artifacts section, or any other piece of information printed to help you decide if it's a regression caused by the change. Similarly, for runtime tests we will try to print the crashing stacks to aid in the investigation.
+Используйте консольный лог, прикрепленные дампы или любую другую информацию, чтобы помочь вам решить, является ли ошибки регрессией. Таким образом, для тестов runtime будет выставлен стек вызовов при сбое, чтобы помочь найти причину сбоев.
 
-If you have considered all the diagnostic artifacts and determined the failure is definitely not caused by changes in your PR, please do this:
+Если вы рассмотрели все диагностические артефакты и определили, что сбой точно не вызван изменениями в вашем PR, выполните следующие действия:
 
-1. Identify a string from the logs that uniquely identifies the issue at hand. A good example of this the string `The system cannot open the device or file specified. : 'NuGet-Migrations'` for issue https://github.com/dotnet/runtime/issues/80619.
-2. On the test failure in the tab you can select `Report repository issue`. This will prepopulate an issue with the appropriate tags and with a body similar to:
+1. Укажите строку из лога, которая идентифицирует и объясняет проблему.
+2. На вкладке с неудачным тестом вы можете выбрать `Report repository issue`. Это автоматически заполнит форму для создания проблемы с соответствующими тегами и текстом, например:
     ````
     Build Information
     Build: https://dev.azure.com/dnceng-public/cbb18261-c48f-4abb-8651-8cdcb5474649/_build/results?buildId=242380
@@ -89,60 +77,37 @@ If you have considered all the diagnostic artifacts and determined the failure i
     }
     ```
     ````
-    It already contains most of the essential information, but *it is very important that you fill out the json blob*.
+    Здесь уже содержится большая часть необходимой информации, но также *очень важно заполнить JSON-BLOB*.
 
-    - You can now use the [Build Analysis Known Issue Helper](https://helix.dot.net/BuildAnalysis/CreateKnownIssues) to create an issue. It assists in adding the right set of labels, fill the necessary paths in the json blob, and it will validate that it matches the text presented for the issue found in the logs.
-    - You can add into the `ErrorMessage` field the string that you found uniquely identifies the issue. In case you need to use a regex, use the `ErrorPattern` field instead. This is a limited to a single-line, non-backtracking regex as described [here](https://github.com/dotnet/arcade/blob/main/Documentation/Projects/Build%20Analysis/KnownIssues.md#regex-matching). This regex also needs to be appropriately escaped. Check the [arcade known issues](https://github.com/dotnet/arcade/blob/main/Documentation/Projects/Build%20Analysis/KnownIssues.md#filling-out-known-issues-json-blob) documentation for a good guide on proper regex and JSON escaping.
-    - The field `ExcludeConsoleLog` describes if the execution logs should be considered on top of the individual test results. **For most cases, this should be set to `true` as the failure will happen within a single test**. Setting it to `false` will mean all failures within an xUnit set of tests will also get attributed to this particular error, since there's one log describing all the problems. Due to limitations in Known Issues around rate limiting and xUnit resiliency, setting `ExcludeConsoleLog=false` is necessary in two scenarios:
-      + Nested tests as reported to Azure DevOps. Essentially this means theory failures, which look like this when reported in Azure DevOps: ![xUnit theory seen in azure devops](theory-azdo.png).
-        Adding support for this requires too many API calls, so using the console log here is necessary.
-      + Native crashes in libraries also require using the console log. This is needed as the crash corrupts the test results to be reported to Azure DevOps, so only the console logs are left.
-    - Optionally you can add specifics as needed like leg, configuration parameters, available dump links.
+    - Для создания issue используйте [Build Analysis Known Issue Helper](https://helix.dot.net/BuildAnalysis/CreateKnownIssues). Этот инструмент помогает добавить правильный набор меток, заполнить необходимые пути в JSON-BLOB, а также проверяет соответствие тексту, представленному для проблемы в логах.
+    - Добавьте `ErrorMessage` в строку, которая описывает проблемы. Если вам нужно написать выражение в regex, используйте `ErrorPattern`. Выражение должно быть однострочным и необратимым (non-backtracking) как указано [тут](https://github.com/dotnet/arcade/blob/main/Documentation/Projects/Build%20Analysis/KnownIssues.md#regex-matching). Выражение также должно быть правильно экранировано. Инструкцию по экранированию regex и JSON можно найти[тут](https://github.com/dotnet/arcade/blob/main/Documentation/Projects/Build%20Analysis/KnownIssues.md#filling-out-known-issues-json-blob) .
+    - Поле `ExcludeConsoleLog` описывает, следует ли учитывать логи выполнения поверх индивидуальных результатов тестов. **В большинстве случаев должно иметь значение `true` , так как ошибки происходят в рамках одного теста**. Установка в `false` означает, что все сбои в наборе тестов xUnit также будут приписаны к этой конкретной ошибке (т.к. есть только один лог, который описывает все проблемы). Из-за ограничений в известных проблемах, связанных с ограничением по количеству запросов и устойчивостью xUnit, опция `ExcludeConsoleLog=false` необходима в только двух сценариях:
+      + Для вложенных (nested) тестов, которые также представлены в Azure DevOps: ![xUnit theory seen in azure devops](theory-azdo.png).
+        Поддержка таких тестов требует слишком большого количества API-вызовов, поэтому использование консольного лога здесь необходимо.
+      + Системные сбои в библиотеках также требуют использования консольного лога, так как такие ошибки повреждают результаты тестов, которые должны быть зарегистрированы в Azure DevOps.
+    - При необходимости вы можете добавить дополнительную информацию, такие как job step, параметры конфигурации, доступные ссылки на дампы и т.д.
 
-Once the issue is open, feel free to rerun the `Build Analysis` check and the issue should be recognized as known if all was filed correctly and you are ready to merge once all unrelated issues are marked as known. However, there are some known limitations to the system as previously described. Additionally, the system only looks at the error message the stacktrace fields of an Azure DevOps test result, and the console log in the helix queue.
+После открытия issue вы можете повторно запустить проверку `Build Analysis`. Если все было заполнено правильно, ошибка должна быть распознана как известная.Тем не менее, существуют некоторые известные ограничения системы, как было упомянуто ранее. Помимо этого, система рассматривает только сообщение об ошибке, поля трассировки стека результата теста Azure DevOps и консольный лог в очереди Helix.
 
-The `Build Analysis` requests are sent to a queue. In certain scenarios, this queue can have many items to process and it can take a while for the status to be updated. If you do not see the status getting updated, be patient and wait at least 10 minutes before investigating further.
+Запросы `Build Analysis` отправляются в очередь. В некоторых случаях эта очередь может содержать несколько элементов для обработки. Поэтому обновление статуса может занять некоторое время. Если вы не видите обновления статуса, подождите  минимум 10 минут прежде чем продолжить диагностику.
 
-If rerunning the check doesn't pick up the known issue and you feel it should, feel free to tag  @dotnet/runtime-infrastructure to request infrastructure team for help.
+Если повторный запуск проверки не распознает известную проблему, но она должна быть распознана, нужно отправить комментарий с `@dotnet/runtime-infrastructure`, чтобы запросить помощь.
 
-After you do this, if the failure is occurring frequently as per the data captured in the recently opened issue, please disable the failing test(s) with the corresponding tracking issue link in a follow-up Pull Request.
+При частых сбоях с недавно открытой issue можно отключить тест с ошибкой при этом указав ссылку на зарегистрированную проблему в вашем PR.
 
-* Update the tracking issue with the `disabled-test` label and remove the blocking tags.
-* For libraries tests add a [`[ActiveIssue(link)]`](https://github.com/dotnet/arcade/blob/master/src/Microsoft.DotNet.XUnitExtensions/src/Attributes/ActiveIssueAttribute.cs) attribute on the test method. You can narrow the disabling down to runtime variant, flavor, and platform. For an example see [File_AppendAllLinesAsync_Encoded](https://github.com/dotnet/runtime/blob/cf49643711ad8aa4685a8054286c1348cef6e1d8/src/libraries/System.IO.FileSystem/tests/File/AppendAsync.cs#L74)
-* For runtime tests found under `src/tests`, please edit [`issues.targets`](https://github.com/dotnet/runtime/blob/main/src/tests/issues.targets). There are several groups for different types of disable (mono vs. coreclr, different platforms, different scenarios). Add the folder containing the test and issue mimicking any of the samples in the file.
+* Обновите зарегистрированную проблему-issue, добавив метку `disabled-test`. Также удалите блокирующие метки.
+* Для тестов библиотек добавьте атрибут [`[ActiveIssue(link)]`](https://github.com/dotnet/arcade/blob/master/src/Microsoft.DotNet.XUnitExtensions/src/Attributes/ActiveIssueAttribute.cs) к методу теста. Попробуйте также отключить версии runtime, систему и т.д, чтобы найти ошибку быстрее, например см. [File_AppendAllLinesAsync_Encoded](https://github.com/dotnet/runtime/blob/cf49643711ad8aa4685a8054286c1348cef6e1d8/src/libraries/System.IO.FileSystem/tests/File/AppendAsync.cs#L74).
+* Для тестов runtime в папке `src/tests` нужно отредактировать [`issues.targets`](https://github.com/vitacore-company/runtime/blob/main/src/tests/issues.targets). В файле есть несколько групп для различных типов отключений (mono или coreclr, систему, архитектуру и т.п.). Добавьте папку, содержащую тест и соответствующую issue.
 
-There are plenty of intermittent failures that won't manifest again on a retry. Therefore these steps should be followed for every iteration of the PR build, e.g. before retrying/rebuilding.
+Существует множество периодических сбоев, которые не проявятся снова при повторном запуске. Поэтому эти шаги следует выполнять для каждой итерации сборки PR (например, перед повторным запуском или пересборкой).
 
-### Bypassing build analysis
+### Как обойти анализ сборки
 
-To unconditionally bypass the build analysis check (turn it green), you can add a comment to your PR with the following text:
+Чтобы обойти проверку анализа сборки (и сделать ее успешной), вы можете добавить комментарий к вашему PR со следующим текстом::
 
 ```
 /ba-g <reason>
 ```
 
-The `Build Analysis` requests are sent to a queue. In certain scenarios, this queue can have many items to process and it can take a while for the status to be updated. If you do not see the status getting updated, be patient and wait at least 10 minutes before investigating further.
+Запросы `Build Analysis` отправляются в очередь. В некоторых случаях эта очередь может содержать много элементов для обработки. Также обновление статуса может занять некоторое время. Подождите как минимум 10 минут прежде чем продолжить диагностику. Для получения дополнительной информации см. [Escape Mechanism for BuildAnalysis](https://github.com/dotnet/arcade/blob/main/Documentation/Projects/Build%20Analysis/EscapeMechanismforBuildAnalysis.md)
 
-For more information, see https://github.com/dotnet/arcade/blob/main/Documentation/Projects/Build%20Analysis/EscapeMechanismforBuildAnalysis.md
-
-### Examples of Build Analysis
-
-#### Good usage examples
-
-- Sufficiently specific strings. Ex: issue https://github.com/dotnet/runtime/issues/80619
-
-```json
-{
-  "ErrorPattern": "The system cannot open the device or file specified. : (&#39;|')NuGet-Migrations(&#39;|')",
-  "BuildRetry": false,
-  "ExcludeConsoleLog": false
-}
-```
-
-This is a case where the issue is tied to the machine the workitem falls on. Everything would fail in that test group, so `ExcludeConsoleLog` isn't harmful and the string is specific to the issue. The proper usage of this provides useful insight such as an accurate count of the impact of the issue without blocking other devs:
-
-![issue impact with data for investigation](issue-impact.png)
-
-#### Bad usage examples
-
-- Overly generic short strings. For example "dlbigleakthd", just refering to the test name is likely to match the build log in case there's a build failure, since the log will list the file getting built. In that case a better thing is to use the name of the scripts (sh/cmd) or part of the dump that caused the crash.
