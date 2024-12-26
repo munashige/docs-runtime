@@ -1,75 +1,62 @@
-# Debugging CoreCLR
+# Отладка CoreCLR
 
-* [Debugging CoreCLR on Windows](#debugging-coreclr-on-windows)
-  * [Using Visual Studio](#using-visual-studio)
-    * [Using Visual Studio Open Folder with CMake](#using-visual-studio-open-folder-with-cmake)
-  * [Using Visual Studio Code](#using-visual-studio-code)
-  * [Using SOS with Windbg or Cdb on Windows](#using-sos-with-windbg-or-cdb-on-windows)
-* [Debugging CoreCLR on Linux and macOS](#debugging-coreclr-on-linux-and-macos)
-  * [SOS on Unix](#sos-on-unix)
-  * [Debugging CoreCLR with lldb](#debugging-coreclr-with-lldb)
-    * [Disabling Managed Attach/Debugging](#disabling-managed-attachdebugging)
-  * [Debugging core dumps with lldb](#debugging-core-dumps-with-lldb)
-* [Debugging AOT compilers](#debugging-aot-compilers)
-* [Debugging Managed Code](#debugging-managed-code)
-  * [Using Visual Studio Code for Managed Code](#using-visual-studio-code-for-managed-code)
-  * [Using Visual Studio for Managed Code](#using-visual-studio-for-managed-code)
+Эта глава содержит инструкции по отладке CoreCLR. Обратите внимание, что SOS (основной плагин для отладки) не находится в этом репозитории. Для получения дополнительной информации о том, как его получить, установить и использовать пройдите[по этой ссылке](https://github.com/dotnet/diagnostics).
 
-These instructions will lead you through debugging CoreCLR.
+## Отладка CoreCLR на Windows
 
-As an initial note, SOS (the main plugin to aid with CoreCLR debugging) no longer resides here. For more information on how to get it, installing it, and how to use it, check it out in its new home, the [diagnostics repo](https://github.com/dotnet/diagnostics).
-
-## Debugging CoreCLR on Windows
-
-In order to start debugging CoreCLR, it is highly recommended to at least build the _clr_ subset under the _Debug_ configuration, in order to generate the necessary artifact files for the best debugging experience:
+Для начала отладки рекомендуется собрать подмножество clr в конфигурации _Debug_, чтобы сгенерировать необходимые артефакты:
 
 ```cmd
 .\build.cmd -s clr -c Debug
 ```
 
-Note that you can omit the `-c Debug` flag, since it's the default one when none other is specified. We are leaving it here in this doc for the sake of clarity.
+Флаг `-c Debug` можно опустить, так как это конфигурация используется по умолчанию, если не указано иное. 
 
-If for some reason `System.Private.CoreLib.dll` is missing, you can rebuild it with the following command, instead of having to go through the whole build again:
+Если по какой-либо причине отсутствует `System.Private.CoreLib.dll`, перезапускать всю сборку не обязательно. Для этого используйте следующую команду:
 
 ```cmd
 .\build.cmd -s clr.corelib+clr.nativecorelib -c Debug
 ```
 
-**NOTE**: When debugging with _CORE\_LIBRARIES_, the `libs` subset must also be built prior to attempting any debugging.
+__ПРИМЕЧАНИЕ__: При отладке с использованием CORE_LIBRARIES подмножество libs также должно быть собрано перед дальнейшей работой.
 
-### Using Visual Studio
+### Visual Studio
 
-Visual Studio's capabilities as a full IDE provide a lot of help making the runtime debugging more amiable.
+Использование Visual Studio в качестве IDE значительно упрощают работу с отладкой runtime.
 
-0. Run `.\build.cmd clr.nativeprereqs -a <architecture> -c <configuration>`. This will build some of the tools requiremented for the native build. This step only needs to be run once as long you don't clean the `artifacts` directory.
-1. Open the CoreCLR solution _(coreclr.sln)_ in Visual Studio.
-   * _Method 1_: Use the build scripts to open the solution:
-      1. Run `.\build.cmd -vs coreclr.sln -a <architecture> -c <configuration>`. This will create and launch the CoreCLR solution in VS for the specified architecture and configuration. By default, this will be `x64 Debug`.
-   * _Method 2_: Manually build and open the solution:
-      1. Perform a build of the repo with the `-msbuild` flag.
-      2. Open solution `path\to\runtime\artifacts\obj\coreclr\windows.<architecture>.<configuration>\ide\CoreCLR.sln` in Visual Studio. As in the previous method, the architecture and configuration by default are `x64` and `Debug`, unless explicitly stated otherwise.
-2. Right-click the **INSTALL** project and choose `Set as StartUp Project`.
-3. Bring up the properties page for the **INSTALL** project.
-4. Select _Configuration Properties -> Debugging_ from the left side tree control.
-5. Set `Command=$(SolutionDir)\..\..\..\..\bin\coreclr\windows.$(Platform).$(Configuration)\corerun.exe`. This points to the folder where the built runtime binaries are present.
-6. Set `Command Arguments=<managed app you wish to run>` (e.g. HelloWorld.dll).
-7. Set `Working Directory=$(SolutionDir)\..\..\..\..\bin\coreclr\windows.$(Platform).$(Configuration)`. This points to the folder containing CoreCLR binaries.
-8. Set `Environment=CORE_LIBRARIES=$(SolutionDir)\..\..\..\..\bin\runtime\<target-framework>-windows-$(Configuration)-$(Platform)`, where '\<target-framework\>' is the target framework of current branch: `net10.0`. A few notes on this step:
+Для начала необходимо выполнить команду `.\build.cmd clr.nativeprereqs -a <архитектура> -c <конфигурация>`. Это соберет инструменты, которые необходимы для нативной сборки. Этот шаг нужно выполнить только один раз ( за исключением очистки папки `artifacts`).
 
-* This points to the folder containing core libraries except `System.Private.CoreLib`.
-* This step can be skipped if you are debugging CLR tests that reference only `System.Private.CoreLib`. Otherwise, it's required to debug a real-world application that references anything else, including `System.Runtime`.
+  1. Откройте решение CoreCLR (coreclr.sln) в Visual Studio.
 
-9. Right-click the **INSTALL** project and choose `Build`. This will load necessary information from _CMake_ to Visual Studio.
-10. Press F11 to start debugging at `wmain` in _corerun_, or set a breakpoint in source and press F5 to run to it. As an example, set a breakpoint for the `EEStartup()` function in `ceemain.cpp` to break into CoreCLR startup.
+    * _Метод 1_: Выполнить `.\build.cmd -vs coreclr.sln -a <architecture> -c <configuration>`. Это создаст и запустит решение CoreCLR в Visual Studio для указанной архитектуры и конфигурации. По умолчанию используется `x64 Debug`.
+    * _Метод 2_: Собрать и открыть решение вручную:
+          1. Выполните сборку репозитория с флагом `-msbuild`.
+          2. Открыть решение `path\to\runtime\artifacts\obj\coreclr\windows.<architecture>.<configuration>\ide\CoreCLR.sln` в Visual Studio. Как и в предыдущем методе, архитектура и конфигурация по умолчанию — это `x64` и `Debug`, если не указано иное.
+          
+2. Вызовите контекстное меню (правой кнопкой мыши) на проекте INSTALL и выберите `Set as StartUp Project`.
+3. Откройте страницу свойств для проекта **INSTALL**.
+4. Выберите _Configuration Properties -> Debugging_ в древе управления слева.
+5. Установите `Command=$(SolutionDir)\..\..\..\..\bin\coreclr\windows.$(Platform).$(Configuration)\corerun.exe`. Эта команда указывает на папку, где находятся собранные бинарные файлы времени выполнения.
+6. Установите `Command Arguments=<управляемое приложение, которое вы хотите запустить>` (например, HelloWorld.dll).
+7. Установите `Working Directory=$(SolutionDir)\..\..\..\..\bin\coreclr\windows.$(Platform).$(Configuration)`. This points to the folder containing CoreCLR binaries.
+8. Установите `Environment=CORE_LIBRARIES=$(SolutionDir)\..\..\..\..\bin\runtime\<target-framework>-windows-$(Configuration)-$(Platform)`, где `\<target-framework\>` обозначает целевую платформу текущей ветки: `net10.0`. 
 
-Steps 1-9 only need to be done once as long as there's been no changes to the CMake files in the repository. Afterwards, step 10 can be repeated whenever you want to start debugging. As of now, it is highly recommended to use Visual Studio 2022 or Visual Studio 2019.
+    Несколько замечаний по этому шагу:
 
-#### Using Visual Studio Open Folder with CMake
+      * Команда указывает на папку, содержащую основные библиотеки, кроме `System.Private.CoreLib`.
+      * Этот шаг можно пропустить при отладке тестов CLR, которые ссылаются только на `System.Private.CoreLib`. В противном случае это необходимо для отладки реального приложения, которое ссылается на что-либо еще, включая `System.Runtime`.
 
-1. Open the _dotnet/runtime_ repository in Visual Studio using the _open folder_ feature. When opening the repository root, Visual Studio will prompt about finding _CMake_ files. Select `src\coreclr\CMakeList.txt` as the CMake workspace.
-2. Set the `corerun` project as startup project. When using the folder view instead of the CMake targets view, right click `coreclr\hosts\corerun\CMakeLists.txt` to set as startup project, or select it from debug target dropdown of Visual Studio.
-3. Right click the `corerun` project and open the `Debug` configuration. You can also click on _Debug -> Debug and Launch Configuration_ from the Visual Studio main bar menu.
-4. In the opened `launch.vs.json`, set following properties to the configuration of `corerun`:
+9. Вызовите контекстное меню проекта **INSTALL**  и выберите опцию `Build`, чтобы загрузить необходимую информацию из CMake в Visual Studio.
+10. Нажмите F11, чтобы начать отладку с `wmain` в _corerun_; или установите переломную точку (breakpoint) в исходном коде и нажмите F5. Например, установите такую точку для функции `EEStartup()` в `ceemain.cpp`, чтобы прервать выполнение при запуске CoreCLR.
+
+Шаги 1-9 нужно выполнять только один раз, если не было изменений в файлах CMake в репозитории. После этого шаг 10 можно повторять каждый раз, когда вы хотите начать отладку. На данный момент настоятельно рекомендуется использовать Visual Studio 2022 или Visual Studio 2019.
+
+#### Открыть папку в Visual Studio с Cmake
+
+1. Откройте репозиторий в Visual Studio, используя функцию _открыть папку_. При открытии корневой папки репозитория Visual Studio предложит найти файлы CMake. Выберите `src\coreclr\CMakeList.txt` в качестве рабочего пространства CMake.
+2. Установите проект `corerun` в качестве стартового проекта. Щелкните правой кнопкой мыши на `coreclr\hosts\corerun\CMakeLists.txt`, чтобы установить его в качестве стартового проекта; или выберите его из выпадающего списка целей отладки в Visual Studio.
+3. Щелкните правой кнопкой мыши на проекте `corerun` и откройте конфигурацию `Debug`. Вы также можете выбрать _Debug -> Debug and Launch Confuguration_ в главном меню Visual Studio.
+4. В открывшемся файле `launch.vs.json` установите следующие свойства для конфигурации `corerun`:
 
 ```json
     {
@@ -84,158 +71,154 @@ Steps 1-9 only need to be done once as long as there's been no changes to the CM
         },
         {
           "name": "CORE_LIBRARIES",
-          // for example net10.0-windows-debug-x64
+          // напр. net10.0-windows-debug-x64
           "value": "${cmake.installRoot}\\..\\..\\runtime\\<tfm>-windows-<configuration>-<arch>\\"
         }
       ],
       "args": [
-        // path to a managed application to debug
-        // remember to use double backslashes (\\)
+        // путь к приложению для отладки
+        // не забывайте использовать двойную косую черту (\\)
         "HelloWorld.dll"
       ]
     }
 ```
 
-**NOTE**: For Visual Studio 17.3, changing the location of launched executable doesn't work, so the `CORE_ROOT` is necessary.
+**ПРИМЕЧАНИЕ**: В Visual Studio 17.3 изменение местоположения запускаемого исполняемого файла не работает, поэтому необходим `CORE_ROOT` .
 
-5. Right click the CoreCLR project or `coreclr\CMakeLists.txt` in the folder view, and then invoke the _Install_ command.
-6. Press F10 or F11 to start debugging at main, or set a breakpoint and press F5.
+5. Щелкните правой кнопкой мыши на проекте CoreCLR или на `coreclr\CMakeLists.txt` в представлении папки, а затем выполните команду Install.
+6. Нажмите F10 или F11, чтобы начать отладку с функции main, или установите breakpoint и нажмите F5.
 
-Whenever you make changes to the CoreCLR source code, don't forget to invoke the _Install_ command again to have them set in place.
+Каждый раз, когда вы вносите изменения в исходный код CoreCLR, не забудьте снова выполнить команду Install, чтобы изменения вступили в силу.
 
-### Using Visual Studio Code
 
-It will be very nice to be able to achieve all this using Visual Studio Code as well, since it's the editor of choice for lots of developers.
 
-Visual Studio Code instructions coming soon!
+### Использование SOS с Windbg или Cdb на Windows
 
-### Using SOS with Windbg or Cdb on Windows
+SOS обычно поставляется вместе с Windbg и поэтому дополнительная установка не требуется. Однако, если вы хотите использовать другую версию и установка все же нужна, ссылки ниже дадут полезную информацию о настройке:
+* [Официальная документация SOS](https://learn.microsoft.com/dotnet/core/diagnostics/dotnet-sos).
+* [Инструкции в репозитории диагностики](https://github.com/dotnet/diagnostics/blob/main/documentation/installing-sos-windows-instructions.md).
 
-Under normal circumstances, SOS usually comes shipped with Windbg, so no additional installation is required. However, if this is not the case for you, you want to use another version, or any other circumstance that requires you to install it separately/additionally, here are two links with useful information on how to get it set up:
+Для получения дополнительной информации о командах SOS см. [эту ссылку](https://github.com/dotnet/diagnostics/blob/master/documentation/sos-debugging-extension-windows.md).
 
-* The official [Microsoft docs on SOS](https://learn.microsoft.com/dotnet/core/diagnostics/dotnet-sos).
-* The instructions at the [diagnostics repo](https://github.com/dotnet/diagnostics/blob/master/documentation/installing-sos-windows-instructions.md).
+## Отладка CoreCLR на Linux и macOS
 
-For more information on SOS commands click [here](https://github.com/dotnet/diagnostics/blob/master/documentation/sos-debugging-extension-windows.md).
-
-## Debugging CoreCLR on Linux and macOS
-
-Very similarly to Windows, Linux and macOS also require to have at least the _clr_ subset built prior to attempting to debug, most preferably under the _Debug_ configuration:
+На Linux и macOS (как и на Windows) необходимо собрать подмножество `clr` перед работой с отладкой. Рекомендуется использовать конфигурацию Debug:
 
 ```bash
 ./build.sh -s clr -c Debug
 ```
 
-Note that you can omit the `-c Debug` flag, since it's the default one when none other is specified. We are leaving it here in this doc for the sake of clarity.
+Можно опустить флаг `-c Debug`, так как он является значением по умолчанию, если не указано иное. 
 
-If for some reason `System.Private.CoreLib.dll` is missing, you can rebuild it with the following command, instead of having to go through the whole build again:
+Если по какой-либо причине отсутствует `System.Private.CoreLib.dll`, перезапускать всю сборку не обязательно. Для этого используйте следующую команду:
 
 ```bash
 ./build.sh -s clr.corelib+clr.nativecorelib -c Debug
 ```
 
-**NOTE**: When debugging with _CORE\_LIBRARIES_, the `libs` subset must also be built prior to attempting any debugging.
+__ПРИМЕЧАНИЕ__: При отладке с использованием CORE_LIBRARIES подмножество libs также должно быть собрано перед дальнейшей работой.
 
-### SOS on Unix
+### SOS на Unix
 
-For Linux and macOS, you have to install SOS by yourself, as opposed to Windows' Windbg. The instructions are very similar however, and you can find them on these two links:
+На Linux и macOS нужно установить SOS вручную, в отличие автоматической установки Windbg на Windows. Инструкции идентичны и вы можете найти их по следующим ссылкам:
 
-* The official [Microsoft docs on SOS](https://learn.microsoft.com/dotnet/core/diagnostics/dotnet-sos).
-* The instructions at the [diagnostics repo](https://github.com/dotnet/diagnostics/blob/master/documentation/installing-sos-instructions.md).
+* [Официальная документация SOS](https://learn.microsoft.com/dotnet/core/diagnostics/dotnet-sos).
+* [Инструкции в репозитории диагностики](https://github.com/dotnet/diagnostics/blob/main/documentation/installing-sos-windows-instructions.md).
 
-It might also be the case that you would need the latest changes in SOS, or you're working with a not-officially-supported scenario that actually works. The most common occurrence of this scenario is when using macOS Arm64. In this case, you have to build SOS from the diagnostics repo (linked above). Once you have it done, then simply load it to your `lldb`. More details in the following section.
+В некоторых нестандартных случаях нужно нужно собрать SOS из репозитория диагностики (как указано по ссылке выше). Наиболее распространенный случай — это использование macOS Arm64. После этого нужно загрузить его в ваш `lldb`. Подробная информация указана в следующем разделе.
 
-### Debugging CoreCLR with lldb
+### Отладка CoreCLR с помощью lldb
 
-**NOTE**: Only `lldb` is supported to use with SOS. You can also use `gdb`, `cgdb`, or other debuggers, but you might not have access to SOS.
+**ПРИМЕЧАНИЕ**: Для работы с SOS поддерживается только `lldb`. Можно использовать `gdb`, `cgdb` или другие отладчики, но у вас может не быть доступа к SOS.
 
-1. Perform a build of the _clr_ subset of the runtime repo.
-2. Start lldb passing `corerun`, the app to run (e.g. `HelloWorld.dll`), and any arguments this app might need: `lldb -- /path/to/corerun /path/to/app.dll <app args go here>`
-3. If you're using the installed version of SOS, you can skip this step. If you built SOS manually, you have to load it before starting the debugging session: `plugin load /path/to/built/sos/libsosplugin.so`. Note that `.so` is for Linux, and `.dylib` is for macOS. You can find more information in the diagnostics repo [private sos build doc](https://github.com/dotnet/diagnostics/blob/main/documentation/using-sos-private-build.md).
-4. Launch program: `process launch -s`
-5. To stop breaks on _SIGUSR1_ signals used by the runtime run the following command: `process handle -s false SIGUSR1`
-6. Set a breakpoint where CoreCLR is initialized, as it's the most stable point to begin debugging: `breakpoint set -n coreclr_execute_assembly`.
-7. Get to that point by issuing `process continue` after setting the breakpoint.
-8. Now, you're ready to begin your debugging session. You can set breakpoints or run SOS commands like `clrstack` or `sos VerifyHeap`.  Note that SOS command names are case sensitive.
+1. Выполните сборку подмножества _clr_.
+2. Запустите lldb, передав `corerun`, приложение для запуска (например, `HelloWorld.dll`) и любые аргументы, которые могут понадобиться этому приложению: `lldb -- /path/to/corerun /path/to/app.dll <ваши аргументы приложения>`.
+3. Если вы используете установленную версию SOS, вы можете пропустить этот шаг. Если вы собрали SOS вручную, вам нужно загрузить его перед началом сессии отладки: `plugin load /path/to/built/sos/libsosplugin.so`. Обратите внимание, что `.so` используется для Linux, а `.dylib` — для macOS. Больше информации см. [по этой ссылке](https://github.com/dotnet/diagnostics/blob/main/documentation/using-sos-private-build.md).
+4. Запустите программу: `process launch -s`
+5. Чтобы остановить прерывания сигналов _SIGUSR1_, которые используются runtime-ом,  выполните следующую команду: `process handle -s false SIGUSR1`
+6. Установите breakpoint там, где инициализируется CoreCLR, так как это наиболее стабильная точка для начала отладки: `breakpoint set -n coreclr_execute_assembly`.
+7. Перейдите в эту точку с помощью команды `process continue` после установки breakpoint-а.
+8. Теперь вы готовы начать сессию отладки. Вы можете устанавливать breakpoint-ы или выполнять команды SOS, такие как `clrstack` или `sos VerifyHeap`. Обратите внимание, что имена команд SOS чувствительны к регистру.
 
-#### Disabling Managed Attach/Debugging
+#### Отключение управляемого подключения/отладки
 
-The `DOTNET_EnableDiagnostics` _environment variable_ can be used to disable managed debugging. This prevents the various OS artifacts used for debugging, such as named pipes and semaphores on Linux and macOS, from being created.
+Переменная окружения `DOTNET_EnableDiagnostics` может быть использована для отключения управляемой отладки. Это предотвращает создание различных артефактов ОС, используемых для отладки, таких как named pipes и semaphores на Linux и macOS.
 
 ```bash
 export DOTNET_EnableDiagnostics=0
 ```
 
-### Debugging core dumps with lldb
+### Отладка дампов памяти с помощью lldb
 
-Our friends at the diagnostics repo have a very detailed guide on core dumps debugging [here in their repo](https://github.com/dotnet/diagnostics/blob/master/documentation/debugging-coredump.md).
+Подробная инструкция представлена [в этом репозитории](https://github.com/dotnet/diagnostics/blob/main/documentation/debugging-coredump.md).
 
 ## Debugging AOT compilers
 
-Debugging AOT compilers is described in [its related document](debugging-aot-compilers.md).
+Отладка AOT-компиляторов описана в [этом разделе](debugging-aot-compilers.md).
 
-## Debugging Managed Code
+## Отладка управляемого кода
 
-Native C++ code is not everything in our runtime. Nowadays, there are lots of stuff to debug that stay in the higher C# managed code level.
+В этом репозитории используется не только нативный C++ код. В настоящее время много чего нужно отлаживать на более высоком уровне управляемого кода C#.
 
-### Using Visual Studio Code for Managed Code
+### Использование Visual Studio Code для управляемого кода
 
-* Install the [C# Extension](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp).
-* Open the folder containing the source you want to debug in VS Code.
-* Open the debug window: `ctrl-shift-D`/`cmd-shift-D` or click on the button on the left.
-* Click the gear button at the top to create a launch configuration, and select `.NET 5+ and .NET Core` from the selection dropdown.
-* It will create a `launch.json` file, where you can configure what and how you want to debug it. Here is a basic template on how to fill it:
+* Установите [расширение C# ](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp).
+* Откройте в VS Code папку с исходным кодом, который нужно отлаживать.
+* Откройте окно отладки: `ctrl-shift-D`/`cmd-shift-D` или нажмите на кнопку на панели слева.
+* Нажмите на кнопку шестеренки вверху, чтобы создать конфигурацию запуска, и выберите `.NET 5+ and .NET Core` из выпадающего списка.
+* Это создаст файл `launch.json`  в котором вы можете указать, как и что нужно отлаживать. Ниже представлен пример, как его заполнить:
 
 ```json
 {
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "My Configuration", // Any identifiable name you might like.
-      "type": "coreclr", // We want to debug a CoreCLR app.
-      "request": "launch", // Start the app with the debugger attached.
-      "program": "/path/to/corerun", // Point to your 'corerun', in order to run the app using your build.
-      "args": ["app-to-debug.dll", "app arg1", "app arg2"], // First argument is your app, second and on are the app's arguments.
-      "cwd": "/path/to/app-to-debug", // Can be anywhere. For simplicity, choose where your app is stationed. Otherwise, you have to adjust paths in the other parameters.
-      "stopAtEntry": true, // This can be either. Keeping it to 'true' allows you to see when the debugger is ready.
-      "console": "internalConsole", // Use VSCode's internal console instead of launching more terminals.
-      "justMyCode": false, // Be able to debug into native assemblies.
-      "enableStepFiltering": false, // Be able to debug into class initializations, field accessors, etc.
+      "name": "My Configuration", // Любое имя, которое вам нравится.
+      "type": "coreclr", // Тут выбрано приложение CoreCLR.
+      "request": "launch", // Запустить приложение с подключенным отладчиком.
+      "program": "/path/to/corerun", // Укажите путь к вашему 'corerun', чтобы запустить приложение с использованием вашей сборки.
+      "args": ["app-to-debug.dll", "app arg1", "app arg2"], // Первый аргумент — это ваше приложение, второй и последующие — аргументы приложения.
+      "cwd": "/path/to/app-to-debug", // Может быть где угодно. Для простоты выберите место, где находится ваше приложение. В противном случае вам придется корректировать пути в других параметрах.
+      "stopAtEntry": true, // Может быть либо true, либо false. Установка в 'true' позволяет вам увидеть, когда отладчик готов.
+      "console": "internalConsole", // Используйте внутреннюю консоль VSCode вместо запуска дополнительных терминалов.
+      "justMyCode": false, // Возможность отладки в нативных сборках.
+      "enableStepFiltering": false // Возможность отладки в инициализациях классов, доступах к полям и т.д.
     }
   ]
 }
 ```
 
-* Set a breakpoint and launch the debugger, inspecting variables and call stacks will now work
+* Установите breakpoint и запустите отладчик; теперь вы сможете проверять переменные и стеки вызовов.
 
-### Using Visual Studio for Managed Code
+### Использование Visual Studio для управляемого кода
 
-* Use _File -> Open Project_ (not open file) and select the binary you want to use as your host (typically _dotnet.exe_ or _corerun.exe_).
-* Open the project properties for the new project that was just created and set the following:
-  * _Arguments_: Make this match whatever arguments you would have used at the command-line. For example if you would have run `dotnet.exe exec Foo.dll`, then set `arguments = "exec Foo.dll"` (**NOTE**: Make sure you use `dotnet exec` instead of `dotnet run` because the run verb command is implemented to launch the app in a child process, and the debugger won't be attached to that child process).
-  * _Working Directory_: Make this match whatever you would have used on the command-line.
-  * _Debugger Type_: Set this to `Managed (.NET Core, .NET 5+)`. If you're going to debug the native C++ code, then you would select `Native Only` instead.
-  * _Environment_: Add any environment variables you would have added at the command-line. You may also consider adding `DOTNET_ReadyToRun=0`, which disables R2R pre-compilation, and allow the JIT to create debuggable code. This will give you a higher quality C# debugging experience inside the runtime framework assemblies, at the cost of somewhat lower app performance.
-* For managed debugging, there are some additional settings in _Debug -> Options_, _Debugging -> General_ that might be useful:
-  * Uncheck `Just My Code`. This will allow you debug into the framework libraries.
-  * Check `Enable .NET Framework Source Stepping`. This will configure the debugger to download symbols and source automatically for runtime framework binaries. If you built the framework yourself, then you can omit this step without any problems.
-  * Check `Suppress JIT optimzation on module load`. This tells the debugger to tell the .NET runtime JIT to generate debuggable code even for modules that may not have been compiled in a `Debug` configuration by the C# compiler. This code is slower, but it provides much higher fidelity breakpoints, stepping, and local variable access. It is the same difference you see when debugging .NET apps in the `Debug` project configuration vs the `Release` project configuration.
+1. Откройте проект _File -> Open Project_ и выберите бинарный файл, который вы хотите использовать в качестве хоста (обычно это _dotnet.exe_ или _corerun.exe_).
+2. Откройте свойства проекта для нового проекта, который только что был создан, и установите следующие параметры:
+      * _Аргументы_: Убедитесь, что они соответствуют тем аргументам, которые вы использовали бы в командной строке. Например, если вы бы запустили `dotnet.exe exec Foo.dll`, установите `arguments = "exec Foo.dll"` (**ПРИМЕЧАНИЕ**: Убедитесь, что вы используете `dotnet exec`, а не `dotnet run`, потому что команда _run_ реализована для запуска приложения в дочернем процессе, и отладчик не будет подключен к этому дочернему процессу).
+      * _Рабочий каталог_: Убедитесь, что он соответствует тому, что вы использовали бы в командной строке.
+      * _Тип отладчика_: Установите это значение на `Managed (.NET Core, .NET 5+)`. Если нужно отлаживать нативный C++ код, выберите `Native Only`.
+      * _Переменные окружения_: Добавьте любые переменные окружения, которые вы бы добавили в командной строке. Также можно использовать `DOTNET_ReadyToRun=0`, чтобы отключить предварительную компиляцию R2R и указать JIT создать отлаживаемый код. Это значительно облегчит отладку C# внутри сборок фреймворка runtime, но несколько понизит производительности приложения.
+3. Для управляемой отладки существует несколько дополнительных полезных настроек в  _Debug -> Options_, _Debugging -> General_ :
+    * Снимите отметку с `Just My Code`, чтобы отлаживать библиотеки фреймворка.
+    * Установите флажок `Enable .NET Framework Source Stepping`, чтобы настроить отладчик на автоматическую загрузку символов и исходного кода для бинарных файлов фреймворка runtime. Если вы собрали фреймворк самостоятельно, вы можете пропустить этот шаг.
+    * Установите флажок `Suppress JIT optimization on module load`, чтобы отладчик проинструктировал .NET JIT runtime сгенерировать отлаживаемый код и для модулей, которые могли не быть созданы компилятором C# в конфигурации Debug. Этот код работает медленнее, но обеспечивает гораздо более высокую точность breakpoint-ов, stepping-а и доступа к локальным переменным. Такое же отличие при отладке .NET приложений в конфигурации проекта Debug по сравнению с конфигурацией проекта Release.
 
-#### Resolving Signature Validation Errors in Visual Studio
+#### Устранение ошибок проверки подписи в Visual Studio
 
-Visual Studio 2022 version 17.5 and later validates that the debugging libraries shipped with the .NET Runtime are signed before loading them. If they are unsigned, Visual Studio shows an error similar to the following:
+Версия Visual Studio 2022 (начиная с 17.5) проверяет, чтобы отладочные библиотеки, поставляемые с runtime, были подписаны перед их загрузкой. Если они не подписаны, Visual Studio вернет ошибку, например:
 
-> Unable to attach to CoreCLR. Signature validation failed for a .NET Runtime Debugger library because the file is unsigned.
->
-> This error is expected if you are working with non-official releases of .NET (example: daily builds from https://github.com/dotnet/sdk). See https://aka.ms/vs/unsigned-dotnet-debugger-lib for more information.
+    > Unable to attach to CoreCLR. Signature validation failed for a Runtime Debugger library because the file is unsigned.
+    > This error is expected if you are working with non-official releases of .NET (example: daily builds from https://github.com/dotnet/sdk). See https://aka.ms/vs/unsigned-dotnet-debugger-lib for more information.
 
-This error occurs if the target process is using a daily build .NET Runtime or one that you built. **NOTE**: This error never happens with [released builds of the .NET Runtime from Microsoft](https://dotnet.microsoft.com/en-us/download/dotnet). ***Don’t*** disable the validation if you are using an official release of the .NET Runtime.
+Такие ошибки возникают, если целевой процесс использует daily-сборку .NET Runtime или сборку, которую вы создали самостоятельно. __ПРИМЕЧАНИЕ__: Эта ошибка никогда не возникает с [релизными билдами .NET Runtime](https://dotnet.microsoft.com/en-us/download/dotnet). _Не отключайте_ проверку, если вы используете официальную версию .NET Runtime.
 
-The following approaches configure Visual Studio to disable signature validation:
+Следующие подходы настраивают Visual Studio для отключения проверки подписи:
 
-1. The `VSDebugger_ValidateDotnetDebugLibSignatures` environment variable:
-  * This is the easiest and recommended approach to temporarily disable signature validation.
-  * At the command line, run `set VSDebugger_ValidateDotnetDebugLibSignatures=0` and then start Visual Studio (`devenv.exe`) from the same command prompt.
-  * This setting is only valid for the Visual Studio instance that is started from the command prompt where the environment variable is set.
-1. The [`DOTNET_ROOT` environment variable](https://learn.microsoft.com/dotnet/core/tools/dotnet-environment-variables#dotnet_root-dotnet_rootx86): if Visual Studio is started from a command prompt where `DOTNET_ROOT` is set, it ignores unsigned .NET runtime debugger libraries which are under the `DOTNET_ROOT` directory.
-1. ***NOT RECOMMENDED*** Set the `ValidateDotnetDebugLibSignatures` registry key: To disable signature validation on a more permanent basis, set the `Common7\IDE\VsRegEdit.exe set local HKCU Debugger\EngineSwitches ValidateDotnetDebugLibSignatures dword 0` VS registry key. For example, open a Developer Command Prompt and run `Common7\IDE\VsRegEdit.exe set local HKCU Debugger\EngineSwitches ValidateDotnetDebugLibSignatures dword 0`
+- Переменная окружения `VSDebugger_ValidateDotnetDebugLibSignatures`:
+      1. Это самый простой и рекомендуемый способ временно отключить проверку подписи.
+      2. В командной строке выполните `set VSDebugger_ValidateDotnetDebugLibSignatures=0` , а затем запустите Visual Studio (`devenv.exe`) из той же командной строки.
+      3. Эта настройка действительна только для экземпляра Visual Studio, который запускается из командной строки, где установлена эта переменная окружения.
+- Переменная окружения  [`DOTNET_ROOT`](https://learn.microsoft.com/dotnet/core/tools/dotnet-environment-variables#dotnet_root-dotnet_rootx86):  
+Если Visual Studio запускается из командной строки, где установлена переменная `DOTNET_ROOT`, неподписанные библиотеки отладчика runtime в этой директории будут игнорироваться.
+- ***НЕ РЕКОМЕНДУЕТСЯ*** Установка ключа регистра `ValidateDotnetDebugLibSignatures`:  
+Чтобы отключить проверку подписи на постоянной основе, установите ключ реестра VS `Common7\IDE\VsRegEdit.exe set local HKCU Debugger\EngineSwitches ValidateDotnetDebugLibSignatures dword 0`. Например, откройте командную строку разработчика и выполните `Common7\IDE\VsRegEdit.exe set local HKCU Debugger\EngineSwitches ValidateDotnetDebugLibSignatures dword 0`.
