@@ -30,7 +30,11 @@ theme:
 markdown_extensions:
   - admonition
   - pymdownx.highlight
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.keys
   - pymdownx.tabbed:
       alternate_style: true
@@ -78,7 +82,7 @@ nav:
         - Покрытие кода: workflow/building/libraries/code-coverage.md
         - Кросс-компиляция: workflow/building/libraries/cross-building.md
         - WebAssembly: workflow/building/libraries/webassembly-instructions.md
-    - Continuous Integration:
+    - CI:
       - Состояние и анализ: workflow/ci/coreclr-ci-health.md
       - Отключение тестов: workflow/ci/disabling-tests.md
       - Обзор пайплайнов: workflow/ci/pipelines-overview.md
@@ -107,13 +111,14 @@ nav:
       - CoreCLR:
         - Общая структура: workflow/testing/coreclr/test-configuration.md 
         - Сборка и запуск: workflow/testing/coreclr/testing.md
-        - Инструкции для Windows: workflow/testing/coreclr/unix-test-instructions.md
+        - Инструкции для Windows: workflow/testing/coreclr/windows-test-instructions.md
         - Инструкции для Unix: workflow/testing/coreclr/unix-test-instructions.md
         - AutoTrace: workflow/testing/coreclr/automated-stress-testing-diagnostic-server.md
         - Верификация вывода дизассемблирования: workflow/testing/coreclr/disasm-checks.md
         - Stress run для изменений GC: workflow/testing/coreclr/gc-stress-run-readme.md
         - Benchmark Driver 2: workflow/testing/coreclr/running-aspnet-benchmarks-with-crossgen2.md
       - Хосты:
+        - Тестирование: workflow/testing/host/testing.md
         - Запуск и сборка хост-тестов: workflow/testing/host/using-apphost.md
         - Работа с Apphost: workflow/testing/host/using-apphost.md 
       - Библиотеки:
@@ -125,7 +130,301 @@ nav:
         - Тестирование библиотек: workflow/testing/libraries/testing.md
       - Mono: workflow/testing/mono/testing.md 
     - Trimming: 
-      - Файлы ILLink: workflow/trimming/ILLink-files
+      - Файлы ILLink: workflow/trimming/ILLink-files.md
       - Переключатели функций: workflow/trimming/feature-switches.md
+  - Design:
+    - CoreCLR:
+          - BOTR:
+              - Overview: design/coreclr/botr/README.md
+              - FAQ: design/coreclr/botr/botr-faq.md
+              - CLR ABI: design/coreclr/botr/clr-abi.md
+              - Corelib: design/coreclr/botr/corelib.md
+              - DAC Notes: design/coreclr/botr/dac-notes.md
+              - Exceptions: design/coreclr/botr/exceptions.md
+              - Garbage Collection: design/coreclr/botr/garbage-collection.md
+              - Guide for Porting: design/coreclr/botr/guide-for-porting.md
+              - ILC Architecture: design/coreclr/botr/ilc-architecture.md
+              - Intro to CLR: design/coreclr/botr/intro-to-clr.md
+              - Managed Type System: design/coreclr/botr/managed-type-system.md
+              - Method Descriptor: design/coreclr/botr/method-descriptor.md
+              - Mixed Mode: design/coreclr/botr/mixed-mode.md
+              - Profilability: design/coreclr/botr/profilability.md
+              - Profiling: design/coreclr/botr/profiling.md
+              - R2R PerfMap Format: design/coreclr/botr/r2r-perfmap-format.md
+              - ReadyToRun Format: design/coreclr/botr/readytorun-format.md
+              - ReadyToRun Overview: design/coreclr/botr/readytorun-overview.md
+              - Shared Generics: design/coreclr/botr/shared-generics.md
+              - Stack Walking: design/coreclr/botr/stackwalking.md
+              - Threading: design/coreclr/botr/threading.md
+              - Type Loader: design/coreclr/botr/type-loader.md
+              - Type System: design/coreclr/botr/type-system.md
+              - Vectors and Intrinsics: design/coreclr/botr/vectors-and-intrinsics.md
+              - Virtual Stub Dispatch: design/coreclr/botr/virtual-stub-dispatch.md
+              - Xplat Minidump Generation: design/coreclr/botr/xplat-minidump-generation.md
+          - JIT:
+              - Guarded Devirtualization: design/coreclr/jit/GuardedDevirtualization.md
+              - JIT Architecture Plan 2009: design/coreclr/jit/Jit Architecture Plan 2009.md
+              - JIT Optimizer Planning Guide: design/coreclr/jit/JitOptimizerPlanningGuide.md
+              - JIT Optimizer Todo Assessment: design/coreclr/jit/JitOptimizerTodoAssessment.md
+              - Optimization of Heap Access in Value Numbering: design/coreclr/jit/Optimization of Heap Access in Value Numbering.md
+              - Perf Score: design/coreclr/jit/Perf-Score.md
+              - ARM64 JIT Frame Layout: design/coreclr/jit/arm64-jit-frame-layout.md
+              - EH Writethru: design/coreclr/jit/eh-writethru.md
+              - Finally Optimizations: design/coreclr/jit/finally-optimizations.md
+              - First Class Structs: design/coreclr/jit/first-class-structs.md
+              - Hot Cold Splitting: design/coreclr/jit/hot-cold-splitting.md
+              - Inline Size Estimates: design/coreclr/jit/inline-size-estimates.md
+              - Inlining Plans: design/coreclr/jit/inlining-plans.md
+              - Investigate Stress: design/coreclr/jit/investigate-stress.md
+              - JIT Call Morphing: design/coreclr/jit/jit-call-morphing.md
+              - Longs on 32bit Arch: design/coreclr/jit/longs-on-32bit-arch.md
+              - LSRA Detail: design/coreclr/jit/lsra-detail.md
+              - LSRA Heuristic Tuning: design/coreclr/jit/lsra-heuristic-tuning.md
+              - LSRA Throughput: design/coreclr/jit/lsra-throughput.md
+              - Multi Reg Call Nodes: design/coreclr/jit/multi-reg-call-nodes.md
+              - Object Stack Allocation: design/coreclr/jit/object-stack-allocation.md
+              - Porting RyuJIT: design/coreclr/jit/porting-ryujit.md
+              - Profile Count Reconstruction: design/coreclr/jit/profile-count-reconstruction.md
+              - Removing Embedded Statements: design/coreclr/jit/removing-embedded-statements.md
+              - RyuJIT Overview: design/coreclr/jit/ryujit-overview.md
+              - RyuJIT Tutorial: design/coreclr/jit/ryujit-tutorial.md
+              - Struct ABI: design/coreclr/jit/struct-abi.md
+              - Variable Tracking: design/coreclr/jit/variabletracking.md
+              - Viewing JIT Dumps: design/coreclr/jit/viewing-jit-dumps.md
+          - Profiling:
+            - IL Rewriting Basics: design/coreclr/profiling/IL Rewriting Basics.md
+            - Profiler Attach on CoreCLR: design/coreclr/profiling/Profiler Attach on CoreCLR.md
+            - Profiler Breaking Changes: design/coreclr/profiling/Profiler Breaking Changes.md
+            - Profiler Loading: design/coreclr/profiling/Profiler Loading.md
+            - ReJIT on Attach: design/coreclr/profiling/ReJIT on Attach.md
+            - Davbr Blog Archive:
+                - Overview: design/coreclr/profiling/davbr-blog-archive/README.md
+                - Attach: design/coreclr/profiling/davbr-blog-archive/Attach.md
+                - Attach2: design/coreclr/profiling/davbr-blog-archive/Attach2.md
+                - CORPROF_E_UNSUPPORTED_CALL_SEQUENCE: design/coreclr/profiling/davbr-blog-archive/CORPROF_E_UNSUPPORTED_CALL_SEQUENCE.md
+                - Creating an IL-rewriting Profiler: design/coreclr/profiling/davbr-blog-archive/Creating an IL-rewriting profiler.md
+                - Debugging - Activation: design/coreclr/profiling/davbr-blog-archive/Debugging - Activation.md
+                - Debugging - SOS and IDs: design/coreclr/profiling/davbr-blog-archive/Debugging - SOS and IDs.md
+                - DoStackSnapshot - Callback CONTEXT Registers: design/coreclr/profiling/davbr-blog-archive/DoStackSnapshot - Callback CONTEXT Registers.md
+                - DoStackSnapshot - Exception Filters: design/coreclr/profiling/davbr-blog-archive/DoStackSnapshot - Exception Filters.md
+                - DoStackSnapshot - HRESULTs: design/coreclr/profiling/davbr-blog-archive/DoStackSnapshot - HRESULTs.md
+                - ELT Hooks - The Basics: design/coreclr/profiling/davbr-blog-archive/ELT Hooks - The Basics.md
+                - ELT Hooks - Tail Calls: design/coreclr/profiling/davbr-blog-archive/ELT Hooks - tail calls.md
+                - GC Heap and Alignment Padding: design/coreclr/profiling/davbr-blog-archive/GC Heap and Alignment Padding.md
+                - Generics and Your Profiler: design/coreclr/profiling/davbr-blog-archive/Generics and Your Profiler.md
+                - Metadata Tokens, Run-Time IDs, and Type Loading: design/coreclr/profiling/davbr-blog-archive/Metadata Tokens, Run-Time IDs, and Type Loading.md
+                - Profiler Detach: design/coreclr/profiling/davbr-blog-archive/Profiler Detach.md
+                - Profiler Stack Walking Basics and Beyond: design/coreclr/profiling/davbr-blog-archive/Profiler stack walking Basics and beyond.md
+                - ReJIT - Limitations: design/coreclr/profiling/davbr-blog-archive/ReJIT - Limitations.md
+                - ReJIT - The Basics: design/coreclr/profiling/davbr-blog-archive/ReJIT - The Basics.md
+                - Sample A Signature Blob Parser for your Profiler: design/coreclr/profiling/davbr-blog-archive/Sample A Signature Blob Parser for your Profiler.md
+                - Tail Call JIT Conditions: design/coreclr/profiling/davbr-blog-archive/Tail call JIT conditions.md
+                - Type Forwarding: design/coreclr/profiling/davbr-blog-archive/Type Forwarding.md
+                - When is it safe to use ObjectIDs: design/coreclr/profiling/davbr-blog-archive/When is it safe to use ObjectIDs.md
+    - Data Contracts:
+        - DacStreams: design/datacontracts/DacStreams.md
+        - EcmaMetadata: design/datacontracts/EcmaMetadata.md
+        - Exception: design/datacontracts/Exception.md
+        - GCHandle: design/datacontracts/GCHandle.md
+        - Loader: design/datacontracts/Loader.md
+        - Object: design/datacontracts/Object.md
+        - RuntimeTypeSystem: design/datacontracts/RuntimeTypeSystem.md
+        - Thread: design/datacontracts/Thread.md
+        - Contract Descriptor: design/datacontracts/contract-descriptor.md
+        - Data Descriptor: design/datacontracts/data_descriptor.md
+        - Data Contracts Design: design/datacontracts/datacontracts_design.md
+    - Features:
+        - Assembly Load Context Contextual Reflection: design/features/AssemblyLoadContext.ContextualReflection.md
+        - COM Activation: design/features/COM-activation.md
+        - DotNetCore Shared Package Store: design/features/DotNetCore-SharedPackageStore.md
+        - Dynamic PGO Instrumented Tiers: design/features/DynamicPgo-InstrumentedTiers.md
+        - Dynamic PGO: design/features/DynamicPgo.md
+        - IJW Activation: design/features/IJW-activation.md
+        - Inline Array Attribute: design/features/InlineArrayAttribute.md
+        - Linux Hugepage Crossgen2: design/features/Linux-Hugepage-Crossgen2.md
+        - Non-GC Heap: design/features/NonGC-Heap.md
+        - OSR X64 Epilog Redesign: design/features/OSRX64EpilogRedesign.md
+        - On Stack Replacement: design/features/OnStackReplacement.md
+        - Osr Details and Debugging: design/features/OsrDetailsAndDebugging.md
+        - Pinned Heap: design/features/PinnedHeap.md
+        - Scalable Approximate Counting: design/features/ScalableApproximateCounting.md
+        - String Deduplication: design/features/StringDeduplication.md
+        - Additional Dependencies: design/features/additional-deps.md
+        - ARM64 Intrinsics: design/features/arm64-intrinsics.md
+        - Assembly Conflict Resolution: design/features/assembly-conflict-resolution.md
+        - Assembly Load Context: design/features/assemblyloadcontext.md
+        - ByRef-like Generics: design/features/byreflike-generics.md
+        - CET Feature: design/features/cet-feature.md
+        - Code Generation Strategies: design/features/code-generation-strategies.md
+        - Code Versioning Profiler Breaking Changes: design/features/code-versioning-profiler-breaking-changes.md
+        - Code Versioning: design/features/code-versioning.md
+        - Covariant Return Methods: design/features/covariant-return-methods.md
+        - Cross DAC: design/features/cross-dac.md
+        - Crossgen2 Compilation Structure Enhancements: design/features/crossgen2-compilation-structure-enhancements.md
+        - Default Interface Methods: design/features/default-interface-methods.md
+        - DLLMap: design/features/dllmap.md
+        - .NET PGO: design/features/dotnet-pgo.md
+        - Event Counter: design/features/event-counter.md
+        - Framework Version Resolution: design/features/framework-version-resolution.md
+        - Globalization Hybrid Mode: design/features/globalization-hybrid-mode.md
+        - Globalization ICU Wasm: design/features/globalization-icu-wasm.md
+        - Globalization Invariant Mode: design/features/globalization-invariant-mode.md
+        - Host Component Dependencies Resolution: design/features/host-component-dependencies-resolution.md
+        - Host Components: design/features/host-components.md
+        - Host Download URLs: design/features/host-download-urls.md
+        - Host Error Codes: design/features/host-error-codes.md
+        - Host Probing: design/features/host-probing.md
+        - Host Runtime Information: design/features/host-runtime-information.md
+        - Host Startup Hook: design/features/host-startup-hook.md
+        - Host Testing: design/features/host-testing.md
+        - Host Tracing: design/features/host-tracing.md
+        - Hosting Layer APIs: design/features/hosting-layer-apis.md
+        - Hardware Intrinsics: design/features/hw-intrinsics.md
+        - Jump Stubs: design/features/jump-stubs.md
+        - Localization Options: design/features/localization-options.md
+        - Native Hosting: design/features/native-hosting.md
+        - Raw EventListener: design/features/raw-eventlistener.md
+        - ReadyToRun Composite Format Design: design/features/readytorun-composite-format-design.md
+        - ReadyToRun PInvoke: design/features/readytorun-pinvoke.md
+        - Roll Forward on No Candidate FX: design/features/roll-forward-on-no-candidate-fx.md
+        - SharedFX Lookup: design/features/sharedfx-lookup.md
+        - Source Generator COM: design/features/source-generator-com.md
+        - Source Generator PInvokes: design/features/source-generator-pinvokes.md
+        - Standalone GC Eventing: design/features/standalone-gc-eventing.md
+        - Standalone GC Loading: design/features/standalone-gc-loading.md
+        - Tail Calls with Helpers: design/features/tailcalls-with-helpers.md
+        - Tiered Compilation: design/features/tiered-compilation.md
+        - Timezone Invariant Mode: design/features/timezone-invariant-mode.md
+        - Unloadability: design/features/unloadability.md
+        - Unsafe Accessors: design/features/unsafeaccessors.md
+        - User Events: design/features/user-events.md
+        - Y2038: design/features/y2038.md
+    - Librares:
+      - Com Interface Generator:
+          - Compatibility: design/libraries/ComInterfaceGenerator/Compatibility.md
+          - Derived Com Interfaces: design/libraries/ComInterfaceGenerator/DerivedComInterfaces.md
+          - Unmanaged to Managed EH: design/libraries/ComInterfaceGenerator/UnmanagedToManagedEH.md
+          - VTable Stubs: design/libraries/ComInterfaceGenerator/VTableStubs.md
+      - Library Import Generator:
+          - Compatibility: design/libraries/LibraryImportGenerator/Compatibility.md
+          - Pipeline: design/libraries/LibraryImportGenerator/Pipeline.md
+          - Span Marshallers: design/libraries/LibraryImportGenerator/SpanMarshallers.md
+          - Struct Marshalling: design/libraries/LibraryImportGenerator/StructMarshalling.md
+          - User Type Marshalling V2: design/libraries/LibraryImportGenerator/UserTypeMarshallingV2.md
+    - Mono:
+      - AOT: design/mono/aot.md
+      - Components: design/mono/components.md
+      - Debugger: design/mono/debugger.md
+      - Diagnostics Tracing: design/mono/diagnostics-tracing.md
+      - JITerpreter: design/mono/jiterpreter.md
+      - LLVM: design/mono/llvm.md
+      - Mobile RuntimeConfig JSON: design/mono/mobile-runtimeconfig-json.md
+      - Mono Library Mode: design/mono/mono-library-mode.md
+      - Mono Manpage 1: design/mono/mono-manpage-1.md
+      - Mono Thread State Machine: design/mono/mono-thread-state-machine.md
+      - Profiled AOT: design/mono/profiled-aot.md
+      - Runtime ILGen: design/mono/runtime-ilgen.md
+      - Unloadability: design/mono/unloadability.md
+      - Wasm AOT: design/mono/wasm-aot.md
+      - Webcil: design/mono/webcil.md
+      - Web:
+          - Overview: design/mono/web/README.md
+          - AOT: design/mono/web/aot.md
+          - Bitcode: design/mono/web/bitcode.md
+          - Coop Suspend: design/mono/web/coop-suspend.md
+          - Exception Handling: design/mono/web/exception-handling.md
+          - Generic Sharing: design/mono/web/generic-sharing.md
+          - Generics: design/mono/web/generics.md
+          - Glossary: design/mono/web/glossary.md
+          - GSharedVT: design/mono/web/gsharedvt.md
+          - Linear IR: design/mono/web/linear-ir.md
+          - LLVM Backend: design/mono/web/llvm-backend.md
+          - Memory Management: design/mono/web/memory-management.md
+          - Mini Porting: design/mono/web/mini-porting.md
+          - Mono Error: design/mono/web/mono-error.md
+          - Other: design/mono/web/other.md
+          - Register Allocation: design/mono/web/register-allocation.md
+          - Soft Debugger Wire Format: design/mono/web/soft-debugger-wire-format.md
+          - Soft Debugger: design/mono/web/soft-debugger.md
+          - Thread Safety: design/mono/web/thread-safety.md
+          - Trampolines: design/mono/web/trampolines.md
+    - Security:
+      - Unix TMP: design/security/unix-tmp.md
+    - Specs:
+      - Ecma 335 Augments: design/specs/Ecma-335-Augments.md
+      - Memory Model: design/specs/Memory-model.md
+      - PE-COFF: design/specs/PE-COFF.md
+      - Portable PDB Metadata: design/specs/PortablePdb-Metadata.md
+    - Tools:
+      - ILLink:
+          - DAM on Type and RUC Interaction: design/tools/illink/DAM-on-type-and-RUC-interaction.md
+          - Compiler Generated Code Handling: design/tools/illink/compiler-generated-code-handling.md
+          - Constant Propagation and Branch Removal: design/tools/illink/constant-propagation-and-branch-removal.md
+          - Feature Attribute Semantics: design/tools/illink/feature-attribute-semantics.md
+          - Feature Checks: design/tools/illink/feature-checks.md
+          - Redundant Suppressions: design/tools/illink/redundant-suppressions.md
+          - Reflection Flow: design/tools/illink/reflection-flow.md
+          - Trimmed Assemblies: design/tools/illink/trimmed-assemblies.md
+  - Coding Guidelines:
+    - Event Logging: coding-guidelines/EventLogging.md
+    - Adding API Guidelines: coding-guidelines/adding-api-guidelines.md
+    - Breaking Change Definitions: coding-guidelines/breaking-change-definitions.md
+    - Breaking Change Rules: coding-guidelines/breaking-change-rules.md
+    - Breaking Changes: coding-guidelines/breaking-changes.md
+    - CLR Code Guide: coding-guidelines/clr-code-guide.md
+    - CLR JIT Coding Conventions: coding-guidelines/clr-jit-coding-conventions.md
+    - Code Formatting Tools: coding-guidelines/code-formatting-tools.md
+    - Coding Style: coding-guidelines/coding-style.md
+    - Cross-platform Guidelines: coding-guidelines/cross-platform-guidelines.md
+    - Cross-platform Performance and Eventing: coding-guidelines/cross-platform-performance-and-eventing.md
+    - Framework Design Guidelines Digest: coding-guidelines/framework-design-guidelines-digest.md
+    - Interop Guidelines: coding-guidelines/interop-guidelines.md
+    - Libraries Packaging: coding-guidelines/libraries-packaging.md
+    - Mono Code Guide: coding-guidelines/mono-code-guide.md
+    - Performance Guidelines: coding-guidelines/performance-guidelines.md
+    - Project Guidelines: coding-guidelines/project-guidelines.md
+    - Updating Ref Source: coding-guidelines/updating-ref-source.md
+    - Vectorization Guidelines: coding-guidelines/vectorization-guidelines.md
+    - API Guidelines:
+      - ReadMe: coding-guidelines/api-guidelines/README.md
+      - System Memory: coding-guidelines/api-guidelines/System.Memory.md
+      - Nullability: coding-guidelines/api-guidelines/nullability.md
+  - Infra:
+    - Automation: infra/automation.md
+    - Test Configurations: infra/test-configurations.md
+  - Project:
+    - Analyzers: project/analyzers.md
+    - API Review Process: project/api-review-process.md
+    - Branching Guide: project/branching-guide.md
+    - Breaking Change Process: project/breaking-change-process.md
+    - Copyright: project/copyright.md
+    - Dogfooding: project/dogfooding.md
+    - Dotnet Filenames: project/dotnet-filenames.md
+    - Dotnet Standards: project/dotnet-standards.md
+    - Garbage Collector: project/garbage-collector-guidelines.md
+    - Glossary: project/glossary.md
+    - Issue Guide: project/issue-guide.md
+    - JIT Testing: project/jit-testing.md
+    - Library Servicing: project/library-servicing.md
+    - Linux Performance Tracing: project/linux-performance-tracing.md
+    - List of Diagnostics: project/list-of-diagnostics.md
+    - Performance Guidelines: project/performance-guidelines.md
+    - Profiling API Status: project/profiling-api-status.md
+    - Public Signing: project/public-signing.md
+    - Repo Organization: project/repo-organization.md
+    - Strong Name Signing: project/strong-name-signing.md
+    - Updating JIT Interface: project/updating-jitinterface.md
+    - Versioning: project/versioning.md
+    - Writing Tests: project/writing-tests.md
+  - Illink Tool:
+    - Readme: tools/illink/README.md
+    - Custom Steps: tools/illink/custom-steps.md
+    - Data Formats: tools/illink/data-formats.md
+    - Error Codes: tools/illink/error-codes.md
+    - Illink Options: tools/illink/illink-options.md
+    - Illink Tasks: tools/illink/illink-tasks.md
+    - Methods Kept By Interface: tools/illink/methods-kept-by-interface.md
+    - Optimizations: tools/illink/optimizations.md
+    - Serialization: tools/illink/serialization.md
   - Статьи CoreCLR: deep-dive-blog-posts.md 
   - Правила оформления PR: issues-pr-management.md
