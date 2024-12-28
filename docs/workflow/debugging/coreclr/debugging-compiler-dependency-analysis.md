@@ -1,57 +1,50 @@
-# Debugging Compiler Dependency Analysis
+# Анализ зависимостей компилятора отладки
 
-* [Dependency Graph Viewer](#dependency-graph-viewer)
-  * [Graphs View](#graphs-view)
-  * [Dependency Graph View](#dependency-graph-view)
-  * [Single Node Exploration](#single-node-exploration)
-* [Why DGML](#why-dgml)
+Техника заключается в том, чтобы определить, какая нода отсутствует в графе или ошибочно присутствует в графике. Далее нужно изменить логику анализа зависимостей для корректировки графика. Эта глава описывает различные способы отладки для выявления ошибок.
 
-The general technique is to identify what node is missing from the graph, or is erroneously present in the graph, and change the dependency analysis logic to adjust the graph. This document describes the various ways of debugging to identify what's happening.
+Техники анализа для графика зависимостей:
 
-Analysis techniques for the dependency graph:
+1. Используйте инструмент _DependencyGraphViewer_ (если работаете на Windows). Этот инструмент находится в  папке `src/coreclr/tools/aot/DependencyGraphViewer`
+      + Это единственный инструмент, чтобы исследовать граф и одновременно работать с отладкой компилятора.
+      + В настоящее время инструмент доступен только для Windows из-за использования WinForms, но можно создать и инструмент на основе командной строки.
+      + График зависимостей не поддерживает работу с несколькими инструментами ведения журналов, поэтому убедитесь, что _IlcGenerateDgmlFile_ не установлен. Также _ILCompiler_ не должен быть вызван с включенной генерацией _DGML_.
+2. Передайте параметры командной строки компилятору для генерации файла `dependency graph DGML`. Это создаст те же данные, которые можно просмотреть и в инструменте, но в текстовом формате XML. В будущем файлы XML возможно могут быть загружены в инструмент просмотра.
+3. Используйте инструмент анализ зависимостей компилятора. Это может быть необходимо в случаях, когда инструмент просмотра не может предоставить достаточной информации о том, почему график структурирован именно так.
 
-* Use the _DependencyGraphViewer_ tool (if running on Windows). This tool is located in `src/coreclr/tools/aot/DependencyGraphViewer`
-  * This is the only convenient way to examine the graph while also simultaneously debugging the compiler.
-  * While this is currently Windows only due to use of _WinForms_, it would be fairly straightforward to make a command line based tool.
-  * Dependency graph does not support multiple simultaneous logging facilities, so make sure that you do not set _IlcGenerateDgmlFile_ or invoke _ILCompiler_ with the _DGML_ generation turned on.
-* Pass command line switches to the compiler to generate a _dependency graph DGML_ file. This will produce the same data that is viewable in the viewer tool, but in a textual XML format.
-  * Future efforts may make the XML file loadable by the viewer tool.
-* Instrument the compiler dependency analysis. (This may be necessary in cases where the viewer is unable to provide sufficient information about why the graph is structured as it is.)
+## Просмотр графика зависимостей
 
-## Dependency Graph Viewer
-
-This application allows viewing the dependency graph produced by the AOT compilation.
+Это приложение позволяет просматривать график зависимостей, который создан при AOT-компиляции.
 
 <!-- TODO: Add an example. -->
-Usage instructions:
+Инструкции по использованию:
 
-1. Launch the process as an administrator.
-2. Run the compiler. The compiler can be run to completion, or stopped.
-3. Explore through the graph.
+1. Запустите процесс от имени администратора.
+2. Запустите компилятор. Компилятор может быть остановлен.
+3. Исследуйте график.
 
-### Graphs View
+### Просмотр графиков
 
-* Choose one of the graphs that appears in the Dependency Graphs view to explore. As compilers execute, new graphs will automatically appear here.
-* The set of graphs loaded into the process is limited by available memory space. To clear the used memory, close all windows of the application.
+* Выберите один из графиков, которые появляются в списке _Dependency Graphs_. По мере работы компиляторов новые графики будут автоматически добавляться в список.
+* Список графиков ограничен доступным объемом памяти. Чтобы очистить использованную память, закройте все окна приложения.
 
-### Dependency Graph View
+### Просмотр графиков зависимостей
 
-* In the Dependency Graph View, enter a regular expression in the text box, and then press `Filter`. This will display a list of the nodes in the graph which have names that match the regular expression.
-* Commonly, if there is an object file symbol associated with the node, it should be used as part of the regular expression. See the various implementations of `GetName` in the compiler for naming behavior.
-* Additionally, the event source marking mode assigns an _id_ to each node, and that is found as the mark object on the node. So, if a specific _id_ is known, just type that in, and it will appear in the window. This is for use when using this tool in parallel with debugging the compiler.
+* В разделе _Dependency Graph View_ нужно ввести регулярное выражение в текстовое поле, а затем нажмите `Filter`. Далее отобразиться список с нодами в графике, имена которых соответствуют заданному регулярному выражению.
+* Если нода связана с символом объектного файла, такой символ быть использован как часть регулярного выражения. Для информации о наименовании смотрите реализацию `GetName` в компиляторе.
+* Кроме того, режим маркировки источника событий (event source marking mode) присваивает каждой ноде ID, который можно найти на маркировке объекта. Таким образом, если известен конкретный id, просто введите его, и он появится в окне. Такой подход используется при работе с этим инструментом параллельно с отладкой компилятора.
 
-### Single Node Exploration
+### Исследование ноды
 
-* Once the interesting node(s) have been identified in the dependency graph window, select one of them, and then press `Explore`.
-* In the _Node Explorer_ window, the Dependent nodes (the ones which depend on the current node) are the ones displayed above, and the Dependee nodes (the ones that this node depends on) are displayed below. Each node in the list is paired with a textual reason as to why that edge in the graph exists.
-* Select a node to explore further and press the corresponding button to make it happen.
+* Как только нужные ноды будут представлены в списке, выберите один из них и нажмите `Explore`.
+* Вкладка _Node Explorer_ отображает ноды, которые зависят от текущей ноды, в разделе `Dependent Nodes` сверху. Ноды, от которых зависит текущая нода, отображаются в разделе `Dependee Nodes` снизу. Каждая нода в списках имеет текстовое описание в графике.
+* Выберите ноду для дальнейшего анализа и нажмите на соответствующую кнопку.
 
-## Why DGML
+## Использование DGML
 
-This tool can be used to visualize paths from a node of interest to the roots. To use it, pass command line option to the compiler to generate the DGML file (`--dgmllog name_of_output_file`) and then use this tool to find the path to the root. If you're looking at an optimized NativeAOT compilation, `--scandgmllog` might be preferable since it will have more details.
+Этот инструмент можно использовать для визуализации путей от нужной ноды к корню (root). Для начала работы с инструментом, передайте параметр командной строки компилятору для генерации файла DGML (`--dgmllog имя_выходного_файла`), а затем используйте этот инструмент, чтобы найти путь к корню. Для оптимизированной компиляции NativeAOT предпочтительнее использовать `--scandgmllog`, так как он будет содержать больше деталей.
 
-The input to the tool is the DGML file and name of a node of interest. The output is the list of reasons why that node was included.
+Входными данными для инструмента являются файл DGML и имя нужной ноды. Выходными данными являются список причин, по которым нода была предоставлена.
 
-This tool located in folder `src/coreclr/tools/aot/WhyDgml`
+Этот инструмент находится в папке `src/coreclr/tools/aot/WhyDgml`
 
-See <https://github.com/dotnet/corert/pull/7962> for example of usage and output.
+Пример использования инструмента см. [по этой ссылке](https://github.com/dotnet/corert/pull/7962).

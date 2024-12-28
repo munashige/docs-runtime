@@ -92,7 +92,7 @@ nav:
       - CoreCLR: 
         - Отладка CoreCLR: workflow/debugging/coreclr/debugging-runtime.md
         - Отладка компиляторов AOT: workflow/debugging/coreclr/debugging-aot-compilers.md
-        - Анализ зависимостей компилятора отладки: workflow/debugging/coreclr/debugging-compiler-dependency-analysis.md 
+        - Анализ зависимостей компилятора: workflow/debugging/coreclr/debugging-compiler-dependency-analysis.md 
       - Библиотеки:
         - Инструкции для Unix: workflow/debugging/libraries/unix-instructions.md
         - Инструкции для Windows: workflow/debugging/libraries/windows-instructions.md
