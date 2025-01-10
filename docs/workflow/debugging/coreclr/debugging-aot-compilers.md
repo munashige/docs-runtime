@@ -174,8 +174,8 @@ Emitting R2R PE file: c:\git2\runtime\artifacts\tests\coreclr\windows.x64.Debug\
 devenv /debugexe C:\git2\runtime\.dotnet\dotnet.exe "c:\git2\runtime\artifacts\tests\coreclr\windows.x64.Debug\Tests\Core_Root\crossgen2\crossgen2.dll" @"c:\git2\runtime\artifacts\tests\coreclr\windows.x64.Debug\jit\Directed\Arrays\Complex1\\Complex1.dll.rsp"   -r:c:\git2\runtime\artifacts\tests\coreclr\windows.x64.Debug\jit\Directed\Arrays\Complex1\IL-CG2\*.dll --print-repro-instructions --singlemethodtypename "Complex_Array_Test,Complex1" --singlemethodname Main --singlemethodindex 1 --codegenopt JitOrder=1 --targetarch arm64
 ```
 
-Это запустит отладчик Visual Studio с решением, настроенным для отладки процесса dotnet.exe. По умолчанию это решение будет отлаживать только нативный код процесса. Чтобы отлаживать управляемые компоненты, отредактируйте свойства решения и установите  `Debugger Type` на `Managed (.NET Core, .NET 5+)` или `Mixed (.NET Core, .NET 5+)`.
+Далее запустится отладчик Visual Studio с решением, настроенным для отладки процесса dotnet.exe. По умолчанию это решение будет отлаживать только нативный код процесса. Чтобы отлаживать управляемые компоненты, отредактируйте свойства решения и установите  `Debugger Type` на `Managed (.NET Core, .NET 5+)` или `Mixed (.NET Core, .NET 5+)`.
 
 ## Отладка графа компиляции
 
-AOT-компиляция управляется графом зависимостей. Если вам нужно устранить неполадки в графе зависимостей (чтобы выяснить, почему что-то было или не было сгенерировано), следуйте [этому руководству](debugging-compiler-dependency-analysis.md).
+AOT-компиляция управляется графиком зависимостей. Если вам нужно устранить неполадки в графике зависимостей (чтобы выяснить, почему что-то было или не было сгенерировано), следуйте [этому руководству](debugging-compiler-dependency-analysis.md).
