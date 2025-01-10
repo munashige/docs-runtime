@@ -1,33 +1,33 @@
-# Debugging Libraries with Visual Studio Code
+# Отладка библиотек с помощью Visual Studio Code
 
-- Install [Visual Studio Code](https://code.visualstudio.com/)
-- Install the [C# Extension](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp)
-- Optionally install the [C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit)
-- Open the folder containing the source you want to debug in VS Code - i.e., if you are debugging a test failure in System.Net.Sockets, open `runtime/src/libraries/System.Net.Sockets`
-- Open the debug window: `ctrl-shift-D` or click on the button on the left
-- Click "create a launch.json file", select the option that includes `.NET Core` from the selection dropdown
-- In the ".NET Core Launch (console)" `launch.json` configuration file make the following changes:
-  - delete the `preLaunchTask` property
-  - set `program` to the full path to `dotnet` in the artifacts/bin/testhost directory.
-    - something like `{full path to your dotnet/runtime directory}/artifacts/bin/testhost/net{Version}-{OS}-{Configuration}-{Architecture}/dotnet`.
-  - set `cwd` to the test bin directory.
-    - using the System.Net.Sockets example, it should be something like `{full path to your dotnet/runtime directory}/artifacts/bin/System.Net.Sockets.Tests/Debug/net{Version}-{OS}`. Exact naming/structure might differ based on which library you are debugging.
-  - set `args` to the command line arguments to pass to the test
-    - something like: `[ "exec", "--runtimeconfig", "{TestProjectName}.runtimeconfig.json", "xunit.console.dll", "{TestProjectName}.dll", "-notrait", ... ]`, where TestProjectName would be `System.Net.Sockets.Tests`
-    - to run a specific test, you can append something like: `[ "-method", "System.Net.Sockets.Tests.{ClassName}.{TestMethodName}", ...]`
-    - to find the exact arguments to replicate a test run you are trying to debug, run the test command in a terminal and look for output starting with `exec`. Copy all arguments and reformat them in `launch.json` as shown above.
-      - ex. running `dotnet build /t:Test` in `runtime/src/libraries/System.Net.Sockets/tests/FunctionalTests` has terminal output including `"exec --runtimeconfig System.Net.Sockets.Tests.runtimeconfig.json ... -notrait category=failing"`, which can be reformatted into `["exec","--runtimeconfig","System.Net.Sockets.Tests.runtimeconfigjson", ... ,"-notrait","category=failing"]`
-      - similarly, running `dotnet build /t:Test /p:xUnitMethodName=System.Net.Sockets.Tests.{ClassName}.{TestMethodName}` will get you the args needed to debug a specific test
-- Set a breakpoint and launch the debugger (running ".NET Core Launch (console)"), inspecting variables and call stacks will now work.
-- Optionally, save the launch settings in a [workspace](https://code.visualstudio.com/docs/editor/workspaces) file. The advantage is that it doesn't necessarily need to reside in `.vscode` in the currently open directory, so it's much easier to preserve during `git clean -dfx`.
+1. Установите [Visual Studio Code](https://code.visualstudio.com/)
+2. Установите [расширение C#](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp)
+3. Если необходимо, установите [C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit)
+4. Откройте папку, содержащую исходный код, который вы хотите отлаживать в VS Code, например, если вы отлаживаете сбой теста в System.Net.Sockets, откройте `runtime/src/libraries/System.Net.Sockets`
+5. Откройте окно отладки:  `ctrl-shift-D` или нажмите на соответствующую кнопку на панели слева.
+6. Нажмите "create a launch.json file"выберите опцию, которая включает `.NET Core` из выпадающего списка.
+7. В файле конфигурации `launch.json` для ".NET Core Launch (console)" внесите следующие изменения:
+    1. Удалить свойство `prelaunchtask`
+    2. Установить `program` на полный путь к` dotnet` в папке `artifacts/bin/testhost`
+        + например `{полный путь к dotnet/runtime directory}/artifacts/bin/testhost/net{Version}-{OS}-{Configuration}-{Architecture}/dotnet`.
+    3. Установить `cwd` на директорию бинарных файлов теста.
+        + например, для System.Net.Sockets: `{полный путь к dotnet/runtime directory}/artifacts/bin/System.Net.Sockets.Tests/Debug/net{Version}-{OS}`. Точное наименование или структура могут отличаться в зависимости от библиотеки, с которой вы работаете.
+    4. Установить `args` на аргументы командной строки, которые нужно передать тесту:
+        - например: `[ "exec", "--runtimeconfig", "{TestProjectName}.runtimeconfig.json", "xunit.console.dll", "{TestProjectName}.dll", "-notrait", ... ]`, здесь TestProjectName будет представлять `System.Net.Sockets.Tests`;
+        - чтобы запустить конкретный тест, вы можете добавить следующее: `[ "-method", "System.Net.Sockets.Tests.{ClassName}.{TestMethodName}", ...]`;
+        - чтобы найти точные аргументы для воспроизведения запуска теста, который вы пытаетесь отладить, выполните команду теста в терминале и ищите вывод, начинающийся с `exec`. Скопируйте все аргументы и отформатируйте их в `launch.json` , как показано выше;
+          - например, команда `dotnet build /t:Test` в папке `runtime/src/libraries/System.Net.Sockets/tests/FunctionalTests` выводит в терминал `"exec --runtimeconfig System.Net.Sockets.Tests.runtimeconfig.json ... -notrait category=failing"`, что можно отформатировать в следующее: `["exec","--runtimeconfig","System.Net.Sockets.Tests.runtimeconfigjson", ... ,"-notrait","category=failing"]`
+          - аналогично, комнда `dotnet build /t:Test /p:xUnitMethodName=System.Net.Sockets.Tests.{ClassName}.{TestMethodName}` возвращает аргументы, которые необходимы для отладки конкретного теста.
+8. Установите breakpoint и запустите отладчик (выбрав ".NET Core Launch (console)"). Запустится инспекция переменных и стеков вызовов (call stacks).
+9. Если необходимо, сохраните настройки запуска в файле [workspace](https://code.visualstudio.com/docs/editor/workspaces). Файл не обязательно должен находиться в `.vscode` и в текущей открытой папке, поэтому его гораздо проще сохранить при помощи `git clean -dfx`.
 
-## Debugging Libraries with Visual Studio Code running on Mono
+## Отладка библиотек с помощью VS Code на Mono
 
-To debug the libraries on a "desktop" platform (Linux/Mac/Windows, not WebAssembly, or iOS or Android) running on Mono runtime, follow the instructions below.
-See also [Android debugging](../mono/android-debugging.md) and [WebAssembly debugging](../mono/wasm-debugging.md)
+Чтобы отлаживать библиотеки на "десктопной" ОС-и (Linux/Mac/Windows, не WebAssembly, iOS или Android), которая будет работать с Mono runtime, следуйте инструкциям ниже.
+Также смотрите главу [отладка Android](../mono/android-debugging.md) и [отладка WebAssembly](../mono/wasm-debugging.md)
 
-- Install the VS Code [Mono Debugger (`ms-vscode.mono-debug`)](https://marketplace.visualstudio.com/items?itemName=ms-vscode.mono-debug) extension
-- Create a `launch.json` file configuration with type `mono`
+- Установите [расширение Mono Debugger (`ms-vscode.mono-debug`)](https://marketplace.visualstudio.com/items?itemName=ms-vscode.mono-debug) для VS Code 
+- Создайте файл `launch.json` с типом `mono`:
 
    ```json
    {
@@ -44,15 +44,15 @@ See also [Android debugging](../mono/android-debugging.md) and [WebAssembly debu
    }
    ```
 
-- start a test from the command line, setting the `MONO_ENV_OPTIONS` environment variable to configure the debugger:
+- Запустите тест из командной строки, установив переменную окружения `MONO_ENV_OPTIONS`, чтобы настроить отладчик:
 
   ```sh
   DOTNET_REMOTEEXECUTOR_SUPPORTED=0 MONO_ENV_OPTIONS="--debug --debugger-agent=transport=dt_socket,address=127.0.0.1:1235,server=y,suspend=y" ./dotnet.sh build /t:Test /p:RuntimeFlavor=Mono src/libraries/System.Buffers/tests
   ```
 
-  Note that you also have to set `DOTNET_REMOTEEXECUTOR_SUPPORTED=0` otherwise multiple instances of the runtime will attempt to listen on the same port.
+  Обратите внимание, что нужно установить `DOTNET_REMOTEEXECUTOR_SUPPORTED=0`, иначе несколько экземпляров runtime будут слушать один и тот же порт.
 
-  On Windows, do not pass `--debug` in `MONO_ENV_OPTIONS`.
+  При работе на Windows не передавайте `--debug` в `MONO_ENV_OPTIONS`.
 
-- Set a breakpoint in a test in VS Code and start debugging in the "Attach to Mono" configuration.
-- Note that Mono does not stop on first chance exceptions and xunit catches all exceptions, so if a test is throwing, the debugger won't break on an uncaught exception.
+- Установите breakpoint тестов в VS Code и начните отладку в конфигурации "Attach to Mono".
+- Обратите внимание, что Mono не останавливается на first chance exceptions. xUnit перехватывает все исключения, и поэтому, если тест вызывает такое исключение, отладчик не остановится на необработанном исключении.
