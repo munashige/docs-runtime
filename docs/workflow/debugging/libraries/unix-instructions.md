@@ -1,37 +1,37 @@
-Debugging core .NET libraries on Unix
-=====================================
+Отладка библиотек core .NET на Unix
+===================================
 
-.NET can be debugged on unix using both lldb and Visual Studio Code.
+.NET можно отлаживать на Unix с помощью _lldb_ и _Visual Studio Code_.
 
-## Using lldb and SOS
+## SOS и lldb
 
-- Install SOS and lldb. See https://github.com/dotnet/diagnostics/blob/main/documentation/sos.md and https://learn.microsoft.com/dotnet/core/diagnostics/dotnet-sos for setup instructions.
-- Run the test using msbuild at least once with `/t:Test`.
+- Установите SOS и lldb. См. [инструкции по настройке](https://github.com/dotnet/diagnostics/blob/main/documentation/sos.md) и [документацию dotnet-sos](https://learn.microsoft.com/dotnet/core/diagnostics/dotnet-sos).
+- Запустите тест с помощью msbuild хотя бы один раз с параметром `/t:Test`.
 
-## Debugging core dumps with lldb
+## Отладка дампов памяти с помощью lldb
 
-It is also possible to debug .NET crash dumps using lldb and SOS. In order to do this, you need all of the following:
+SOS и lldb могут быть использованы для отладки crash-дампов .NET. Для этого понадобится следующее:
 
-- The crash dump file.
-- On Linux, there is an utility called `createdump` (see [doc](../../../design/coreclr/botr/xplat-minidump-generation.md "doc")) that can be setup to generate core dumps when a managed app throws an unhandled exception or faults.'
+- Файл дампа памяти.
+- На Linux понадобится утилита под названием `createdump` ([документация](../../../design/coreclr/botr/xplat-minidump-generation.md)), которую можно настроить для генерации дампов памяти, когда управляемое приложение вызывает необработанное исключение или сбой.
 
-There are instructions for installing lldb and SOS [here](https://github.com/dotnet/diagnostics/blob/main/documentation/sos.md).
+Инструкции по установке lldb и SOS можно найти [здесь](https://github.com/dotnet/diagnostics/blob/main/documentation/sos.md).
 
-Once you have everything listed above, you are ready to start debugging. You need to specify an extra parameter to lldb in order for it to correctly resolve the symbols for libcoreclr.so. Use a command like this:
+Если все перечисленное выше установлено, можно начинать отладку. Также нужно указать дополнительный параметр для lldb, чтобы он правильно разрешал символы для libcoreclr.so. Для этого используйте следующую команду:
 
 ```
 lldb-3.9 -O "settings set target.exec-search-paths <runtime-path>" --core <core-file-path> <host-path>
 ```
 
-- `<runtime-path>`: The path containing libcoreclr.so.dbg, as well as the rest of the runtime and framework assemblies.
-- `<core-file-path>`: The path to the core dump you are attempting to debug.
-- `<host-path>`: The path to the dotnet or corerun executable, potentially in the `<runtime-path>` folder.
+- `<runtime-path>`: Путь, который содержит `libcoreclr.so.dbg` и остальные ассамблеи runtime и фреймворка.
+- `<core-file-path>`: Путь к дампу памяти, который нужно отладить.
+- `<host-path>`: Путь к исполняемому файлу dotnet или corerun, потенциально находящемуся в папке `<runtime-path>`.
 
-lldb should start debugging successfully at this point. You should see stacktraces with resolved symbols for libcoreclr.so. At this point you can begin using SOS commands provided you've set it up as described in the links.
+На этом этапе lldb должен успешно начать отладку. Вы должны увидеть трассировки стека (stracktraces) с разрешенными символами для `libcoreclr.so`. Теперь вы можете начать использовать команды SOS, если вы настроили их, как описано в ссылках.
 
-Also see this [link](https://github.com/dotnet/diagnostics/blob/main/documentation/debugging-coredump.md) in the diagnostics repo.
+Для получения дополнительных сведений о coredump см. [эту ссылку](https://github.com/dotnet/diagnostics/blob/main/documentation/debugging-coredump.md).
 
-##### Example
+##### Пример
 
 ```
 lldb-3.9 -O "settings set target.exec-search-paths /home/parallels/Downloads/System.Drawing.Common.Tests/home/helixbot/dotnetbuild/work/2a74cf82-3018-4e08-9e9a-744bb492869e/Payload/shared/Microsoft.NETCore.App/$(ProductVersion)/" --core /home/parallels/Downloads/System.Drawing.Common.Tests/home/helixbot/dotnetbuild/work/2a74cf82-3018-4e08-9e9a-744bb492869e/Work/f6414a62-9b41-4144-baed-756321e3e075/Unzip/core /home/parallels/Downloads/System.Drawing.Common.Tests/home/helixbot/dotnetbuild/work/2a74cf82-3018-4e08-9e9a-744bb492869e/Payload/shared/Microsoft.NETCore.App/$(ProductVersion)/dotnet
