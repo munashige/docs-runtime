@@ -1,52 +1,49 @@
-Debugging core .NET libraries on Windows
-========================================
+Отладка core-библиотек на Windows
+=================================
 
-You can Debug .NET via Visual Studio or WinDBG.
+Отладка core-библиотек на Windows производится с помощью _Visual Studio_ или _WinDBG_.
 
-For Visual Studio debugging, follow the instructions at [Debugging tests in Visual Studio](../../testing/visualstudio.md) to run and debug tests.
-For bugs that cannot be reproduced within Visual Studio (certain low-probability race conditions, SafeHandle life-time problems, etc) you will need to use WinDBG.
+Для работы в Visual Studio следуйте инструкциям в [этой главе](../../testing/visualstudio.md), чтобы запустить и начать отладку с тестами. Для ошибок, которые не удается воспроизвести в Visual Studio (проблемы с жизненным циклом SafeHandle, race conditions и т. д.), потребуется использовать WinDBG.
 
-## Required Software
 
-WinDBG free download:
+## Необходимое программное обеспечение
 
-* [WDK and WinDBG downloads](https://msdn.microsoft.com/en-us/windows/hardware/hh852365.aspx)
+* [Скачать WDK и WinDBG](https://msdn.microsoft.com/en-us/windows/hardware/hh852365.aspx)
 
-Note: You can select the Standalone Debugging Tools for Windows or download only WinDBG via the WDK.
+_Примечание_: Можно выбрать только инструменты отладки (debugging tools) для Windows или скачать WinDBG отдельно через WDK.
 
-## Prerequisites to Debugging with WinDBG
+## Предварительные условия для работы с WinDBG
 
-1. Build the entire repository. This ensures that all packages are downloaded and that you have up-to-date symbols.
+1. Сначала необходимо собрать весь репозиторий. Таким образом, все нужные пакеты будут успешно загружены.
 
-2. Install WinDBG as post-mortem debugger
-As Administrator:
+2. Установите WinDBG в качестве отладчика _post-mortem_. Запустите от имени администратора:
 
 ```
 windbg -I
 ```
 
-You may need to do this for both x64 and x86 versions.
-Any application that crashes should now automatically start a WinDBG session.
+Действия выше возможно потребуются как для x64, так и для x86 архитектур.
+Любое приложение, которое закрывается с ошибкой, должно автоматически запускать сессию WinDBG.
 
 ## Debugging tests
-To run a single test from command line:
+Чтобы запустить один тест из командной строки:
 
-* Locate the test binary folder based on the CSPROJ name.
+1. Найдите папку с бинарными файлами с тем же именем, что и проект CSPROJ.
 
-For example: `src\System.Net.Sockets\tests\Functional\System.Net.Sockets.Tests.csproj` will build and output binaries at  `bin\tests\windows.AnyCPU.Debug\System.Net.Sockets.Tests\netcoreapp1.0`.
+Например: `src\System.Net.Sockets\tests\Functional\System.Net.Sockets.Tests.csproj` выведет бинарные файлы в следующей директории:  `bin\tests\windows.AnyCPU.Debug\System.Net.Sockets.Tests\netcoreapp1.0`.
 
-* Execute the test
+2. Запустите тесты.
 
-Assuming that your repo is at `C:\root`:
+Например, если репозиторий находится в `C:\root`:
 
 ```
 cd C:\root\bin\tests\windows.AnyCPU.Debug\System.Net.Sockets.Tests\netcoreapp1.0
 C:\root\bin\tests\windows.AnyCPU.Debug\System.Net.Sockets.Tests\netcoreapp1.0\CoreRun.exe xunit.console.dll System.Net.Sockets.Tests.dll -xml testResults.xml -notrait category=nonwindowstests -notrait category=OuterLoop -notrait category=failing
 ```
 
-* If the test crashes or encounters a `Debugger.Launch()` method call, WinDBG will automatically start and attach to the `CoreRun.exe` process
+3. Если тест вернет ошибку или вызов метода `Debugger.Launch()`, WinDBG автоматически запустится и подключится к процессу `CoreRun.exe`.
 
-The following commands will properly configure the debugging extension and fix symbol and source-code references:
+Следующие команды корректно настроят расширение для отладки и исправят ссылки на символы, а также исходный код:
 
 ```
 .symfix
@@ -55,27 +52,27 @@ The following commands will properly configure the debugging extension and fix s
 !load C:\root\packages\runtime.win7-x64.Microsoft.NETCore.Runtime.CoreCLR\<version>\tools\sos
 ```
 
-_Important_: Pass in the correct path to your SOS extension discovered during the Prerequisites, step 2.
+_Важно_: Укажите правильный путь к вашему расширению SOS на этапе выполнения предварительных условий (шаг 2).
 
-Documentation on how to use the SOS extension is available on [MSDN](https://msdn.microsoft.com/en-us/library/bb190764\(v=vs.110\).aspx).
+Документация по использованию SOS доступна на сайте [MSDN](https://msdn.microsoft.com/en-us/library/bb190764\(v=vs.110\).aspx).
 
-For quick reference, type the following in WinDBG:
+Для быстрой справки введите следующее в WinDBG:
 
 ```
 0:000> !sos.help
 ```
 
-## Traces
+## Трассировка
 
-In Windows, EventSource generated traces are collected via ETW using either logman or PerfView.
+В Windows трассировки, сгенерированные EventSource, собираются через ETW с использованием logman или PerfView.
 
-### Using Logman
-[Logman](https://technet.microsoft.com/en-us/library/bb490956.aspx) ships with Windows and doesn't need to be downloaded or installed.
-Given that the ETW providers are dynamically generated and registered by .Net, you need to use the GUIDs and not the names whenever logman is used.
+### Использование Logman
+[Logman](https://technet.microsoft.com/en-us/library/bb490956.aspx) поставляется с Windows и не требует загрузки или установки.
+Поскольку ETW-провайдеры динамически генерируются и регистрируются в .NET, нужно использовать GUID, а не имена, которые используется в logman.
 
-#### Trace a single provider
+#### Трассировка одного провайдера
 
-The following example shows how to trace Sockets:
+Ниже приведен пример трассировки Sockets:
 
 ```
     logman -start SocketTrace -o %SYSTEMDRIVE%\sockets.etl -p "{e03c0352-f9c9-56ff-0ea7-b94ba8cabc6b}" -ets
@@ -85,11 +82,11 @@ The following example shows how to trace Sockets:
     logman -stop SocketTrace -ets
 ```
 
-Logs are going to be placed in %SYSTEMDRIVE%\sockets.etl.
+Логи будут сохранены в `%SYSTEMDRIVE%\sockets.etl`.
 
-#### Trace multiple providers
+#### Трассировка нескольких провайдеров
 
-1. Create a file called providers.txt with the following contents:
+1. Создайте файл `providers.txt` со следующим кодом:
 
     ```
     "{e03c0352-f9c9-56ff-0ea7-b94ba8cabc6b}"
@@ -97,77 +94,78 @@ Logs are going to be placed in %SYSTEMDRIVE%\sockets.etl.
     "{bdd9a83e-1929-5482-0d73-2fe5e1c0e16d}"
     ```
 
-2. Create the trace
+2. Создайте трассировку:
 
     ```
     logman create trace SystemNetTrace -o sn.etl -pf providers.txt
     ```
 
-3. Start the trace
+3. Запустите трассировку:
 
     ```
     logman start SystemNetTrace
     ```
 
-4. Repro the issue
-5. Stop the trace
+4. Воспроизведите проблему.
+5. Остановите трассировку:
 
     ```
     logman stop SystemNetTrace
     ```
 
-   The trace can be restarted from step 3.
+   Трассировку можно перезапустить с шага 3.
 
-6. Remove the trace profile if it's not going to be reused
+6. Удалите профиль трассировки, если он не будет использоваться повторно:
     ```
     logman delete SystemNetTrace
     ```
 
-7. The logs are placed in sn.etl.
+7. Логи будут сохранены в sn.etl.
 
-### Using PerfView
+### Использование PerfView
 
-1. Install [PerfView](https://github.com/Microsoft/perfview/blob/master/documentation/Downloading.md)
-2. Run PerfView as Administrator
-3. Press Alt+C to collect events
-4. Disable all other collection parameters
-5. Add Additional Providers (see below - Important: keep the "*" wildcard before the names.)
+1. Установите [PerfView](https://github.com/Microsoft/perfview/blob/master/documentation/Downloading.md).
+2. Запустите `PerfView` от имени администратора.
+3. Нажмите `Alt+C` для сбора событий..
+5. Добавьте дополнительные провайдеры (см. ниже).
 
-![PerfView example](perfview_example.gif)
+_Важно_: используйте символ `*` перед указанными именами.
 
-### Built-in EventSource tracing
+![Пример PerfView](perfview_example.gif)
 
-The following EventSources are built-in to the .NET platform. The ones that are not marked as [__TestCode__] can be enabled in production scenarios for log collection.
+### Встроенная трассировка EventSource
+
+Следующие EventSource встроены в платформу .NET. Те, которые не помечены как [TestCode], могут быть включены в производственных сценариях для сбора логов.
 
 #### Global
-* `*System.Diagnostics.Eventing.FrameworkEventSource {8E9F5090-2D75-4d03-8A81-E5AFBF85DAF1}`: Global EventSource used by multiple namespaces.
+* `*System.Diagnostics.Eventing.FrameworkEventSource {8E9F5090-2D75-4d03-8A81-E5AFBF85DAF1}`: Глобальный `EventSource`, который используется несколькими пространствами имен.
 
 #### System.Collections
-* `*System.Collections.Concurrent.ConcurrentCollectionsEventSource {35167F8E-49B2-4b96-AB86-435B59336B5E}`: Provides an event source for tracing Coordination Data Structure collection information.
+* `*System.Collections.Concurrent.ConcurrentCollectionsEventSource {35167F8E-49B2-4b96-AB86-435B59336B5E}`: Предоставляет источник событий для трассировки информации о коллекциях `Coordination Data Structure`.
 
 #### System.Linq
-* `*System.Linq.Parallel.PlinqEventSource {159eeeec-4a14-4418-a8fe-faabcd987887}`: Provides an event source for tracing PLINQ information.
+* `*System.Linq.Parallel.PlinqEventSource {159eeeec-4a14-4418-a8fe-faabcd987887}`: Предоставляет источник событий для трассировки информации о `PLINQ`.
 
-#### System.Net namespaces
+#### Пространства имен System.Net
 
-Helper scripts are available at https://github.com/dotnet/runtime/tree/main/src/libraries/Common/tests/Scripts/Tools. Run `net_startlog.cmd` as Administrator, run the application, then run `net_stoplog.cmd`. Open the `.etl` file with PerfView.
+Вспомогательные скрипты доступны по этому [адресу](https://github.com/dotnet/runtime/tree/main/src/libraries/Common/tests/Scripts/Tools). Запустите `net_startlog.cmd` от имени администратора. Далее запустите приложение и выполните `net_stoplog.cmd`. Откройте файл `.etl` с помощью `PerfView`.
 
-* `*Microsoft-System-Net-Http {bdd9a83e-1929-5482-0d73-2fe5e1c0e16d}`: HTTP-related traces.
-* `*Microsoft-System-Net-Http-WinHttpHandler {b71555b1-9566-5ce3-27f5-98405bbfde9d}`: WinHttpHandler-related traces.
-* `*Microsoft-System-Net-Mail {42c8027b-f048-58d2-537d-a4a9d5ee7038}`: SMTP-related traces.
-* `*Microsoft-System-Net-NameResolution {5f302add-3825-520e-8fa0-627b206e2e7e}`: DNS-related traces.
-* `*Microsoft-System-Net-NetworkInformation {b8e42167-0eb2-5e39-97b5-acaca593d3a2}`: Network configuration-related traces.
-* `*Microsoft-System-Net-Ping {a771ec4a-7260-59ce-0475-db257437ed8c}`: Ping-related traces.
-* `*Microsoft-System-Net-Primitives {a9f9e4e1-0cf5-5005-b530-3d37959d5e84}`: Traces related to core networking-related types.
-* `*Microsoft-System-Net-Requests {3763dc7e-7046-5576-9041-5616e21cc2cf}`: WebRequest-related traces.
-* `*Microsoft-System-Net-Sockets {e03c0352-f9c9-56ff-0ea7-b94ba8cabc6b}`: Sockets-related traces.
-* `*Microsoft-System-Net-Security {066c0e27-a02d-5a98-9a4d-078cc3b1a896}`: Security-related traces.
+* `*Microsoft-System-Net-Http {bdd9a83e-1929-5482-0d73-2fe5e1c0e16d}`: Трассировки, связанные с HTTP.
+* `*Microsoft-System-Net-Http-WinHttpHandler {b71555b1-9566-5ce3-27f5-98405bbfde9d}`: Трассировки, связанные с WinHttpHandler.
+* `*Microsoft-System-Net-Mail {42c8027b-f048-58d2-537d-a4a9d5ee7038}`: Трассировки, связанные с SMTP.
+* `*Microsoft-System-Net-NameResolution {5f302add-3825-520e-8fa0-627b206e2e7e}`: Трассировки, связанные с DNS.
+* `*Microsoft-System-Net-NetworkInformation {b8e42167-0eb2-5e39-97b5-acaca593d3a2}`: Трассировки, связанные с конфигурацией сети.
+* `*Microsoft-System-Net-Ping {a771ec4a-7260-59ce-0475-db257437ed8c}`: Трассировки, связанные с Ping.
+* `*Microsoft-System-Net-Primitives {a9f9e4e1-0cf5-5005-b530-3d37959d5e84}`: Трассировки, связанные с базовыми сетевыми типами.
+* `*Microsoft-System-Net-Requests {3763dc7e-7046-5576-9041-5616e21cc2cf}`: Трассировки, связанные с WebRequest.
+* `*Microsoft-System-Net-Sockets {e03c0352-f9c9-56ff-0ea7-b94ba8cabc6b}`: Трассировки, связанные с сокетами.
+* `*Microsoft-System-Net-Security {066c0e27-a02d-5a98-9a4d-078cc3b1a896}`: Трассировки, связанные с безопасностью.
 
 #### System.Threading
-* `*System.Threading.SynchronizationEventSource {EC631D38-466B-4290-9306-834971BA0217}`: Provides an event source for tracing Coordination Data Structure synchronization information.
-* `*System.Threading.Tasks.TplEventSource {2e5dba47-a3d2-4d16-8ee0-6671ffdcd7b5}`: Provides an event source for tracing TPL information.
-* `*System.Threading.Tasks.Parallel.EventSource`: Provides an event source for tracing TPL information.
-* `*System.Threading.Tasks.Dataflow.DataflowEventSource {16F53577-E41D-43D4-B47E-C17025BF4025}`: Provides an event source for tracing Dataflow information.
+* `*System.Threading.SynchronizationEventSource {EC631D38-466B-4290-9306-834971BA0217}`: Предоставляет источник событий для трассировки информации о синхронизации Coordination Data Structure.
+* `*System.Threading.Tasks.TplEventSource {2e5dba47-a3d2-4d16-8ee0-6671ffdcd7b5}`: Предоставляет источник событий для трассировки информации о TPL.
+* `*System.Threading.Tasks.Parallel.EventSource`: Предоставляет источник событий для трассировки информации о TPL.
+* `*System.Threading.Tasks.Dataflow.DataflowEventSource {16F53577-E41D-43D4-B47E-C17025BF4025}`: Предоставляет источник событий для трассировки информации о Dataflow.
 
-## Notes
-* You can find the test invocation command-line by looking at the logs generated after the `dotnet build /t:test` within the test folder.
+## Примечание
+Команду для вызова теста можно найти в логах, сгенерированных после выполнения `dotnet build /t:test` в папке с тестами.
