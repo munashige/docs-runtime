@@ -2,14 +2,13 @@
 
 Codespaces позволяет вести разработку в Docker-контейнере, который работает в облаке. Можно использовать веб-версию VSCode, а также on-premise версию с расширением [GitHub Codespaces](https://marketplace.visualstudio.com/items?itemName=GitHub.codespaces).
 
-
 ## Создание Codespaces
 
 Репозиторий работает с nightly GitHub Action для сборки кода. Это позволяет сразу начать разработку и тестирование после создания Codespaces, не дожидаясь сборки всего репозитория. После создания машины, репозиторий будет собран с использованием кода в 6 утра по всемирному координированному времени (UTC).
 
-1. Из корневой страницы репозитория нажмите кнопку *<> Code*, а затем выберите вкладку *Codespaces*.
+1. Из корневой страницы репозитория нажмите кнопку _<> Code_, а затем выберите вкладку _Codespaces_.
 
-2. В правом верхнем углу вкладки *Codespaces* нажмите *...* и затем *+ New with options*.
+2. В правом верхнем углу вкладки _Codespaces_ нажмите _..._ и затем _+ New with options_.
 
     ![Configure and create codespace](https://docs.github.com/assets/cb-49317/images/help/codespaces/default-machine-type.png)
 
@@ -17,8 +16,8 @@ Codespaces позволяет вести разработку в Docker-конт
 
     ![Dev container configuration](./codespace-dev-container-configuration.png)
 
-     - Для работы с `библиотеками` выберите `.devcontainer/libraries/devcontainer.json`.
-     - Для работы с  `WASM` выберите `.devcontainer/wasm/devcontainer.json`.
+    - Для работы с `библиотеками` выберите `.devcontainer/libraries/devcontainer.json`.
+    - Для работы с `WASM` выберите `.devcontainer/wasm/devcontainer.json`.
 
 4. Выберите Machine Type. Рекомендуется выбрать опцию `4-core` или выше.
 
@@ -31,14 +30,15 @@ Codespaces позволяет вести разработку в Docker-конт
 Конфигурация Codespaces распределена следующим образом:
 
 1. Папка `.devcontainer` содержит подпапки для каждого сценария разработки:
-    - *Библиотеки*: Используется разработчиками, работающими с `src/libraries`.
-    - *Wasm*: Используется разработчиками, работающими c `browser-wasm`.
-    - *Скрипты*: Содержит скрипты, которые выполняются во время создания Сodespaces. 
-    Здесь находится команда сборки, которая собирает весь репозиторий.
+
+    - _Библиотеки_: Используется разработчиками, работающими с `src/libraries`.
+    - _Wasm_: Используется разработчиками, работающими c `browser-wasm`.
+    - _Скрипты_: Содержит скрипты, которые выполняются во время создания Сodespaces.
+      Здесь находится команда сборки, которая собирает весь репозиторий.
 
 2. Каждая вышеупомянутая подпапка содержит следующие файлы:
-    * Файл `devcontainer.json`, который настраивает Codespaces и содержит настройки для VS Code/ окружения.
-    * Файл для создания Docker-образа.
+    - Файл `devcontainer.json`, который настраивает Codespaces и содержит настройки для VS Code/ окружения.
+    - Файл для создания Docker-образа.
 3. Github Action. Настройте GitHub Action, следуя [этой инструкции](https://docs.github.com/codespaces/prebuilding-your-codespaces/configuring-prebuilds).
 
 Чтобы протестировать изменения в файлах `.devcontainer`, необходимо следовать процессу, описанному в [документации GitHub](https://docs.github.com/codespaces/customizing-your-codespace/configuring-codespaces-for-your-project#applying-changes-to-your-configuration). Таким образом, можно пересобрать Codespaces перед созданием PR.

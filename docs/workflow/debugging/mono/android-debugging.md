@@ -1,8 +1,8 @@
-# Debugging Android runtime issues
+# Отладка проблем с Android Runtime
 
-## Enable verbose runtime logging
+## Включить verbose-логирование
 
-If a `net6.0-android` (or later) C# project is available, adding the following:
+Если доступен С#-проект `net6.0-android` (или новее), добавьте следующий код в файл проекта:
 
 ```xml
  <ItemGroup>
@@ -10,60 +10,54 @@ If a `net6.0-android` (or later) C# project is available, adding the following:
  </ItemGroup>
 ```
 
-with `AndroidEnv.txt`:
+Содержимое файла `AndroidEnv.txt`:
 
 ```
 debug.mono.log=mono_log_level=debug,mono_log_mask=all
 MONO_SDB_ENV_OPTIONS=loglevel=10    # only needed if you're debugging the managed debugger
 ```
 
-Will enable additional Mono runtime logging in the adb log.  This is often
-enough to diagnose issues such as missing assemblies or other loader problems.
+Это включит дополнительное логирование Mono runtime в логах adb. Обычно этого достаточно для диагностики проблем, таких как отсутствующие ассамблеи или другие проблемы с loader.
 
-## Managed Debugging
+## Управляемая отладка
 
-Should work from Visual Studio (Windows)
+Должна работать в Visual Studio (Windows).
 
-## Native debugging
+## Нативная отладка
 
-Install Android Studio.
+Установите Android Studio.
 
-Download the symbols nupkg corresponding to the runtime pack that is used by
-the app.  The runtime pack for the android workload is in a folder like
+Скачайте пакет символов nupkg, который соответствует используемому runtime-у. Runtime для Android находится в папке, например:
 `${DOTNET_ROOT}/packs/Microsoft.NETCore.App.Runtime.Mono.android-x86/6.0.0-rc.1.21451.13`
 
-The symbols are in a package called
-`Microsoft.NETCore.App.Runtime.Mono.android-x86.6.0.0-rc.1.21451.13.symbols.nupkg`
-uploaded to (FIXME: where does the symbols nuget go?).  Extract it to some folder using `unzip` and in the
-`runtimes/android-x86/native/` folder rename the `*.so.dbg` files to `*.so.so`
-(we will need to add the symbols files to Android Studio, but its file picker
-only shows `*.so` extensions)
+Символы находятся в пакете с именем:
+`Microsoft.NETCore.App.Runtime.Mono.android-x86.6.0.0-rc.1.21451.13.symbols.nupkg`. Распакуйте его в какую-либо папку с помощью `unzip`, а в папке
+`runtimes/android-x86/native/` переименуйте файлы `*.so.dbg` в `*.so.so`
+(нужно добавить файлы символов в Android Studio, т.к. файловый менеджер может показывать только файлы с расширением `*.so`).
 
+1. Соберите APK как обычно с помощью `dotnet build` (это создаст `AppName-Signed.apk` в выходной папке).
+2. Запустите эмулятор Android.
+3. Установите приложение на эмулятор с помощью `dotnet build -t:Install`.
+4. Откройте APK в Android Studio с помощью "Profile or Debug APK".
+5. В окне "Project" выберите папку "cpp", затем `libmonosgen-2.0.so`. Далее дважды щелкните `libmonosgen-2.0.so` в папке `libmonosgen-2.0.so`.
+6. В окне "Debug Symbols" нажмите "Add", перейдите к распакованному пакету символов и выберите `libmonosgen-2.0.so.so`.
+7. В разделе "Path Mappings" выберите корневую папку и добавьте локальный путь к git-репозиторию release/6.0, соответствующему пакету. Нажмите "Apply Changes".
+8. Запустите эмулятор или подключите устройство.
+9. В меню выберите `Run > Edit Configurations...` и на вкладке "Debugger" убедитесь, что "Debug Type" установлен на что-то, кроме "Java Only".
+10. Начните отладку.
+11. Теперь у вас должны быть имена функций, локальные переменные, а также возможность пошагово проходить через код на C.
 
-1. Build the APK normally using `dotnet build`, (this will produce a `AppName-Signed.apk` in the output folder)
-2. Start an Android emultator
-3. Install the app on the emulator using `dotnet build -t:Install`
-2. Open the APK in Android Studio with "Profile or Debug APK"
-3. In the "Project" viewer, choose the "cpp" folder, then `libmonosgen-2.0.so` then double-click `libmonosgen-2.0.so` inside the `libmonosgen-2.0.so` folder.
-4. In the "Debug Symbols" view click "Add", navigate to the extracted runtime symbols nuget and select `libmonosgen-2.0.so.so`
-5. In the "Path Mappings" section, select the toplevel folder and add a Local
-   Path to a git checkout of the `release/6.0` tree corresponding to the nuget.  Click Apply Changes.
-6. Start an emulator or connect to a device
-7. On the menu bar select  "Run > Edit Configurations..." and on the "Debugger" tab make sure the "Debug Type" is something other than "Java Only"
-8. Start debugging.
-9. You should now have function names, local variables, as well as stepping through the runtime C code.
+Поскольку вы отлаживаете оптимизированную сборку, возможно, отладчик не сможет отобразить все локальные переменные.
 
-Since you're debugging an optimized release build, it is likely the debugger will not be able to materialize every local variable.
+## Работа с локальной отладочной сборкой Mono
 
-## Native debugging using a local debug build of Mono
+Убедитесь, что выполнены предварительные условия для [Тестирования на Android](../../testing/libraries/testing-android.md#prerequisites).
 
-Ensure the prerequisites are met for [Testing Android](../../testing/libraries/testing-android.md#prerequisites).
-
-Build the runtime for your android architecture `<ANDROID_ARCH>` and keep debug symbols in the binary:
+Соберите runtime для вашей архитектуры Android `<ANDROID_ARCH>` и сохраните отладочные символы в бинарном файле:
 
 `./build.sh -s mono+libs -os android -arch <ANDROID_ARCH> -c Debug /p:KeepNativeSymbols=true`
 
-In the source code for the C# project, add the following to the .csproj (replacing `<RUNTIME_GIT_ROOT>` by the appropriate location and `<ANDROID_ARCH>` with the built android architecture):
+В исходном коде проекта C# добавьте следующее в .csproj (замените `<RUNTIME_GIT_ROOT>` на соответствующий путь и `<ANDROID_ARCH>` на архитектуру Android, для которой вы собирали):
 
 ```
   <Target Name="UpdateRuntimePack"
@@ -75,27 +69,24 @@ In the source code for the C# project, add the following to the .csproj (replaci
   </Target>
 ```
 
-Then rebuild and reinstall the project, open the apk in Android Studio (File > Profile or Debug APK), and debug.
+Затем пересоберите и переустановите проект, откройте APK в Android Studio (File > Profile or Debug APK) и начните отладку.
 
-Note: If debugging in Android Studio stops at signals `SIGPWR` and `SIGXCPU` during startup, configure LLDB to not stop the process for those signals via `process handle -p true -s false -n true SIGPWR` and `process handle -p true -s false -n true SIGXCPU` in Android Studio's LLDB tab.
+Примечание: Если отладка в Android Studio останавливается на сигналах SIGPWR и SIGXCPU во время запуска, настройте LLDB так, чтобы он не останавливал процесс для этих сигналов, выполнив команды `process handle -p true -s false -n true SIGPWR` и `process handle -p true -s false -n true SIGXCPU` на вкладке LLDB в Android Studio.
 
-## Native and managed debugging or debugging the managed debugger
+## Нативная и управляемая отладка или отладка управляемого отладчика
 
-This workflow is useful to look for issues in the debugger itself, or to debug using a mixture of C and C# debugging.
+Этот рабочий процесс полезен для поиска проблем в самом отладчике или для отладки с использованием смеси C и C#.
 
-Install [sdb](https://github.com/mono/sdb).
+Установите [sdb](https://github.com/mono/sdb).
 
-Start `sdb` and set it to listen  `listen 127.0.0.1 5000` (the port number is up to you).
+Запустите `sdb` и настройте прослушивание `listen 127.0.0.1 5000` (номер порта на ваше усмотрение).
 
-Run the following `adb` command to set Mono apps to connect to a debugger on startup:
+Выполните следующую команду `adb`, чтобы настроить Mono-приложения на подключение к отладчику при запуске:
 
 ```
 $ adb shell setprop debug.mono.extra "debug=10.0.2.2:5000,loglevel=10"
 ```
 
-(`loglevel=10` will produce debugger protocol messages in the `adb` log.  If
-you're not debugging the debugger it can be omitted.  For other debugger
-options see [`print_usage()`](https://github.com/dotnet/runtime/blob/main/src/mono/mono/component/debugger-agent.c#L573) in `src/mono/mono/component/debugger-agent.c`)
+(`loglevel=10` будет выводить сообщения протокола отладчика в логах adb. Если вы не отлаживаете отладчик, этот параметр можно опустить. Для других параметров отладчика см. [`print_usage()`](https://github.com/dotnet/runtime/blob/main/src/mono/mono/component/debugger-agent.c#L573) в `src/mono/mono/component/debugger-agent.c`)
 
-Now launch the app from Android Studio. It should run and connect to the debugger.
-
+Теперь запустите приложение из Android Studio. Оно должно запуститься и подключиться к отладчику.
