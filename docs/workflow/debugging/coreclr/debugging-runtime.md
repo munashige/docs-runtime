@@ -1,6 +1,6 @@
 # Отладка CoreCLR
 
-Эта глава содержит инструкции по отладке CoreCLR. Обратите внимание, что SOS (основной плагин для отладки) не находится в этом репозитории. Для получения дополнительной информации о том, как его получить, установить и использовать пройдите[по этой ссылке](https://github.com/dotnet/diagnostics).
+Эта глава содержит инструкции по отладке CoreCLR. Обратите внимание, что SOS (основной плагин для отладки) не находится в этом репозитории. Для получения дополнительной информации о том, как его получить, установить и использовать пройдите [по этой ссылке](https://github.com/dotnet/diagnostics).
 
 ## Отладка CoreCLR на Windows
 
@@ -212,7 +212,10 @@ export DOTNET_EnableDiagnostics=0
 Следующие подходы настраивают Visual Studio для отключения проверки подписи:
 
 -   Переменная окружения `VSDebugger_ValidateDotnetDebugLibSignatures`: 1. Это самый простой и рекомендуемый способ временно отключить проверку подписи. 2. В командной строке выполните `set VSDebugger_ValidateDotnetDebugLibSignatures=0` , а затем запустите Visual Studio (`devenv.exe`) из той же командной строки. 3. Эта настройка действительна только для экземпляра Visual Studio, который запускается из командной строки, где установлена эта переменная окружения.
--   Переменная окружения [`DOTNET_ROOT`](https://learn.microsoft.com/dotnet/core/tools/dotnet-environment-variables#dotnet_root-dotnet_rootx86):  
+-   Переменная окружения [DOTNET_ROOT](https://learn.microsoft.com/dotnet/core/tools/dotnet-environment-variables#dotnet_root-dotnet_rootx86):
+
     Если Visual Studio запускается из командной строки, где установлена переменная `DOTNET_ROOT`, неподписанные библиотеки отладчика runtime в этой директории будут игнорироваться.
--   **_НЕ РЕКОМЕНДУЕТСЯ_** Установка ключа регистра `ValidateDotnetDebugLibSignatures`:  
+
+-   **_НЕ РЕКОМЕНДУЕТСЯ_** Установка ключа регистра `ValidateDotnetDebugLibSignatures`:
+
     Чтобы отключить проверку подписи на постоянной основе, установите ключ реестра VS `Common7\IDE\VsRegEdit.exe set local HKCU Debugger\EngineSwitches ValidateDotnetDebugLibSignatures dword 0`. Например, откройте командную строку разработчика и выполните `Common7\IDE\VsRegEdit.exe set local HKCU Debugger\EngineSwitches ValidateDotnetDebugLibSignatures dword 0`.
