@@ -28,11 +28,11 @@ windbg -I
 ## Debugging tests
 Чтобы запустить один тест из командной строки:
 
-1. Найдите папку с бинарными файлами с тем же именем, что и проект CSPROJ.
+- Найдите папку с бинарными файлами с тем же именем, что и проект CSPROJ.
 
 Например: `src\System.Net.Sockets\tests\Functional\System.Net.Sockets.Tests.csproj` выведет бинарные файлы в следующей директории:  `bin\tests\windows.AnyCPU.Debug\System.Net.Sockets.Tests\netcoreapp1.0`.
 
-2. Запустите тесты.
+- Запустите тесты.
 
 Например, если репозиторий находится в `C:\root`:
 
@@ -41,7 +41,7 @@ cd C:\root\bin\tests\windows.AnyCPU.Debug\System.Net.Sockets.Tests\netcoreapp1.0
 C:\root\bin\tests\windows.AnyCPU.Debug\System.Net.Sockets.Tests\netcoreapp1.0\CoreRun.exe xunit.console.dll System.Net.Sockets.Tests.dll -xml testResults.xml -notrait category=nonwindowstests -notrait category=OuterLoop -notrait category=failing
 ```
 
-3. Если тест вернет ошибку или вызов метода `Debugger.Launch()`, WinDBG автоматически запустится и подключится к процессу `CoreRun.exe`.
+- Если тест вернет ошибку или вызов метода `Debugger.Launch()`, WinDBG автоматически запустится и подключится к процессу `CoreRun.exe`.
 
 Следующие команды корректно настроят расширение для отладки и исправят ссылки на символы, а также исходный код:
 
