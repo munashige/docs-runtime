@@ -28,12 +28,8 @@
 
 1. Откройте решение CoreCLR (coreclr.sln) в Visual Studio.
 
-
-    * _Метод 1_: Выполнить `.\build.cmd -vs coreclr.sln -a <architecture> -c <configuration>`. Это создаст и запустит решение CoreCLR в Visual Studio для указанной архитектуры и конфигурации. По умолчанию используется `x64 Debug`.
-    * _Метод 2_: Собрать и открыть решение вручную:
-          1. Выполните сборку репозитория с флагом `-msbuild`.
-          2. Открыть решение `path\to\runtime\artifacts\obj\coreclr\windows.<architecture>.<configuration>\ide\CoreCLR.sln` в Visual Studio. Как и в предыдущем методе, архитектура и конфигурация по умолчанию — это `x64` и `Debug`, если не указано иное.
-
+    - _Метод 1_: Выполнить `.\build.cmd -vs coreclr.sln -a <architecture> -c <configuration>`. Это создаст и запустит решение CoreCLR в Visual Studio для указанной архитектуры и конфигурации. По умолчанию используется `x64 Debug`.
+    - _Метод 2_: Собрать и открыть решение вручную: 1. Выполните сборку репозитория с флагом `-msbuild`. 2. Открыть решение `path\to\runtime\artifacts\obj\coreclr\windows.<architecture>.<configuration>\ide\CoreCLR.sln` в Visual Studio. Как и в предыдущем методе, архитектура и конфигурация по умолчанию — это `x64` и `Debug`, если не указано иное.
 
 2. Вызовите контекстное меню (правой кнопкой мыши) на проекте INSTALL и выберите `Set as StartUp Project`.
 3. Откройте страницу свойств для проекта **INSTALL**.
