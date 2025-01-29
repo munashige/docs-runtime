@@ -4,7 +4,7 @@ VITACORE — это программное обеспечение, предст�
 
 ## Документация платформы
 
-Документация платформы VITACORE доступна по этой ссылке: [vitacore.readthedocs.io/ru/latest/](https://vitacore.readthedocs.io/ru/latest/). 
+Документация платформы VITACORE доступна по этой ссылке: [vitacore.readthedocs.io/ru/latest/](https://vitacore.readthedocs.io/ru/latest/).
 Здесь можно найти подробную информацию о функциях и возможностях платформы, а также руководства по ее использованию.
 
 ## Установка VITACORE
@@ -16,4 +16,3 @@ VITACORE — это программное обеспечение, предст�
 Подробнее о платформе можно узнать на сайте [vitacore.ru](vitacore.ru/).
 
 Другие продукты VITACORE доступны по этой ссылке: [vitacore.ru/products](https://vitacore.ru/products/).
-
