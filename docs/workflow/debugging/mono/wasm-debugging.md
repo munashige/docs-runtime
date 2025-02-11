@@ -1,18 +1,18 @@
+# Отладка WASM runtime
 
-WASM runtime debugging
-======================
+-   Отключите удаление символов, установив свойство WasmNativeStrip в msbuild на false. Инструкции по сбору стектрейсов (stack-trace) с символами в Blazor представлены [ниже](#blazor).
 
-- Disable symbol stripping by setting the `WasmNativeStrip` msbuild property to `false`.  See also, [collecting stack traces with symbols in Blazor](#collecting-stack-traces-with-symbols-in-blazor)
+-   Emscripten генерирует отладочную информацию в формате DWARF, и Chrome начиная с версии 80 может её использовать.
 
-- Emscripten generates dwarf debug info and Chrome 80 and later can use it.
+-   Для остановки JS-отладчика кода runtime:
 
-- To break in the JS debugger from runtime code, do:
 ```
 #include <emscripten.h>
 EM_ASM(debugger;);
 ```
 
-- To print a stack trace from runtime code, do:
+-   Для вывода стектрейса из кода runtime:
+
 ```
 #ifdef HOST_WASM
 #include <emscripten.h>
@@ -23,48 +23,45 @@ EM_ASM(
 	);
 #endif
 ```
-There is a mono_wasm_print_stack_trace () function that does the same:
+
+Существует функция `mono_wasm_print_stack_trace()`, которая делает то же самое:
+
 ```
 #ifdef HOST_WASM
 mono_wasm_print_stack_trace ();
 #endif
 ```
-The ifdef is needed to avoid compilation errors when compiling the cross compiler.
 
-- The runtime-tests.js test runner supports various options useful for debugging:
-   - Runtime command line options can be passed using the --runtime-arg=<arg> option.
-      In particular --trace can be used to enable executing tracing when using the interpreter.
-  - Environment variables can be set using --setenv=<var>=<value>
-     In particular MONO_LOG_LEVEL/MONO_LOG_MASK can be set.
+Директива `ifdef` нужна, чтобы избежать ошибок компиляции при сборке кросс-компилятора.
 
-- The --stack-trace-limit=1000 option to V8 can be used to avoid V8 truncating stack traces.
+-   Тестовый раннер runtime-tests.js поддерживает различные опции для отладки:
 
-- Emscripten supports clang's -fsanitize=address option, it can also decompile
-  wasm images at runtime to create readable stacktraces for C code.
+    1.  Параметры командной строки runtime можно передать с помощью опции `--runtime-arg=<arg>`. В частности, `--trace` можно использовать для включения трассировки выполнения при использовании интерпретатора.
+    2.  Переменные окружения можно задать с помощью `--setenv=<var>=<value>`. В частности, можно задать `MONO_LOG_LEVEL` и `MONO_LOG_MASK`.
 
-- The numbers in stack traces such as:
+-   Опция `--stack-trace-limit=1000` для V8 позволяет избежать усечения стектрейсов.
+
+-   Emscripten поддерживает опцию `-fsanitize=address` в clang, а также может декомпилировать wasm-образы во время выполнения для создания читаемых стектрейсов для C-кода.
+
+-   Cтектрейсы используют числа, например:
+
 ```
 WebAssembly.instantiate:wasm-function[8003]:0x12b564
 ```
-mean wasm function index/offset inside the wasm binary.
-The `wasm-objdump` tool from `https://github.com/WebAssembly/wabt` can be used to find the
-corresponding wasm code:
+
+Эти числа означают индекс функции wasm и смещение внутри wasm-бинарника.
+Инструмент wasm-objdump из https://github.com/WebAssembly/wabt можно использовать для поиска соответствующего wasm-кода:
+
 ```
 12b551 func[8003] <mono_wasm_load_runtime>:
 ```
 
-- The `wasm-dis` tool from `https://github.com/WebAssembly/binaryen` can be used to
-disassemble wasm executables (.wasm files).
+-   Инструмент `wasm-dis` из [github.com/WebAssembly/binaryen](https://github.com/WebAssembly/binaryen) можно использовать для дизассемблирования wasm-исполняемых файлов (файлов .wasm).
 
-# Deterministic execution
+## Детерминированное выполнение
 
-Wasm execution can be made deterministic by passing the -s DETERMINISTIC=1 option to emcc.
-This will cause the app to always execute the same way, i.e. using the same memory
-addresses, random numbers, etc. This can be used to make random crashes happen reliably.
-Sometimes, however, turning this on will make the problem disappear. In this case, it
-might be useful to add some controlled indeterminism. For example, to make the
-random number generator mostly deterministic, change `$getRandomDevice` in
-`upstream/emscripten/src/library.js` to:
+Работу wasm можно сделать детерминированной (determenistic execution) при помощи опции `-s DETERMINISTIC=1` в `emcc`. Эта команда заставит приложение всегда выполняться одинаково, т.е. использовать одни и те же адреса памяти, случайные числа и т.д. Это можно использовать для того, чтобы случайные сбои происходили предсказуемо. Однако иногда включение этой опции может привести к незримым проблемам. В этом случае может быть полезно добавить немного контролируемой недетерминированности (indeterminism). Например, чтобы сделать генератор случайных чисел частично детерминированным, измените `$getRandomDevice` в `upstream/emscripten/src/library.js` на:
+
 ```
 	var randomBuffer2 = new Uint8Array(1);
 	crypto.getRandomValues(randomBuffer2);
@@ -76,27 +73,23 @@ random number generator mostly deterministic, change `$getRandomDevice` in
 		return FS.seed2;
 	};
 ```
-Then run the app until the failure occurs. Note the seed value printed at the beginning,
-and change the
-`FS.seed2 = randomBuffer...` line to:
+
+Запустите приложение до возникновения сбоя. Запишите значение seed, выведенное в начале и измените строку
+`FS.seed2 = randomBuffer...` на :
 `FS.seed2 = <seed value>`.
-This will hopefully cause the failure to happen reliably.
+Это должно заставить сбой происходить предсказуемо.
 
-There is another random number generator in `upstream/emscripten/src/deterministic.js`
-which needs the same treatment.
+Также есть ещё один генератор случайных чисел в `upstream/emscripten/src/deterministic.js`, который требует аналогичных изменений.
 
-Running `make patch-deterministic` in `src/mono/wasm` will patch the
-emscripten installation in `src/mono/browser/emsdk` with these changes.
+Запуск `make patch-deterministic` в `src/mono/wasm` применит эти изменения к установке
+emscripten в `src/mono/browser/emsdk`.
 
-# Debugging signature mismatch errors
+## Отладка ошибок несоответствия сигнатур
 
-When v8 fails with `RuntimeError: function signature mismatch`, it means a function call was
-made to a function pointer with an incompatible signature, or to a NULL pointer.
-This branch of v8 contains some modifications to print out the actual function pointer
-value when this kind of fault happens: https://github.com/vargaz/v8/tree/sig-mismatch.
-The value is an index into the function table inside the wasm executable.
+Когда v8 завершается с ошибкой `RuntimeError: function signature mismatch`, это означает, что был вызов функции по указателю с несовместимой сигнатурой или по указателю NULL. Эта ветка v8 содержит некоторые модификации для вывода фактического значения указателя на функцию при возникновении такой ошибки: [github.com/vargaz/v8/tree/sig-mismatch](https://github.com/vargaz/v8/tree/sig-mismatch). Значение является индексом в таблице функций внутри wasm-исполняемого файла.
 
-The following script can be used to print out the table:
+Следующий скрипт можно использовать для вывода таблицы:
+
 ```
 #!/usr/bin/env python3
 
@@ -123,20 +116,16 @@ for (index, v) in enumerate (table_line.split (" ")):
     print ("" + str(index) + ": " + v)
     index += 1
 ```
-The input to the script is the textual assembly created by the wasm-dis tool.
 
-These kinds of faults usually happen because the mono runtime has some helper functions which are
-never meant to be reached, i.e. `no_gsharedvt_in_wrapper` or `no_llvmonly_interp_method_pointer`.
-These functions are used as placeholders for function pointers with different signatures, so
-if they do end up being called due to a bug, a signature mismatch error happens.
+Входные данные для скрипта — текстовый ассемблер, созданный инструментом wasm-dis.
 
-# Collecting stack traces with symbols in Blazor
+Такие ошибки обычно возникают из-за того, что в runtime mono есть вспомогательные функции, которые никогда не должны вызываться, например, `no_gsharedvt_in_wrapper` или `no_llvmonly_interp_method_pointer`. Эти функции используются как заглушки для указателей на функции с разными сигнатурами, поэтому если они вызываются из-за ошибки, возникает ошибка несоответствия сигнатур.
 
-When debugging a native crash in a .NET 6 Blazor app or another WebAssembly
-framework that uses our default `dotnet.wasm`, the native stack frames will not
-have C symbol names, but will instead look like `$func1234`.
+## Сбор стектрейсов с символами в Blazor
 
-For example this Razor page will crash when a user clicks on the `Crash` button
+При отладке нативного сбоя в приложении .NET 6 Blazor или другом фреймворке WebAssembly, использующем наш стандартный `dotnet.wasm`, нативные стектреймы не будут содержать имён C-символов, а будут выглядеть как `$func1234`.
+
+Например, эта страница Razor вызовет сбой при нажатии пользователем кнопки `Crash`:
 
 ```csharp
 <button class="btn btn-warning" @onclick="Crash">Crash</button>
@@ -151,7 +140,7 @@ For example this Razor page will crash when a user clicks on the `Crash` button
 }
 ```
 
-Clicking on the `Crash` button will produce the following output in the console (the function indices may be different):
+Нажатие на кнопку `Crash` выведет в консоль следующее (индексы функций могут отличаться):
 
 ```console
 dotnet.wasm:0x1d8355 Uncaught (in promise) RuntimeError: memory access out of bounds
@@ -194,22 +183,22 @@ dispatchGlobalEventToAllElements @ blazor.webassembly.js:1
 onGlobalEvent @ blazor.webassembly.js:1
 ```
 
-In order to get symbols, the user should:
+Чтобы получить символы (symbols):
 
-1. Install the `wasm-tools` workload using `dotnet workload install wasm-tools`
-2. Set these additional properties in their `.csproj` file:
+1. Установите `workload wasm-tools` с помощью `dotnet workload install wasm-tools`.
+2. Укажите дополнительные свойства в файле `.csproj`:
 
-   ```xml
-     <!-- Builds a dotnet.wasm with debug symbols preserved -->
-     <PropertyGroup>
-       <WasmBuildNative>true</WasmBuildNative>
-       <WasmNativeStrip>false</WasmNativeStrip>
-     </PropertyGroup>
-   ```
+    ```xml
+      <!-- Builds a dotnet.wasm with debug symbols preserved -->
+      <PropertyGroup>
+        <WasmBuildNative>true</WasmBuildNative>
+        <WasmNativeStrip>false</WasmNativeStrip>
+      </PropertyGroup>
+    ```
 
-3. Delete the `bin` and `obj` folders, re-build the project and run it again.
+3. Удалите папки `bin` и `obj`. Далее нужно пересобрать проект и запустить его снова.
 
-Now clicking on the `Crash` button will produce a stack trace with symbols:
+Теперь нажатие на кнопку `Crash` выведет стектрейс с символами:
 
 ```console
 dotnet.wasm:0x224878 Uncaught (in promise) RuntimeError: memory access out of bounds
@@ -258,62 +247,52 @@ dispatchGlobalEventToAllElements @ blazor.webassembly.js:1
 onGlobalEvent @ blazor.webassembly.js:1
 ```
 
-# Enabling additional logging in Blazor
+## Включение дополнительного логирования в Blazor
 
-In .NET 8+, Blazor startup can be controlled by setting the `autostart="false"` attribute on the
-`<script>` tag that loads the blazor webassembly framework.  After that, a call to the
-`globalThis.Blazor.start()` JavaScript function can be passed additional configuration options,
-including setting mono environment variables, or additional command line arguments.
+В .NET 8+ запуск Blazor можно контролировать, установив атрибут `autostart="false"` в
+теге `<script>`, который загружает фреймворк Blazor WebAssembly. После этого функцию `globalThis.Blazor.start()` можно использовать для передачи дополнительных
+параметров конфигурации, включая установку переменных окружения mono или дополнительных аргументов командной строки.
 
-The name of the script and the location of the `<script>` tag depends on whether the project was a
-Blazor WebAssembly project (template `blazorwasm`) or a Blazor project (template `blazor`).
+Имя скрипта и расположение тега `<script>` зависят от типа проекта: Blazor WebAssembly (шаблон blazorwasm) или Blazor (шаблон blazor).
 
-See the runtime `DotnetHostBuilder` interface in
-[dotnet.d.ts](../../../../src/mono/wasm/runtime/dotnet.d.ts) for additional configuration functions.
+См. интерфейс DotnetHostBuilder в [dotnet.d.ts](https://github.com/vitacore-company/runtime/blob/main/src/mono/browser/runtime/dotnet.d.ts) для дополнительных функций конфигурации.
 
 ## Blazor WebAssembly
 
-In a `blazorwasm` project, the script is `_framework/blazor.webassembly.js` and it is loaded in `wwwroot/index.html`:
+Скрипт для работы на проекте `blazorwasm` называется `_framework/blazor.webassembly.js`. Он загружается в `wwwroot/index.html`:
 
 ```html
 <body>
-    <div id="app">
-      ...
-  </div>
+    <div id="app">...</div>
 
-  <div id="blazor-error-ui">
-    ...
-  </div>
+    <div id="blazor-error-ui">...</div>
     <script src="_framework/blazor.webassembly.js"></script>
 </body>
 ```
 
-Replace it with this:
+Замените скрипт на:
 
 ```html
 <body>
-    <div id="app">
-        ...
-    </div>
+    <div id="app">...</div>
 
-    <div id="blazor-error-ui">
-        ...
-    </div>
+    <div id="blazor-error-ui">...</div>
     <script src="_framework/blazor.webassembly.js" autostart="false"></script>
 
     <script>
         Blazor.start({
-            configureRuntime: dotnet => {
+            configureRuntime: (dotnet) => {
                 dotnet.withEnvironmentVariable("MONO_LOG_LEVEL", "debug");
                 dotnet.withEnvironmentVariable("MONO_LOG_MASK", "all");
-            }
+            },
         });
-    </script></body>
+    </script>
+</body>
 ```
 
-## Blazor
+## Blazor {#blazor}
 
-In a `blazor` project, the script is `_framework/blazor.web.js` and it is loaded by `Components/App.razor` in the server-side project:
+Cкрипт для работы на проекте `blazor` называется `_framework/blazor.web.js`. Он загружается в `Components/App.razor` в серверной части проекта:
 
 ```html
 <body>
@@ -322,7 +301,7 @@ In a `blazor` project, the script is `_framework/blazor.web.js` and it is loaded
 </body>
 ```
 
-Replace it with this (note that for a `blazor` project, `Blazor.start` needs an extra dictionary with a `webAssembly` key):
+Замените срипт следующим образом (обратите внимание, что для проекта blazor в `Blazor.start` нужен дополнительный словарь с ключом `webAssembly`):
 
 ```html
 <body>
@@ -331,12 +310,12 @@ Replace it with this (note that for a `blazor` project, `Blazor.start` needs an 
     <script>
         Blazor.start({
             webAssembly: {
-                configureRuntime: dotnet => {
+                configureRuntime: (dotnet) => {
                     console.log("in configureRuntime");
                     dotnet.withEnvironmentVariable("MONO_LOG_LEVEL", "debug");
                     dotnet.withEnvironmentVariable("MONO_LOG_MASK", "all");
-                }
-            }
+                },
+            },
         });
     </script>
 </body>
