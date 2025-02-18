@@ -1,45 +1,40 @@
-# Testing managed tools
+# Тестирование управляемых инструментов
 
-There are managed unit and functional tests for a number of tools including the
-compiler for NativeAOT (`ILCompiler`), and the trimmer (`illink`).
+Для ряда инструментов, включая компилятор для NativeAOT (`ILCompiler`) и триммер(`illink`), предоставляются модульные и функциональные тесты.
 
-## Adding new testsuites
+## Добавление новых наборов тестов
 
-To add a new test suite, create a new `.csproj` with a name that ends in `Tests`, such as:
-`MyTool.Tests.csproj`.  The property `IsTestProject` will be set by the `Directories.Build.props` in
-the repository root.  The property will, in turn, add references to the xunit package and the
-apropriate test runner.
+Чтобы добавить новый набор тестов (test suit), создайте новый `.csproj` с именем, оканчивающимся на _Tests_, например: `MyTool.Tests.csproj`.
 
-Now add a `ProjectToBuild` item in `eng/Substes.props` to one of the existing subsets, such as
-`clr.toolstests`, or a new subset.
+Свойство `IsTestProject` будет установлено файлом `Directories.Build.props` в
+корне репозитория. Это свойство, в свою очередь, добавит ссылки на пакет xunit и
+соответствующий тестовый раннер.
 
-## Adding new testsuites to CI
+Далее нужно добавить элемент `ProjectToBuild` в `eng/Subsets.props` в один из существующих сабсетов, например `clr.toolstests` или новый сабсет.
 
-To run the tests in CI, add a new pipeline or add to an exsiting pipeline such as `CLR_Tools_Tests`
-in `eng/pipelines/runtime.yml`.  Update the trigger condition, perhaps by adding a new set of paths
-to `eng/pipelines/common/evaluate-default-paths.yml` in order to run the tests when the tool source
-or the test sources change.
+## Добавление новых наборов тестов в CI
 
-## Running tests locally
+Чтобы запускать тесты в CI, добавьте новый пайплайн или дополните существующий, например `CLR_Tools_Tests` в `eng/pipelines/runtime.yml`. Обновите условие запуска, например, добавив новый набор путей в `eng/pipelines/common/evaluate-default-paths.yml`, чтобы тесты запускались при изменении исходного кода инструмента
+или тестов.
 
-Build and run the tests locally either with
+## Локальный запуск тестов
+
+Соберите и запустите тесты локально с помощью одной из следующих команд:
 
 ```console
 ./build.[sh|cmd] -s clr.toolstests -c [Release|Debug] -build -test
 ```
 
-or
+или
 
 ```console
 ./dotnet.[sh|cmd] test .../MyTool.Tests.csproj -c [Release|Debug]
 ```
 
-The `dotnet-test` xunit filter mechanisms work to run a single test or a subset of the tests
+Механизмы фильтрации xunit для `dotnet-tes` позволяют запустить один тест или подмножество тестов:
 
 ```console
 ./dotnet.[sh|cmd] test .../MyTool.Tests.csproj -c [Release|Debug] --filter "FullyQualifiedName~MyTest"
 ```
 
-The above command runs all tests whose fully-qualified name contains the substring `MyTest`.  See
-[dotnet test - Run selective unit tests](https://learn.microsoft.com/dotnet/core/testing/selective-unit-tests?pivots=mstest#syntax)
-for the full syntax.
+Приведённая выше команда запускает все тесты, полное имя которых содержит подстроку `MyTest`. Полный синтаксис см. [на сайте learn.microsoft.com](https://learn.microsoft.com/dotnet/core/testing/selective-unit-tests?pivots=mstest#syntax).

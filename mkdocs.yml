@@ -102,7 +102,7 @@ nav:
         - Android Runtime: workflow/debugging/mono/android-debugging.md 
         - WASM Runtime: workflow/debugging/mono/wasm-debugging.md
     - Тестирование: 
-      - Инструменты управления: workflow/testing/testing-managed-tools.md
+      - Управляемые инструменты: workflow/testing/testing-managed-tools.md
       - Рабочие нагрузки: workflow/testing/testing-workloads.md
       - Работа с Corerun: workflow/testing/using-corerun-and-coreroot.md
       - Пакеты поставки для разработчиков: workflow/testing/using-dev-shipping-packages.md
