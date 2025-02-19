@@ -105,7 +105,7 @@ nav:
       - Инструменты: workflow/testing/testing-managed-tools.md
       - Workloads: workflow/testing/testing-workloads.md
       - Работа с Corerun: workflow/testing/using-corerun-and-coreroot.md
-      - Пакеты поставки для разработчиков: workflow/testing/using-dev-shipping-packages.md
+      - Dev Shipping Packages: workflow/testing/using-dev-shipping-packages.md
       - .NET SDK: workflow/testing/using-your-build-with-installed-sdk.md
       - Visual Studio: workflow/testing/visualstudio.md
       - CoreCLR:
