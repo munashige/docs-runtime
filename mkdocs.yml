@@ -104,7 +104,7 @@ nav:
     - Тестирование: 
       - Инструменты: workflow/testing/testing-managed-tools.md
       - Тестирование Workloads: workflow/testing/testing-workloads.md
-      - Запуск с Corerun: workflow/testing/using-corerun-and-coreroot.md
+      - Corerun и Core_Root: workflow/testing/using-corerun-and-coreroot.md
       - Пакеты Dev Shipping: workflow/testing/using-dev-shipping-packages.md
       - .NET SDK: workflow/testing/using-your-build-with-installed-sdk.md
       - Visual Studio: workflow/testing/visualstudio.md

@@ -1,4 +1,4 @@
-# Запуск .NET-приложения с помощью Corerun
+# Запуск .NET-приложения с помощью Corerun и Core_Root
 
 Ниже показано как использовать Corerun и Core_Root из вашей сборки репозитория runtime для тестирования, запуска приложений и других задач. Предполагается, что подмножество clr из репозитория и бинарные файлы в `artifacts/bin/coreclr/<ОС>.<архитектура>.<конфигурация>` собраны успешно. В противном случае, см. [главу по сборке CoreCLR](/docs/workflow/building/coreclr/README.md).
 
@@ -12,8 +12,8 @@
 
 Ниже представлена инструкция по работе третьего из вышеперечисленных пунктов. Инструкции для первых двух способов представлены в отдельных главах:
 
--   [Использование вашей сборки с установленным SDK](using-your-build-with-installed-sdk.md)
--   [Использование Dev Shipping Packages из вашей сборки](using-dev-shipping-packages.md)
+-   [Тестирование с .NET SDK](using-your-build-with-installed-sdk.md)
+-   [Пакеты Dev Shipping](using-dev-shipping-packages.md)
 
 ## CoreRun
 
