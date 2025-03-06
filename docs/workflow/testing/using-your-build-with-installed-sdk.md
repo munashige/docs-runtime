@@ -1,49 +1,39 @@
-# Using your .NET Runtime Build with the Installed SDK
+# .NET Runtime с установленным SDK
 
-* [Introduction](#introduction)
-  * [Acquire the latest development .NET SDK](#acquire-the-latest-development-net-sdk)
-* [Create a sample self-contained application](#create-a-sample-self-contained-application)
-  * [Publish your App](#publish-your-app)
-* [Update CoreCLR and System.Private.CoreLib.dll with your build](#update-coreclr-and-systemprivatecorelibdll-with-your-build)
-* [Confirm that the app used your new runtime (Optional)](#confirm-that-the-app-used-your-new-runtime-optional)
-* [Troubleshooting](#troubleshooting)
-  * [If it's not using your copied binaries](#if-its-not-using-your-copied-binaries)
-  * [If you get a consistency check assertion failure](#if-you-get-a-consistency-check-assertion-failure)
-  * [If you get a JIT load error](#if-you-get-a-jit-load-error)
+Представленное руководство поможет вам использовать вашу сборку репозитория runtime для тестирования, запуска приложений и других задач. Предполагается, что подмножество (subset) clr репозитория уже собрано, а также созданы бинарные файлы в `artifacts/bin/coreclr/<ОС>.<архитектура>.<конфигурация>`. В противном случае, следуйте инструкциям в главе [сборка CoreCLR](/docs/workflow/building/coreclr/README.md), чтобы получить нужные артефакты.
 
-This guide will walk you through using your own build from the runtime repo for testing, running apps, and so on. This doc assumes you've already built at least the _clr_ subset of the repo, and have the binaries under `artifacts/bin/coreclr/<OS>.<arch>.<configuration>`. If this is not your case, the [CoreCLR building docs](/docs/workflow/building/coreclr/README.md) have detailed instructions on how to get these artifacts.
+## Введение
 
-## Introduction
+Для запуска .NET-приложения с использованием вашей сборки runtime понадобится программа-хост, которая загрузит runtime, а также другие библиотеки .NET, которые могут понадобиться вашему приложению. Есть три основных способа сделать это:
 
-To run a .NET app with the runtime you've built, you will need a _host_ program that will load the runtime, as well as all the other .NET libraries that your application might need. There are three main ways to go about this:
+-   Использовать установленный .NET SDK и заменить необходимые бинарные файлы в автономном приложении.
+-   Использовать пакеты Dev Shipping из вашей сборки для запуска приложения.
+-   Использовать хост CoreRun, созданный как часть артефактов вашей сборки.
 
-* Use your machine's installed .NET SDK and replace the necessary binaries in a self-contained app.
-* Use your build's _Dev Shipping Packages_ to run your app.
-* Use the _CoreRun_ host generated as part of your build's artifacts.
+Инструкции ниже описывают работу для первого из вышеперечисленных пунктов. Остальные способы расписаны в следующих главах:
 
-This guide focuses on the first of the bullet points described above. For the other two, we have docs dedicated to them:
+-   [Пакеты Dev Shipping](using-dev-shipping-packages.md)
+-   [CoreRun и CoreRoot](using-corerun-and-coreroot.md)
 
-* [Using your build's dev shipping packages](using-dev-shipping-packages.md)
-* [Using CoreRun and CoreRoot](using-corerun-and-coreroot.md)
+**ПРИМЕЧАНИЕ**: Официальная версия `dotnet` может быть несовместима с текущим состоянием репозитория (маловероятно). Если замечена несовместимость, нужно использовать другой из вышеперечисленных способов для тестирования, либо установить и использовать _night-сборку_ (не рекомендуется). Нижеописанный метод требует автономного приложения, а портативные сборки в настоящее время не поддерживают это.
 
-**NOTE**: It's unlikely, but it's possible that the officially released version of `dotnet` may not be compatible with the live repository. If this happens to you, then unfortunately, you will be limited to either installing a nightly build on your machine (not that recommended), or use another of the methods described above to test your build. This is because this method requires a _self-contained_ app, and the portable builds do not support this at the present time.
+### Получить последнюю версию .NET SDK для разработки
 
-### Acquire the latest development .NET SDK
+В [репозитории SDK](https://github.com/dotnet/sdk#installing-the-sdk) есть ссылки на все night-сборки для всех поддерживаемых платформ. Найдите ту, которая подходит для вашей системы, и скачайте её.
 
-The [sdk repo](https://github.com/dotnet/sdk#installing-the-sdk) has downloads to all nightly builds for all the currently supported platforms. Find the one that matches your machine and download it.
+Чтобы настроить night-версию SDK, установите ее на ваш компьютер, либо используйте портативную сборку. Если вы скачали установщик, просто следуйте стандартным инструкциям по установке.
 
-To setup the nightly SDK, you can either install it to your machine or use a portable build. If you downloaded the _installer_, then just follow the usual installation instructions, and you're done.
+Чтобы использовать портативную сборку (_см. примечание выше_), сначала извлеките скачанный `zip/tar.gz`. Затем можете либо добавить путь к извлечённой папке в переменную окружения `PATH`, либо всегда указывать полный путь к dotnet (например, `/путь/к/night/сборке/dotnet`).
 
-To use a portable build (check the note above though), first extract somewhere the _zip/tar.gz_ you downloaded at the beginning of this section. Then, you can either add the path where you extracted it to your `PATH` environment variable, or always fully qualify the path to the `dotnet` you extracted (e.g. `/path/to/nightly/build/dotnet`).
-
-After setting up dotnet you can verify you are using the newer version by issuing the `dotnet --version` command on it. At the time of writing, the version must be equal or greater than `9.0.100-*`.
+После настройки dotnet убедитесь, что используете правильную версию, выполнив команду `dotnet --version`. На данный момент версия должна быть равна `9.0.100-*` или выше.
 
 <!-- TODO: It feels like this link may or may not be more appropriate elsewhere. Need to dig deeper into the documentation, so leaving it here for the time being. -->
-For another small walkthrough see [Dogfooding .NET SDK](https://github.com/dotnet/runtime/blob/main/docs/project/dogfooding.md).
 
-## Create a sample self-contained application
+Установка SDK также расписана в руководстве [Dogfooding .NET SDK](https://github.com/dotnet/runtime/blob/main/docs/project/dogfooding.md).
 
-First things first. We need a sample app to test our runtime build on. Let's create a quick 'Hello World' app for this example.
+## Создать автономное приложение для тестирования
+
+Ниже демонстрируется как создать простое приложение "Hello World" для тестирования.
 
 ```cmd
 mkdir HelloWorld
@@ -51,7 +41,7 @@ cd HelloWorld
 dotnet new console
 ```
 
-In order to run with your local changes, the application needs to be self-contained, as opposed to running on the installed shared framework. In order to do that, you will need a `RuntimeIdentifier` for your project. You can specify it directly in the command-line later on, or you can write it in your app's `.csproj` file:
+Чтобы запустить приложение с вашими локальными изменениями, оно должно быть автономным (self-contained), а не работать на установленной общей платформе. Для этого понадобится `RuntimeIdentifier` для вашего проекта. Вы можете указать его прямо в командной строке позже или записать в файл `.csproj` вашего приложения:
 
 ```xml
 <PropertyGroup>
@@ -60,32 +50,32 @@ In order to run with your local changes, the application needs to be self-contai
 </PropertyGroup>
 ```
 
-We are using Windows x64 for this example. Make sure you set it to the platform and configuration you have your build in. The codenames for the most common OS's are:
+В этом примере используется `Windows x64`. Убедитесь, что вы установили его в соответствии с вашей платформой и конфигурацией. Кодовые имена для наиболее распространённых ОС:
 
-* _Windows_: `win`
-* _macOS_: `osx`
-* _Linux_: `linux`
+-   _Windows_: `win`
+-   _macOS_: `osx`
+-   _Linux_: `linux`
 
-For example, if we were testing a macOS ARM64 build, our `RuntimeIdentifier` would be `osx-arm64`.
+Например, для тестирования сборки с macOS ARM64, `RuntimeIdentifier` изменится `osx-arm64`.
 
-### Publish your App
+### Публикация вашего приложения
 
-Now is the time to build and publish. This step will trigger _restore_ and _build_.
+Далее необходимо собрать и опубликовать приложение. Этот шаг запустит восстановление и сборку:
 
 ```cmd
 dotnet publish --self-contained
 ```
 
-**NOTE:** If publish fails to restore runtime packages, then you'll need to configure custom NuGet feeds. This is a side-effect of using a dogfood .NET SDK: Its dependencies are not yet on the regular NuGet feed. To configure this, you have to:
+**ПРИМЕЧАНИЕ**: Если публикация завершается с ошибкой восстановления пакетов runtime, вам нужно настроить пользовательские NuGet-фиды (feeds). Это побочный эффект использования `dogfood .NET SDK`: его зависимости ещё не находятся в обычном NuGet-фиде. Для корректной конфигурации выполните следующие действия:
 
-1. Run the command `dotnet new nugetconfig`
-2. Go to the newly created `NuGet.Config` file and replace the content with the following template:
+1. Выполните команду `dotnet new nugetconfig`.
+2. Перейдите в только что созданный файл `NuGet.Config` и замените его содержимое следующим шаблоном:
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <configuration>
  <packageSources>
-    <!--To inherit the global NuGet package sources remove the <clear/> line below -->
+    <!-- Чтобы унаследовать глобальные источники пакетов NuGet, удалите строку <clear/> ниже -->
     <clear />
     <add key="nuget" value="https://api.nuget.org/v3/index.json" />
     <add key="dotnet9" value="https://dnceng.pkgs.visualstudio.com/public/_packaging/dotnet9/nuget/v3/index.json" />
@@ -93,30 +83,28 @@ dotnet publish --self-contained
 </configuration>
 ```
 
-After you publish successfully, you will find all the binaries needed to run your application under `bin\Debug\net10.0\win-x64\publish`.
+После успешной публикации вы найдёте все необходимые для запуска приложения бинарные файлы в `bin\Debug\net10.0\win-x64\publish`.
 
-**But we are not done yet, you need to replace the published runtime files with the files from your local build!**
+**Работа с тестовым проектом не закончена. Далее нужно заменить опубликованные файлы runtime на файлы из вашей локальной сборки.**
 
-## Update CoreCLR and System.Private.CoreLib.dll with your build
+## Замена CoreCLR и System.Private.CoreLib.dll
 
-The publishing step described above creates a directory that has all the files necessary to run your app, including the CoreCLR runtime and the required libraries. Out of all these binaries, there are three notable ones that will contain any changes you make to the runtime:
+Вышеописанный процесс публикации создаёт директорию, которая содержит все файлы, необходимые для запуска вашего приложения, включая CoreCLR runtime и необходимые библиотеки. Из всех этих бинарных файлов стоит обратить внимание на следующие три файла (т.к. они содержат любые изменения, которые вы внесли в runtime):
 
-* `coreclr.dll (windows)/libcoreclr.dylib (macos)/libcoreclr.so (linux)`: Most modifications (with the exception of the JIT compiler and tools) that are C++ code update this binary.
-* `System.Private.CoreLib.dll`: If you modified managed C# code, it will end up here.
-* `clrjit.dll`: The JIT compiler. It is also required you copy this one to your published app.
+-   `coreclr.dll (windows)/libcoreclr.dylib (macos)/libcoreclr.so (linux)`: Большинство изменений (за исключением компилятора JIT и инструментов), которые являются кодом на C++, обновляют этот бинарный файл.
+-   `System.Private.CoreLib.dll`: Если вы изменили управляемый код на C#, он окажется здесь.
+-   `clrjit.dll`: Компилятор JIT. Также необходимо скопировать этот файл в ваше опубликованное приложение.
 
-Now, here comes the main deal to test your build. Once you have your self-contained app published, and CoreCLR built, you will replace the binaries listed above with the generated artifacts. Copy them from `artifacts/bin/coreclr/<OS>.<arch>.<configuration>/` to your app's publication directory, which by default is `your-app-folder/bin/<configuration>/net10.0/<os-code>-<arch>/publish`.
+**Важно**: чтобы протестировать вашу сборку, замените перечисленные выше бинарные файлы на сгенерированные артефакты. Скопируйте их из `artifacts/bin/coreclr/<ОС>.<архитектура>.<конфигурация>/` в директорию публикации вашего приложения, которая по умолчанию находится в `ваша-папка-приложения/bin/<конфигурация>/net10.0/<код-ос>-<архитектура>/publish`.
 
-In our previous example this would be:
+Для этого примера:
 
-* From: `artifacts/bin/coreclr/windows.x64.Debug/`
-* To: `HelloWorld/bin/Debug/net10.0/win-x64/publish/`
+-   Из: `artifacts/bin/coreclr/windows.x64.Debug/`
+-   В: `HelloWorld/bin/Debug/net10.0/win-x64/publish/`
 
-## Confirm that the app used your new runtime (Optional)
+## Тестирование вашего нового runtime (опционально)
 
-Congratulations, you have successfully used your newly built runtime.
-
-If you want to further ensure this is indeed the case before delving into more complex experiments and testing, you can run the following piece of code in your app:
+На этом этапе ваша новая сборка runtime должна быть успешно использована. Если вы хотите протестировать вашу сборку перед тем, как углубиться в более серьезные эксперименты со сборкой, вы можете запустить следующий код в вашем приложении:
 
 ```csharp
 using System.Diagnostics;
@@ -126,40 +114,40 @@ Console.WriteLine($"Core Runtime Info: {coreAssemblyInfo.ProductVersion}");
 Console.WriteLine($"System.Private.CoreLib.dll is located at: {typeof(object).Assembly.Location}");
 ```
 
-That should tell you the version, and which user and machine built the assembly, as well as the _commit hash_ of the code at the time of building:
+Это должно показать вам версию, пользователя и машину, которые собрали сборку, а также хэш коммита кода на момент сборки:
 
 ```text
 Core Runtime Info: 10.0.0-dev
 System.Private.CoreLib.dll is located at: /path/to/your/app/bin/Debug/net10.0/win-x64/publish/System.Private.CoreLib.dll
 ```
 
-What you are looking for here is that the core runtime used is labelled as `-dev`. This means it is indeed using the one you built in the runtime repo. Also, ensure that the picked _System.Private.CoreLib.dll_ is indeed the one in your `publish` folder.
+Здесь важно убедиться, что используемый `core runtime` помечен флагом `-dev`. Это означает, что он действительно использует вашу сборку из репозитория runtime. Также убедитесь, что выбранный `System.Private.CoreLib.dll` действительно находится в вашей папке `publish`.
 
-## Troubleshooting
+## Устранение неполадок
 
-Here are a few very common errors you might encounter, and how to fix them.
+Вот несколько распространённых ошибок, с которыми вы можете столкнуться, и способы их устранения.
 
-### If it's not using your copied binaries
+### Если ваши скопированные бинарные файлы не используются
 
-Make sure you are running the executable directly.
+Убедитесь, что вы запускаете исполняемый файл напрямую.
 
 ```cmd
 .\bin\Debug\net10.0\win-x64\publish\HelloWorld.exe
 ```
 
-If you use `dotnet run` it will overwrite your custom binaries before executing the app.
+Если вы используете `dotnet run`, он перезапишет ваши пользовательские бинарные файлы перед выполнением приложения.
 
-### If you get a consistency check assertion failure
+### Если вы используете dotnet run, он перезапишет ваши пользовательские бинарные файлы перед выполнением приложения.
 
-This failure happens when you only copy `coreclr`, but not `System.Private.Corelib.dll` as well.
+Эта ошибка возникает, если вы скопировали только `coreclr`, но не `System.Private.Corelib.dll`.
 
 ```text
 Assert failure(PID 13452 [0x0000348c], Thread: 10784 [0x2a20]): Consistency check failed: AV in clr at this callstack:
 ```
 
-### If you get a JIT load error
+### Если вы получаете ошибку загрузки JIT
 
-If you forget to also copy `clrjit.dll`, you will get the following error message:
+Если вы забыли скопировать `clrjit.dll`, вы получите следующее сообщение об ошибке:
 
 ```text
 Fatal error. Failed to load JIT compiler.
