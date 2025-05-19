@@ -1,36 +1,12 @@
-# Building and Running CoreCLR Tests
+# Сборка и запуск тестов CoreCLR
 
-* [Requirements](#requirements)
-* [Overview](#overview)
-* [Building the Core_Root](#building-the-core_root)
-* [Building the Tests](#building-the-tests)
-  * [Building an Individual Test](#building-an-individual-test)
-  * [Building a Test Directory](#building-a-test-directory)
-  * [Building a Test Subtree](#building-a-test-subtree)
-  * [Test Executors](#test-executors)
-    * [The Standalone Test Runner and Build Time Test Filtering](#the-standalone-test-runner-and-build-time-test-filtering)
-    * [Building all tests with the Standalone Runner](#building-all-tests-with-the-standalone-runner)
-  * [Building C++/CLI Native Test Components Against the Live Ref Assemblies](#building-ccli-native-test-components-against-the-live-ref-assemblies)
-  * [Test Priorities](#test-priorities)
-* [Running the Tests](#running-the-tests)
-  * [Running Individual Tests](#running-individual-tests)
-  * [PAL Tests (macOS and Linux only)](#pal-tests-macos-and-linux-only)
-    * [Building PAL Tests](#building-pal-tests)
-    * [Running PAL Tests](#running-pal-tests)
-* [Modifying Tests](#modifying-tests)
-* [Investigating Test Failures](#investigating-test-failures)
+Глава содержит руководство по сборке и запуску тестов CoreCLR. Тестовый набор расположен в поддереве `src/tests` репозитория.
 
-This guide will walk you through building and running the CoreCLR tests. These are located within the `src/tests` subtree of the runtime repo.
+## Требования
 
-## Requirements
+Для сборки тестов CoreCLR необходимо предварительно собрать runtime и библиотеки (подмножества _clr_ и _libs_). Подробнее см. в главе [Инструкция по сборке CoreCLR](../../../workflow/building/coreclr/README.md)
 
-In order to build CoreCLR tests, you will need to have built the runtime and the libraries (that is, _clr_ and _libs_ subsets). You can find more detailed instructions per platform in their dedicated docs:
-
-* [Windows](/docs/workflow/building/coreclr/windows-instructions.md)
-* [macOS](/docs/workflow/building/coreclr/macos-instructions.md)
-* [Linux](/docs/workflow/building/coreclr/linux-instructions.md)
-
-For CoreCLR testing purposes, it is more than enough to simply build the _libs_ subset, as far as it concerns the libraries. If you want to know more in-depth about them, they have their own [libraries dedicated docs section](/docs/workflow/building/libraries/README.md).
+Для тестирования CoreCLR достаточно собрать только подмножество _libs_. Если вам нужна более подробная информация о библиотеках, обратитесь к [документации по библиотекам](../../../workflow/building/libraries/README.md).
 
 ## Overview
 
