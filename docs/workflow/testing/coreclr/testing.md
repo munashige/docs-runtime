@@ -10,217 +10,221 @@
 
 ## Overview
 
-As mentioned in the introduction, all test-building work is done from the `src/tests` folder, so we will consider that our starting point for the rest of this guide.
+## Обзор
 
-Building the tests can be as simple as calling the build script without any arguments. This will by default look for a _Debug_ built runtime and _Release_ built libraries. However, by passing the appropriate flags, you can define which configurations you want to use. For example, let's suppose you have a _Checked_ runtime with _Debug_ libraries:
+Как упоминалось ранее, вся работа по сборке тестов выполняется из папки `src/tests`, которая будет считаться отправной точкой для этого руководства.
+
+Сборка тестов может быть такой же простой, как вызов скрипта сборки без аргументов. По умолчанию скрипт ищет runtime, собранный в конфигурации _Debug_, и библиотеки в конфигурации _Release_. Однако, передав соответствующие флаги, вы можете указать нужные конфигурации. Например, предположим, что у вас есть runtime в конфигурации _Checked_ и библиотеки в _Debug_:
 
 ```bash
 ./src/tests/build.sh checked /p:LibrariesConfiguration=Debug
 ```
 
-Note that for the libraries configuration, we are passing the argument directly to MSBuild instead of the build script, hence the `/p:LibrariesConfiguration` flag. Also, make sure you use the correct syntax depending on our platform. The _cmd_ script takes the arguments by placing, while the _sh_ script requires them to be with a hyphen.
+Обратите внимание, что для конфигурации библиотек аргумент передается напрямую в MSBuild, а не в скрипт сборки, поэтому стоит флаг `/p:LibrariesConfiguration`. Также убедитесь, что используете правильный синтаксис в зависимости от платформы. Скрипт cmd принимает аргументы через пробел, а скрипт sh требует дефис.
 
-In the case you are working with a different build configuration for the host, you can specify it here via the `/p:HostConfiguration` flag.
+Если вы работаете с другой конфигурацией сборки для хоста, вы можете указать ее с помощью флага `/p:HostConfiguration`.
 
-**NOTE**: Building the whole test suite is a very lengthy process, so it is highly recommended you build individual tests, and/or test subtrees as you need them, to make your workflow more efficient. This is explained in detail later on in this doc.
+**ПРИМЕЧАНИЕ**: Сборка всего набора тестов — очень длительный процесс, поэтому рекомендуется собирать тесты или поддрева отдельно по мере необходимости для повышения эффективности как описано ниже.
 
-## Building the Core_Root
+## Сборка Core_Root
 
-The Core_Root folder is some sort of "dev-easy-to-use full build" of the product. It contains the built runtime binaries, as well as the library packages required to run tests. It is required that you build the libraries subset (`--subset libs`) before this command can be run.
+Папка Core_Root представляет собой "удобную для разработки полную сборку" продукта. Она содержит собранные бинарники runtime и пакеты библиотек, необходимые для запуска тестов. Перед выполнением этой команды необходимо собрать подмножество библиотек (`--subset libs`).
 
-Note that, as mentioned in the section above, running the tests build script by default searches the libraries in _Release_ mode, regardless of the runtime configuration you specify. If you built your libraries in another configuration, then you have to pass down the appropriate flag `/p:LibrariesConfiguration=<your_config>`.
+Как упоминалось выше, скрипт сборки тестов по умолчанию ищет библиотеки в конфигурации _Release_, независимо от указанной конфигурации runtime. Если ваши библиотеки собраны в другой конфигурации, необходимо передать соответствующий флаг `/p:LibrariesConfiguration=<ваша_конфигурация>`.
 
-The simplest command to generate the _Core\_Root_ from the repository's root path is the following:
+Самая простая команда для генерации _Core_Root_ из корня репозитория:
 
 ```cmd
 .\src\tests\build.cmd generatelayoutonly
 ```
 
-This example assumes you built CoreCLR on _Debug_ mode and the Libraries on _Release_ mode, hence no additional flags are needed. After the build is complete, you will be able to find the output in the `artifacts/tests/coreclr/<OS>.<arch>.<configuration>/Tests/Core_Root` folder.
+Этот пример предполагает, что вы собрали CoreCLR в режиме _Debug_ и библиотеки в режиме _Release_, поэтому дополнительные флаги не требуются. После завершения сборки вы сможете найти выходные данные в папке `artifacts/tests/coreclr/<OS>.<arch>.<configuration>/Tests/Core_Root`.
 
-## Building the Tests
+## Сборка тестов
 
-The following subsections will explain how to segment the test suite according to your needs. There are three main scopes of building tests:
+В следующих подразделах будет объяснено, как сегментировать тестовый набор в соответствии с вашими потребностями. Существует три основных области сборки тестов:
 
-* Individual Test Runner
-* Full Directory
-* Entire Subtree
+* Индивидуальный тестовый запуск
+* Целая директория
+* Все поддрево
 
-When no set is specified, almost the whole test suite (`src/tests`) is built.
+Когда не указаны подмножества, собирается почти весь тестовый набор (`src/tests`).
 
-One of the most important attributes tests have is their **priority**. By default, only those tests with _Priority 0_ are built, regardless of whether it's an individual one, a directory, or a subtree, unless otherwise specified with the `-priority` flag. More info on this in [its dedicated section](#test-priorities). Regardless of which subset you build, all the outputs will be placed in `artifacts/tests/coreclr/<OS>.<arch>.<configuration>`.
+Одним из самых важных атрибутов тестов является их **приоритет**. По умолчанию собираются только те тесты, которые имеют _Priority 0_, независимо от того, является ли это индивидуальным тестом, директорией или поддеревом, если не указано иное с помощью флага `-priority`. Более подробная информация об этом представлена в [его специальном разделе](#test-priorities). Независимо от того, какой поднабор вы собираете, все выходные данные будут помещены в `artifacts/tests/coreclr/<OS>.<arch>.<configuration>`.
 
-**NOTE**: Some tests have native components to them. It is highly recommended you build all of those prior to attempting to build any managed test in the following sections, as it's not a very costly or lengthy process:
+**ПРИМЕЧАНИЕ**: Некоторые тесты имеют нативные компоненты. Настоятельно рекомендуется собрать все из них перед попыткой собрать любой управляемый тест в следующих разделах, так как это не очень затратный или длительный процесс.
 
 ```cmd
 .\src\tests\build.cmd skipmanaged
 ```
 
-### Building an Individual Test
+### Индивидуальный тестовый запуск 
 
-To build an individual test, you have to pass the `-test` flag along with the path to the test's `csproj` file to the build script. You can select more than one by repeating the `-test` flag. For example, let's try building a couple JIT tests:
+Чтобы собрать конкретный тест, вам нужно передать флаг `-test` вместе с путем к файлу `csproj` теста в скрипт сборки. Вы можете выбрать более одного теста, повторяя флаг `-test`. Например, чтобы собрать несколько тестов JIT:
 
-On Windows:
+На Windows:
+
 
 ```cmd
 .\src\tests\build.cmd test JIT\Methodical\Methodical_d1.csproj test JIT\JIT_ro.csproj
 ```
 
-On macOS and Linux:
+На macOS и Linux:
 
 ```bash
 ./src/tests/build.sh -test:JIT/Methodical/Methodical_d1.csproj -test:JIT/JIT_ro.csproj
 ```
 
-Alternatively, you can call _build_ directly using the `dotnet.cmd/dotnet.sh` script at the root of the repo and pass all arguments directly yourself:
+В качестве альтернативы вы можете вызвать _build_ напрямую, используя скрипт `dotnet.cmd/dotnet.sh` в корне репозитория и передать все аргументы напрямую самостоятельно:
+
 
 ```bash
 ./dotnet.sh build -c <Your Configuration> src/tests/path/to/test.csproj
 ```
 
-### Building a Test Directory
+### Сборка тестовой директории
 
-To build all the tests contained in an individual directory, you have to pass the `-dir` flag along with the directory's path to the build script. Just like with individual tests, you can select more than one by repeating the `-dir` flag. For example, let's try a couple of folders in the JIT subtree:
+Чтобы собрать все тесты, содержащиеся в отдельной директории, вам нужно передать флаг `-dir` вместе с путем к директории в скрипт сборки. Так же, как и с индивидуальными тестами, вы можете выбрать более одной директории, повторяя флаг `-dir`. Например, давайте попробуем собрать несколько папок в поддереве JIT:
 
-On Windows:
+На Windows:
 
 ```cmd
 .\src\tests\build.cmd dir JIT dir Loader
 ```
 
-On macOS and Linux:
+На macOS и Linux:
 
 ```bash
 ./src/tests/build.sh -dir:JIT -dir:Loader
 ```
 
-### Building a Test Subtree
+### Сборка тестового поддрева
 
-To build a whole subtree, you have to pass the path to the root of the subtree you want with the `-tree` flag. Just like with any other subset, you can select more than one by repeating the `-tree` flag. For example, let's try building all the base services exceptions, and methodical JIT tests:
+Чтобы собрать целое поддерево, вам нужно передать путь к корню поддерева, которое вы хотите собрать, с флагом `-tree`. Так же, как и с любым другим подмножеством, вы можете выбрать более одного поддерева, повторяя флаг `-tree`. Например, давайте попробуем собрать все исключения базовых сервисов и методические тесты JIT:
 
-On Windows:
+На Windows:
 
 ```cmd
 .\src\tests\build.cmd tree baseservices\exceptions tree JIT\Methodical
 ```
 
-On macOS and Linux:
+На macOS и Linux:
 
 ```bash
 ./src/tests/build.sh -tree:baseservices/exceptions -tree:JIT/Methodical
 ```
 
-### Test Executors
+### Исполнители тестов
 
-We have multiple different mechanisms of executing tests.
+Имеется несколько различных механизмов выполнения тестов.
 
-Our test entrypoints are generally what we call "merged test runners", as they provide an executable runner project for multiple different test assemblies. These projects can be identified by the `<Import Project="$(TestSourceDir)MergedTestRunner.targets" />` line in their .csproj file. These projects provide a simple experience for running tests. When executing a merged runner project, it will run each test sequentially and record if it passes or fails in an xunit results file. The merged test runner support runtime test filtering. If specified, the first argument to the test runner is treated as a `dotnet test --filter` argument following the xUnit rules in their documentation. Today, the runner only supports the simple form, a substring of a test's fully-qualified name, in the format `Namespace.ContainingTypeName.TypeName.Method`. Additionally, tests can be filtered using the `FullyQualifiedName=Namespace.ContainingTypeName.TypeName.Method` syntax or the `DisplayName=TestDisplayName` syntax. The display name of a test is the name printed out on the console when the test runs. Additionally, a `~` can be used instead of an `=` to specify a substring search. If support for further filtering options is desired, please open an issue requesting it.
+Точки входа для тестов обычно называются "объединенными тестовыми раннерами" (_merged test runners_), так как они предоставляют исполняемый проект для запуска нескольких различных тестовых сборок. Эти проекты можно идентифицировать по строке `<Import Project="$(TestSourceDir)MergedTestRunner.targets" />` в их файле .csproj. Эти проекты обеспечивают простой опыт для запуска тестов. При выполнении проекта объединенного запуска тестов он будет запускать каждый тест последовательно и записывать, прошел он или провалился, в файл результатов xunit. Объединенный тестовый раннер поддерживает фильтрацию тестов во время выполнения. Если указано, первый аргумент для тестового запуска будет рассматриваться как аргумент `dotnet test --filter`, следуя правилам xUnit в их документации. На данный момент раннер поддерживает только простую форму — подстроку полного имени теста в формате `Namespace.ContainingTypeName.TypeName.Method`. Кроме того, тесты можно фильтровать, используя синтаксис `FullyQualifiedName=Namespace.ContainingTypeName.TypeName.Method` или синтаксис `DisplayName=TestDisplayName`. Отображаемое имя теста — это имя, которое выводится на консоль при выполнении теста. Дополнительно, вместо `=` можно использовать `~`, чтобы указать поиск по подстроке. Если требуется поддержка дополнительных опций фильтрации, пожалуйста, откройте проблему с запросом.
 
-Some tests need to be run in their own process as they interact with global process state, they have a custom test entrypoint, or they interact poorly with other tests in the same process. These tests are generally marked with `<RequiresProcessIsolation>true</RequiresProcessIsolation>` in their project files. These tests can be run directly, but they can also be invoked through their corresponding merged test runner. The merged test runner will invoke them as a subprocess in the same manner as if they were run individually.
+Некоторые тесты необходимо запускать в собственном процессе, так как они взаимодействуют с глобальным состоянием процесса, имеют собственную точку входа для теста или плохо взаимодействуют с другими тестами в том же процессе. Эти тесты обычно помечены строкой `<RequiresProcessIsolation>true</RequiresProcessIsolation>` в их файлах проектов. Эти тесты можно запускать напрямую, но их также можно вызывать через соответствующий объединенный тестовый раннер. Объединенный тестовый раннер будет вызывать их как подпроцесс так же, как если бы они запускались индивидуально.
 
-#### The Standalone Test Runner and Build Time Test Filtering
+#### Независимый тестовый раннер и фильтрация тестов
 
-Sometimes you may want to run a test with the least amount of code before actually executing the test. In addition to the merged test runner, we have another runner mode known as the "Standalone" runner. This runner is used by default in tests that require process isolation. This runner consists of a simple `try-catch` around executing each test sequentially, with no test results file or runtime test filtering.
+Иногда вы можете захотеть запустить тест с минимальным количеством кода перед фактическим выполнением теста. В дополнение к объединенному тестовому раннеру у нас есть другой режим запуска, известный как "независимый" раннер. Этот раннер используется по умолчанию в тестах, которые требуют изоляции процесса. Этот раннер состоит из простого `try-catch` вокруг выполнения каждого теста последовательно, без файла результатов тестов или фильтрации тестов во время выполнения.
 
-To filter tests on a merged test runner built as standalone, you can set the `TestFilter` property, like so: `./dotnet.sh build -c Checked src/tests/path/to/test.csproj -p:TestFilter=SubstringOfFullyQualifiedTestName`. This mechanism supports the same filtering as the runtime test filtering. Using this mechanism will allow you to skip individual test cases at build time instead of at runtime.
+Чтобы фильтровать тесты в объединенном тестовом раннере, собранном как независимый, вы можете установить свойство `TestFilter`, например: `./dotnet.sh build -c Checked src/tests/path/to/test.csproj -p:TestFilter=SubstringOfFullyQualifiedTestName`. Этот механизм поддерживает ту же фильтрацию, что и фильтрация тестов во время выполнения. Использование этого механизма позволит вам пропустить отдельные тестовые случаи на этапе сборки, а не во время выполнения.
 
-#### Building all tests with the Standalone Runner
+#### Сборка всех тестов с независимым раннером
 
-If you wish to use the Standalone runner described in the [previous section](#the-standalone-test-runner-and-build-time-test-filtering), you can set the `BuildAllTestsAsStandalone` environment variable to `true` when invoking the `./src/tests/build.sh` or `./src/tests/build.cmd` scripts (for example, `export BuildAllTestsAsStandalone=true` or `set BuildAllTestsAsStandalone=true`). This will build all tests that are not directly in a merged test runner's project as separate executable tests and build only the tests that are compiled into the runner directly. If a runner has no tests that are built directly into the runner, then it will be excluded.
+Если вы хотите использовать Независимый раннер, описанный в [предыдущем разделе](#независимый-тестовый-раннер-и-фильтрация-тестов-во-время-сборки), вы можете установить переменную окружения `BuildAllTestsAsStandalone` в `true` при вызове скриптов `./src/tests/build.sh` или `./src/tests/build.cmd` (например, `export BuildAllTestsAsStandalone=true` или `set BuildAllTestsAsStandalone=true`). Это соберет все тесты, которые не находятся непосредственно в проекте объединенного тестового раннером, как отдельные исполняемые тесты и соберет только те тесты, которые скомпилированы непосредственно в раннере. Если у раннером нет тестов, которые собраны непосредственно в раннере, то он будет исключен.
 
-### I added a test, which project do I run to run it?
+### Запуск проекта для выполнения добавленного теста
 
-Now that we run multiple tests in a single process, determining which project corresponds to the test to run can be a bit tricky. Here's some basic steps to determine which project to run to execute a test:
+Теперь, когда мы запускаем несколько тестов в одном процессе, определить, какой проект соответствует тесту для выполнения, может быть немного сложно. Вот несколько основных шагов, чтобы определить, какой проект запустить для выполнения теста:
 
-1. Look at the project file.
+1. Посмотрите на файл проекта.
 
-If the project file has `<RequiresProcessIsolation>true</RequiresProcessIsolation>` or `<Import Project="$(TestSourceDir)MergedTestRunner.targets" />`, then to run the test, you should build this project and run the `.cmd` or `.sh` script that corresponds to this project file.
+    Если в файле проекта есть `<RequiresProcessIsolation>true</RequiresProcessIsolation>` или `<Import Project="$(TestSourceDir)MergedTestRunner.targets" />`, то для запуска теста вам нужно собрать этот проект и запустить соответствующий ему `.cmd` или `.sh` скрипт.
 
-2. Look at .csproj files in parent directories.
+2. Посмотрите на файлы .csproj в родительских директориях.
 
-In a parent directory, you will find a `.csproj` file marked with `<Import Project="$(TestSourceDir)MergedTestRunner.targets" />`. In that project file, you'll see one or more `MergedTestProjectReference` items. If one of the glob patterns in the `Include` attribute matches and the `Exclude` attribute on the same item, then the test is included in this merged test runner. To run the test, you should build this merged runner project and run the `.cmd` or `.sh` script that corresponds to this project file. You can filter the tests in this runner using the instructions in the [Test Executors section](#test-executors).
+    В родительской директории вы найдете файл `.csproj`, помеченный `<Import Project="$(TestSourceDir)MergedTestRunner.targets" />`. В этом файле проекта вы увидите один или несколько элементов `MergedTestProjectReference`. Если один из шаблонов в атрибуте `Include` совпадает с атрибутом `Exclude` в том же элементе, то тест включен в этот объединенный тестовый раннер. Чтобы запустить тест, вам нужно собрать этот проект объединенного запуска и запустить соответствующий ему `.cmd` или `.sh` скрипт. Вы можете фильтровать тесты в этом раннере, используя инструкции в разделе [Исполнители тестов](#исполнители-тестов).
 
-### When to make a test RequiresProcessIsolation
+### Пометить тест как требующий изоляции процесса
 
-The following are common reasons to mark a test as requiring process isolation:
+Вот несколько распространенных причин, чтобы пометить тест как требующий изоляции процесса:
 
-- The test manipulates process-wide state, such as setting environment variables or changing the current directory.
-- The test requires the ability to parse command line arguments.
-- The test needs a custom main method.
-- The test requires special information, such as an app manifest, in its executable.
-- The test launches through a native executable.
-- The test sets one of the configuration properties that are checked in the test run scripts, such as those in [test-configuration.md](test-configuration.md#adding-test-guidelines).
+- Тест манипулирует состоянием, охватывающим весь процесс, например, устанавливает переменные окружения или изменяет текущую директорию.
+- Тест требует возможности парсинга аргументов командной строки.
+- Тест нуждается в пользовательском методе main.
+- Тест требует специальной информации, такой как манифест приложения, в своем исполняемом файле.
+- Тест запускается через нативный исполняемый файл.
+- Тест устанавливает одно из свойств конфигурации, которые проверяются в скриптах выполнения тестов, такие как те, что в [test-configuration.md](test-configuration.md#adding-test-guidelines).
 
-When a test is marked as `<RequiresProcessIsolation>true</RequiresProcessIsolation>`, it will be run in its own process and have its own `.cmd` and `.sh` scripts generated as test entrypoints. In CI, it will be executed as out of process by whichever merged test runner it is referenced by.
+Когда тест помечен как `<RequiresProcessIsolation>true</RequiresProcessIsolation>`, он будет выполняться в своем собственном процессе и для него будут сгенерированы собственные `.cmd` и `.sh` скрипты в качестве точек входа для тестов. В CI он будет выполняться как вне процесса тем объединенным тестовым раннерем, к которому он ссылается.
 
-#### Main methods in RequiresProcessIsolation tests
+#### Основные методы в тестах, требующих изоляции процесса
 
-If a custom main is not provided, the test can use `[Fact]` and `[Theory]` attributes internally. The test will use the "standalone" generator to create the test entrypoint. If you want to provide your own `Main` method for your test, set the `<ReferenceXUnitWrapperGenerator>false</ReferenceXUnitWrapperGenerator>` property in the test project file.
+Если пользовательский метод main не предоставлен, тест может использовать атрибуты `[Fact]` и `[Theory]` внутри. Тест будет использовать "независимый" генератор для создания точки входа теста. Если вы хотите предоставить свой собственный метод `Main` для вашего теста, установите свойство `<ReferenceXUnitWrapperGenerator>false</ReferenceXUnitWrapperGenerator>` в файле проекта теста.
 
-### Building C++/CLI Native Test Components Against the Live Ref Assemblies
+### Сборка компонентов тестов C++/CLI против живых реферальных сборок
 
-By default, the _C++/CLI_ native test components build against the _ref pack_ from the SDK specified in the `global.json` file in the root of the repository. To build these components against the _ref assemblies_ produced in the build, pass the `-cmakeargs -DCPP_CLI_LIVE_REF_ASSEMBLIES=1` parameters to the test build. For example:
+По умолчанию компоненты тестов _C++/CLI_ собираются против _ref pack_ из SDK, указанного в файле `global.json` в корне репозитория. Чтобы собрать эти компоненты против _ref assemblies_, произведенных в сборке, передайте параметры `-cmakeargs -DCPP_CLI_LIVE_REF_ASSEMBLIES=1` для сборки тестов. Например:
 
 ```bash
 ./src/tests/build.sh skipmanaged -cmakeargs -DCPP_CLI_LIVE_REF_ASSEMBLIES=1
 ```
 
-### Test Priorities
+### Приоритеты тестов
 
-As mentioned earlier in this guide, each test has a priority number assigned to them, and only tests with _Priority 0_ are built by default.
+Как упоминалось ранее в этом руководстве, каждому тесту присваивается номер приоритета, и по умолчанию собираются только тесты с _Priority 0_.
 
-Now, here is where things get a little complicated. Test priority filtering is orthogonal to specifying test subsets. This means that even if when specifying tests, directories, and/or subtrees, you have to explicitly provide the priority if the test(s) of interest are not priority 0. Otherwise, the build will skip them.
+Теперь здесь ситуация становится немного сложной. Фильтрация приоритетов тестов является ортогональной к указанию подмножеств тестов. Это означает, что даже если вы указываете тесты, директории и/или поддеревья, вам нужно явно указать приоритет, если тест(ы) интереса не имеют приоритета 0. В противном случае сборка пропустит их.
 
-Another very important thing to keep in mind, is that priorities are accumulative. This means that if for example, you pass `-priority=1` to the build script, all priority 0 _AND_ priority 1 tests get built.
+Еще одна очень важная вещь, которую следует помнить, заключается в том, что приоритеты являются накопительными. Это означает, что если, например, вы передаете `-priority=1` в скрипт сборки, будут собраны все тесты приоритета 0 _И_ приоритета 1.
 
-Let's take one of the examples used in the previous subsections. Assume you want to build all _JIT Methodical Div_ tests, including both _pri0_ and _pri1_. This is how the command-line would look:
+Возьмем один из примеров, использованных в предыдущих подразделах. Предположим, вы хотите собрать все тесты _JIT Methodical Div_, включая как _pri0_, так и _pri1_. Вот как будет выглядеть командная строка:
 
-On Windows:
+На Windows:
 
 ```cmd
 .\src\tests\build.cmd dir JIT\Methodical\divrem\div -priority=1
 ```
 
-On macOS and Linux:
+На macOS и Linux:
 
 ```bash
 ./src/tests/build.sh -dir:JIT/Methodical/divrem/div -priority1
 ```
 
-**NOTE**: Yes, you're seeing it right. The `priority` flag is a bit different between the Windows and macOS/Linux scripts.
+**ПРИМЕЧАНИЕ**: Флаг `priority` немного отличается между скриптами для Windows и macOS/Linux.
 
-## Running the Tests
+## Запуск тестов {#testlaunch}
 
-The simplest way to run in-bundle the tests you've built is by using the `run.cmd/run.sh` script after you've worked with `build.cmd/build.sh`. The running script takes flags very similarly to the build one. Let's suppose you have a _Checked_ runtime you want to test on an _x64_ machine. You'd run all your built tests with the following command-line:
+Самый простой способ запустить собранные тесты в пакете — использовать скрипт `run.cmd/run.sh` после работы с `build.cmd/build.sh`. Скрипт для запуска принимает флаги очень похоже на скрипт сборки. Предположим, у вас есть среда выполнения _Checked_, которую вы хотите протестировать на машине _x64_. Вы можете запустить все ваши собранные тесты с помощью следующей командной строки:
 
 ```cmd
 .\src\tests\run.cmd x64 checked
 ```
 
-The `run.cmd/run.sh` scripts also have a number of flags you can pass to set specific conditions and environment variables, such as _JIT Stress_, _GC Stress_, and so on. Run it with only any one of the help flags for more details.
+Скрипты `run.cmd/run.sh` также имеют ряд флагов, которые вы можете передать для установки конкретных условий и переменных окружения, таких как _JIT Stress_, _GC Stress_ и так далее. Запустите его с любым из флагов помощи для получения более подробной информации.
 
-Once your tests are done running, a report will be generated with all the results under the `artifacts/log` folder, and will be named `TestRun_<Arch>_<Configuration>.html`. The tests that failed will be listed in a file called `TestRunResults_<OS>_<Arch>_<Configuration>.err`.
+После завершения выполнения ваших тестов будет сгенерирован отчет со всеми результатами в папке `artifacts/log`, который будет называться `TestRun_<Arch>_<Configuration>.html`. Тесты, которые не прошли, будут перечислены в файле с именем `TestRunResults_<OS>_<Arch>_<Configuration>.err`.
 
-For individual test results and outputs, those are written in a `Reports` folder within the test root's directory (`artifacts/tests/coreclr/<OS>.<Arch>.<Configuration>`). For example, the results for the _JIT Intrinsics Math Round Double_ test shown in [Building an Individual Test](#building-an-individual-test), would be placed in `artifacts/tests/coreclr/<OS>.<Arch>.<Configuration>/Reports/JIT/Intrinsics/MathRoundDouble_ro`.
+Для индивидуальных результатов тестов и выводов они записываются в папку `Reports` в директории корня теста (`artifacts/tests/coreclr/<OS>.<Arch>.<Configuration>`). Например, результаты теста _JIT Intrinsics Math Round Double_, показанного в [Сборке индивидуального теста](#сборка-индивидуального-теста), будут помещены в `artifacts/tests/coreclr/<OS>.<Arch>.<Configuration>/Reports/JIT/Intrinsics/MathRoundDouble_ro`.
 
-### Running Individual Tests
+### Запуск индивидуальных тестов {#ind_test}
 
-After you've built one (or more) tests, the way to run them is by calling the generated `cmd/sh` script alongside them. These scripts take three optional arguments:
+После того как вы собрали один (или несколько) тестов, запустить их можно, вызвав сгенерированный скрипт `cmd/sh` вместе с ними. Эти скрипты принимают три необязательных аргумента:
 
-* `-debug`: Receives the path of a debugger to run the test under in.
-* `-env`: Path to a _.env_ file to specify environment variables to be set for the test. More info about _dotenv_ can be found in [their repo](https://github.com/motdotla/dotenv).
-* -coreroot: The path to the Core_Root you wish to use. Note that this flag is mandatory unless you have the `CORE_ROOT` environment variable set. Then, you can omit it and the script will use that one.
+* `-debug`: Принимает путь к отладчику, под управлением которого будет запущен тест.
+* `-env`: Путь к файлу _.env_, чтобы указать переменные окружения, которые будут установлены для теста. Более подробную информацию о _dotenv_ можно найти в [их репозитории](https://github.com/motdotla/dotenv).
+* `-coreroot`: Путь к Core_Root, который вы хотите использовать. Обратите внимание, что этот флаг является обязательным, если у вас не установлена переменная окружения `CORE_ROOT`. В этом случае вы можете опустить его, и скрипт будет использовать эту переменную.
 
-If this list of parameters feels familiar, it's because it's virtually the same as the arguments that `corerun` receives. More info on `corerun` in its [how-to-use doc](/docs/workflow/testing/using-corerun-and-coreroot.md).
+Если этот список параметров кажется вам знакомым, это потому, что он практически идентичен аргументам, которые принимает `corerun`. Более подробная информация о `corerun` представлена в [документации по его использованию](/docs/workflow/testing/using-corerun-and-coreroot.md).
 
-These scripts have a couple more hidden functionalities, which can be activated by setting their environment variables prior to running the script:
+Эти скрипты имеют несколько дополнительных скрытых функций, которые можно активировать, установив их переменные окружения перед запуском скрипта:
 
-* Run with Crossgen2: `RunCrossGen2=1`
-* Build and run as composite: `CompositeBuildMode=1`. Note that this one depends on `RunCrossGen2` being set.
+* Запуск с Crossgen2: `RunCrossGen2=1`
+* Сборка и запуск в качестве составного: `CompositeBuildMode=1`. Обратите внимание, что этот параметр зависит от установки `RunCrossGen2`.
 
-Let's run one of the Intrinsics tests as an example:
+Давайте запустим один из тестов Intrinsics в качестве примера:
 
-On Windows Command Prompt:
+В командной строке Windows:
 
 ```cmd
 set CORE_ROOT=<repo_root>\artifacts\tests\coreclr\windows.<Arch>.<Configuration>\Tests\Core_Root
@@ -228,7 +232,7 @@ cd path\to\JIT\Intrinsics\MathRoundDouble_ro
 .\MathRoundDouble_ro.cmd
 ```
 
-On macOS/Linux:
+На macOS/Linux:
 
 ```bash
 export CORE_ROOT=<repo_root>/artifacts/tests/coreclr/<OS>.<Arch>.<Configuration>/Tests/Core_Root
@@ -236,7 +240,7 @@ cd path/to/JIT/Intrinsics/MathRoundDouble_ro
 ./MathRoundDouble_ro.sh
 ```
 
-On Powershell:
+В Powershell:
 
 ```powershell
 $Env:CORE_ROOT = '<repo_root>\artifacts\tests\coreclr\windows.<Arch>.<Configuration>\Tests\Core_Root'
@@ -244,66 +248,66 @@ cd path\to\JIT\Intrinsics\MathRoundDouble_ro
 .\MathRoundDouble_ro.cmd
 ```
 
-Alternatively, instead of setting the _CORE\_ROOT_ environment variable, you can specify it directly to the test's script via the `-coreroot` flag, as mentioned at the beginning of this section:
+В качестве альтернативы, вместо установки переменной окружения _CORE_ROOT_, вы можете указать ее напрямую в скрипте теста с помощью флага `-coreroot`, как упоминалось в начале этого раздела:
 
-On Windows:
+На Windows:
 
 ```cmd
 cd path\to\JIT\Intrinsics\MathRoundDouble_ro
 .\MathRoundDouble_ro.cmd -coreroot <repo_root>\artifacts\tests\coreclr\windows.<Arch>.<Configuration>\Tests\Core_Root
 ```
 
-On macOS/Linux:
+На macOS/Linux:
 
 ```bash
 cd path/to/JIT/Intrinsics/MathRoundDouble_ro
 ./MathRoundDouble_ro.sh -coreroot=<repo_root>/artifacts/tests/coreclr/<OS>.<Arch>.<Configuration>/Tests/Core_Root
 ```
 
-If you want to run an individual test from a test runner, use the filtering capabilities described in the [Test Executors section](#test-executors).
+IЕсли вы хотите запустить индивидуальный тест из тестового раннером, используйте возможности фильтрации, описанные в разделе [Исполнители тестов](#исполнители-тестов).
 
-### PAL Tests (macOS and Linux only)
+### Тесты PAL (только для macOS и Linux)
 
-The PAL layer tests are exclusive to Unix-based operating systems. This section will go on how to work with them.
+Тесты уровня PAL эксклюзивны для операционных систем на базе Unix. В этом разделе будет описано, как с ними работать.
 
-#### Building PAL Tests
+#### Сборка тестов PAL
 
-Firstly, build them by passing the `paltests` subset to the main build script of the repo:
+Сначала соберите их, передав подмножество `paltests` в основной скрипт сборки репозитория:
 
 ```bash
 ./build.sh -s clr.paltests
 ```
 
-#### Running PAL Tests
+#### Запуск тестов PAL
 
-Once you're done building them, you can run them all either including or excluding the disabled tests:
+После того как вы их собрали, вы можете запустить все тесты, включая или исключая отключенные тесты:
 
-_Including Disabled Tests:_
+_Включая отключенные тесты:_
 
 ```bash
 ./src/coreclr/pal/tests/palsuite/runpaltests.sh artifacts/bin/coreclr/<OS>.<Arch>.<Configuration>/paltests
 ```
 
-_Excluding Disabled Tests:_
+_Без выключенных тестов:_
 
 ```bash
 cd artifacts/bin/coreclr/<OS>.<Arch>.<Configuration>
 ./paltests/runpaltests.sh paltests
 ```
 
-In order to run only specific tests, edit `paltestlist.txt` in under `src/coreclr/pal/tests/palsuite`, and adjust it to your needs (don't check in those changes though). The test(s) results will be output to `/tmp/PalTestOutput/default/pal_tests.xml`.
+Чтобы запустить только определенные тесты, отредактируйте файл `paltestlist.txt` в директории `src/coreclr/pal/tests/palsuite` и настройте его по своим нуждам (не забудьте не коммитить эти изменения). Результаты тестов будут выведены в `/tmp/PalTestOutput/default/pal_tests.xml`.
 
-To disable tests in the CI, edit `src/coreclr/pal/tests/palsuite/issues.targets` accordingly.
+Чтобы отключить тесты в CI, отредактируйте файл `src/coreclr/pal/tests/palsuite/issues.targets` соответствующим образом.
 
-## Modifying Tests
+## Модификация тестов
 
-If you need to edit any given test's source code, simply make your changes and rebuild the test project. Then, you can re-run it as needed following the instructions detailed in the sections above.
+Если вам нужно отредактировать исходный код любого теста, просто внесите изменения и пересоберите проект теста. Затем вы можете повторно запустить его по мере необходимости, следуя инструкциям, изложенным в предыдущих разделах.
 
-## Investigating Test Failures
+## Исследование сбоев тестов
 
-Upon completing a test run with `run.sh/run.cmd`, you may find one or more tests failing. If this is the case, there will be additional files detailing the failures in each test's `Reports` folder (see [Running the Tests](#running-the-tests) for more info regarding reports). There are 2 main files of interest:
+После завершения выполнения теста с помощью `run.sh/run.cmd` вы можете обнаружить, что один или несколько тестов не прошли. Если это так, в папке `Reports` каждого теста будут дополнительные файлы, описывающие сбои (см. [Запуск тестов](#testlaunch) для получения дополнительной информации о отчетах). Есть 2 основных файла, которые стоит отметить:
 
-* `<Test>.output.txt`: Contains all the information logged by the test.
-* `<Test>.error.txt`: Contains all the information reported by _CoreRun_ when the test process crashed.
+* `<Test>.output.txt`: Содержит всю информацию, записанную тестом.
+* `<Test>.error.txt`: Содержит всю информацию, сообщенную _CoreRun_ в случае сбоя процесса теста.
 
-The test's report will also contain the test command exactly as it run it, so you can investigate it further, either by running the app in the way you see fit and/or as the [Running Individual Tests](#running-individual-tests) details.
+Отчет теста также будет содержать команду теста точно так, как она была выполнена, так что вы можете исследовать ее дальше, либо запустив приложение так, как вам удобно, и/или как это описано в разделе [Запуск индивидуальных тестов](#ind_test).
