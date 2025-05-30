@@ -1,164 +1,151 @@
-Building and running tests on Linux, macOS, and FreeBSD
-======================================================
+# Сборка и запуск тестов на Linux, macOS и FreeBSD
 
-CoreCLR tests
--------------
+## Тесты CoreCLR
 
-## Building
+## Сборка
 
-Build CoreCLR on [Unix](../../building/coreclr/linux-instructions.md).
+Соберите CoreCLR на [Unix](../../building/coreclr/cross-building.md).
 
-## Building the Tests
+## Сборка тестов
 
-Dotnet CLI is required to build the tests. This can be done on any platform then copied over if the architecture or OS does not support Dotnet.
+Для сборки тестов требуется Dotnet CLI. CLI может быть использован на любой ОС-и или скопирован, если архитектура или ОС не поддерживают Dotnet.
 
-To build the tests on Unix:
+Чтобы собрать тесты на Unix:
 
 ```sh
 ./src/tests/build.sh
 ```
 
-By default, the test build uses Release as the libraries configuration. To use a different configuration, set the `LibrariesConfiguration` property to the desired configuration. For example:
+По умолчанию сборка тестов использует конфигурацию Release для библиотек. Чтобы использовать другую конфигурацию, установите свойство `LibrariesConfiguration` в желаемое значение. Например:
 
 ```
 ./src/tests/build.sh /p:LibrariesConfiguration=Debug
 ```
 
-Please note that this builds the Priority 0 tests. To build priority 1:
+Обратите внимание, что команда собирает тесты с приоритетом `0`. Для сборки тестов с приоритетом `1`:
 
 ```sh
 ./src/tests/build.sh -priority1
 ```
 
-## Generating Core_Root
+## Генерация Core_Root {#generating-core_root}
 
-The `src/tests/build.sh` script generates the Core_Root folder, which contains the test host (`corerun`), libraries, and coreclr product binaries necessary to run a test. To generate Core_Root without building the tests:
+Скрипт `src/tests/build.sh` генерирует папку Core_Root, которая содержит хост для тестов (`corerun`), библиотеки и бинарные файлы coreclr, необходимые для запуска теста. Чтобы сгенерировать Core_Root без сборки тестов:
 
 ```
 ./src/tests/build.sh generatelayoutonly
 ```
 
-The output will be at `<repo_root>/artifacts/tests/coreclr/<os>.<arch>.<configuration>/Tests/Core_Root`.
+Результат будет находиться в `<repo_root>/artifacts/tests/coreclr/<os>.<arch>.<configuration>/Tests/Core_Root`.
 
-## Building Test Subsets
+## Сборка подмножеств тестов
 
-The `src/tests/build.sh` script supports three options that let you limit the set of tests to build;
-when none of these is specified, the entire test tree (under `src/tests`) gets built but that can be
-lengthy (especially in `-priority1` mode) and unnecessary when working on a particular test.
+Скрипт `src/tests/build.sh` поддерживает три опции, позволяющие ограничить набор собираемых тестов. Если ни одна из них не указана, собирается всё дерево тестов (в `src/tests`), что может занимать много времени (особенно в режиме `-priority1`) и не нужно при работе с конкретным тестом.
 
-1) `-test:<test-project>` - build a particular test project specified by its project file path,
-either absolute or relative to `src/tests`. The option can be specified multiple times on the command
-line to request building several individual projects; alternatively, a single occurrence of the option
-can represent several project paths separated by semicolons.
+1. `-test:<test-project>` - сборка конкретного тестового проекта, указанного по пути к файлу проекта, либо абсолютному, либо относительному к `src/tests`. Опцию можно указывать несколько раз в командной строке, чтобы запросить сборку нескольких отдельных проектов. Одна опция также может указывать несколько путей к проектам, разделенных точками с запятой.
 
-**Example**: `src/tests/build.sh -test:JIT/Methodical/divrem/div/i4div_cs_do.csproj;JIT/Methodical/divrem/div/i8div_cs_do.csproj`
+**Пример**: `src/tests/build.sh -test:JIT/Methodical/divrem/div/i4div_cs_do.csproj;JIT/Methodical/divrem/div/i8div_cs_do.csproj`
 
-2) `-dir:<test-folder>` - build all test projects within a given directory path, either absolute
-or relative to `src/tests`. The option can be specified multiple times on the command line to request
-building projects in several folders; alternatively, a single occurrence of this option can represent
-several project folders separated by semicolons.
+2. `-dir:<test-folder>` - сборка всех тестовых проектов в заданном каталоге,
+   либо абсолютном, либо относительному к `src/tests`. Опцию можно указывать несколько раз в командной строке, чтобы запросить сборку проектов в нескольких папках. Одна опция также может указывать несколько папок проектов, разделенных точками с запятой.
 
-**Example**: `src/tests/build.sh -dir:JIT/Methodical/Arrays/huge;JIT/Methodical/divrem/div`
+**Пример**: `src/tests/build.sh -dir:JIT/Methodical/Arrays/huge;JIT/Methodical/divrem/div`
 
-3) `-tree:<root-folder>` - build all test projects within the subtree specified by its root path,
-either absolute or relative to `src/tests`. The option can be specified multiple times on the command
-line to request building projects in several subtrees; alternatively, a single instance of the option
-can represent several project subtree root folder paths separated by semicolons.
+3. `-tree:<root-folder>` - сборка всех тестовых проектов в поддереве, указанном по его корневому пути, либо абсолютному, либо относительному к `src/tests`. Опцию можно указывать несколько раз в командной строке, чтобы запросить сборку проектов в нескольких поддеревьях. Одна опция также может указывать несколько папок проектов, разделенных точками с запятой.
 
-**Example**: `src/tests/build.sh -tree:baseservices/exceptions;JIT/Methodical`
+**Пример**: `src/tests/build.sh -tree:baseservices/exceptions;JIT/Methodical`
 
-**Please note** that priority filtering is orthogonal to specifying test subsets; even when you request
-building a particular test and the test is Pri1, you need to specify `-priority1` in the command line,
-otherwise the test build will get skipped. While somewhat unintuitive, 'fixing' this ad hoc would likely
-create more harm than good and we're hoping to ultimately get rid of the test priorities in the long term
-anyway.
+**Обратите внимание**, что приоритетная фильтрация является ортогональной к указанию подмножеств тестов. Даже при запросе сборки конкретного теста и при работе с тестом _Pri1_, нужно указать `-priority1` в командной строке, иначе сборка теста будет пропущена.
 
-## Building Individual Tests
+Хотя это несколько неинтуитивно, "исправление" команд по ходу работы принесет больше вреда, чем пользы.
 
-During development there are many instances where building an individual test is fast and necessary. All of the necessary tools to build are under `coreclr`. It is possible to use `~/runtime/dotnet.sh msbuild` as you would normally use MSBuild with a few caveats.
+## Сборка отдельных тестов
 
-**!! Note !! -- Passing /p:TargetOS=[osx|linux] is required.**
+В процессе разработки часто возникают ситуации, когда сборка конкретного теста должна быть быстрой и обязательной для дальнейшей работы. Все необходимые инструменты для сборки находятся в `coreclr`.
 
-## Building an Individual Test
+Можно использовать `~/runtime/dotnet.sh msbuild`, как вы обычно используете MSBuild, с несколькими оговорками.
+
+**!! Примечание !! -- Передача /p:TargetOS=[osx|linux] обязательна.**
+
+## Сборка отдельного теста {#building-individual-tests}
 
 ```sh
 ./dotnet.sh msbuild src/tests/path-to-proj-file /p:TargetOS=<TargetOS> /p:Configuration=<BuildType>
 ```
 
-In addition to the test assembly, this will generate a `.sh` script next to the test assembly in the test's output folder. The test's output folder will be under `<repo_root>/artifacts/tests/coreclr/<os>.<arch>.<configuration>` at a subpath based on the test's location in source.
+В дополнение к сборке теста, будет сгенерирован скрипт `.sh` рядом с тестовой сборкой в папке вывода теста. Папка вывода теста будет находиться по пути `<repo_root>/artifacts/tests/coreclr/<os>.<arch>.<configuration>` в подпапке, основанной на расположении теста в исходном коде.
 
-## Running Tests
+## Запуск Тестов
 
-The following instructions assume that on the Unix machine:
-- The CoreCLR repo is cloned at `/mnt/coreclr`
+Следующие инструкции предполагают, что на Unix-машине:
 
-`src/tests/build.sh` will have set up the `Core_Root` directory correctly after the test build.
+-   Репозиторий CoreCLR клонирован по пути `/mnt/coreclr`
+
+`src/tests/build.sh` корректно настроит директорию `Core_Root` после сборки тестов.
 
 ```sh
 ./src/tests/run.sh x64 checked
 ```
 
-Please use the following command for help.
+Используйте следующую команду для вызова помощи.
 
 ```sh
 ./src/tests/run.sh -h
 ```
 
-### Unsupported and temporarily disabled tests
+### Неподдерживаемые и временно отключенные тесты
 
-To support building all tests for all targets on single target, we use
-the conditional property
+Для сборки всех тестов для всех целей из одной используется следующее условное свойство:
 
 ```xml
 <CLRTestTargetUnsupported Condition="...">true</CLRTestTargetUnsupported>
 ```
 
-This property disables building of a test in a default build. It also
-disables running a test in the bash/batch wrapper scripts. It allows the
-test to be built on any target in CI when the `allTargets` option is
-passed to the `build.*` scripts.
+Это свойство отключает сборку теста в стандартном процессе сборки. Оно также отключает выполнение теста в оболочках _bash/batch_, что позволяет тесту собираться на любой цели в CI, когда опция `allTargets` передается в скрипты `build.*`.
 
-Tests which never should be built or run are marked
+Тесты, которые никогда не должны быть собраны или выполнены, помечаются следующим образом:
 
 ```xml
 <DisableProjectBuild>true</DisableProjectBuild>
 ```
 
-This propoerty should not be conditioned on Target properties to allow
-all tests to be built for `allTargets`.
+Это свойство не должно зависеть от свойств _Target_, чтобы позволить собирать все тесты для `allTargets`.
 
-## Running Individual Tests
+## Запуск отдельных тестов
 
-After [building an individual test](#building-individual-tests), to run the test:
+После [сборки отдельного теста](#building-individual-tests) запустите его, следуя шагам ниже:
 
-1) Set the `CORE_ROOT` environment variable to the [Core_Root folder](#generating-core_root).
+1. Установите переменную окружения `CORE_ROOT` на [папку Core_Root](#generating-core_root).
 
-2) Run the test using the `.sh` generated for the test.
+2. Запустите тест, используя сгенерированный для теста файл `.sh`.
 
-PAL tests
----------
+### Тесты PAL
 
-Build CoreCLR with PAL tests on the Unix machine:
+Соберите CoreCLR с тестами PAL на Unix-машине:
 
 ```sh
 ./build.sh clr.paltests
 ```
 
-Run tests:
+Запустите тесты:
 
-To run all tests including disabled tests
+Чтобы запустить все тесты, включая отключенные тесты:
+
 ```sh
 ./src/coreclr/pal/tests/palsuite/runpaltests.sh $(pwd)/artifacts/bin/coreclr/$(uname).x64.Debug/paltests
-# on macOS, replace $(uname) with osx
+# На macOS замените $(uname) на osx
 ```
-To only run enabled tests for the platform the tests were built for:
+
+Чтобы запустить только включенные тесты для платформы, для которой тесты были собраны:
+
 ```sh
 artifacts/bin/coreclr/$(uname).x64.Debug/paltests/runpaltests.sh $(pwd)/artifacts/bin/coreclr/$(uname).x64.Debug/paltests
-# on macOS, replace $(uname) with osx
+# На macOS замените $(uname) на osx
 ```
-To run only specific tests, edit paltestlist.txt locally to delete the ones you don't want to run.
 
-Test results will go into: `/tmp/PalTestOutput/default/pal_tests.xml`
+Чтобы запустить только конкретные тесты, отредактируйте файл `paltestlist.txt` локально, удалив те, которые вы не хотите запускать.
 
-To disable tests in the CI edit
-`src/coreclr/pal/tests/palsuite/issues.targets`
+Результаты тестов будут сохранены в: `/tmp/PalTestOutput/default/pal_tests.xml`.
+
+Чтобы отключить тесты в CI, отредактируйте файл
+`src/coreclr/pal/tests/palsuite/issues.targets`.

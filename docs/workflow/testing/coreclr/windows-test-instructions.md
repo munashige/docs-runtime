@@ -1,5 +1,4 @@
-Building and running tests on Windows
-=====================================
+# Building and running tests on Windows
 
 ## Building Tests
 
@@ -83,24 +82,24 @@ The `src\tests\build.cmd` script supports three options that let you limit the s
 when none of these is specified, the entire test tree (under `src\tests`) gets built but that can be
 lengthy (especially in `-priority=1` mode) and unnecessary when working on a particular test.
 
-1) `test <test-project>` - build a particular test project specified by its project file path,
-either absolute or relative to `src\tests`. The option can be specified multiple times on the command
-line to request building several individual projects; alternatively, a single occurrence of the option
-can represent several project paths separated by semicolons.
+1. `test <test-project>` - build a particular test project specified by its project file path,
+   either absolute or relative to `src\tests`. The option can be specified multiple times on the command
+   line to request building several individual projects; alternatively, a single occurrence of the option
+   can represent several project paths separated by semicolons.
 
 **Example**: `src\tests\build.cmd test JIT/Methodical/divrem/div/i4div_cs_do.csproj;JIT/Methodical/divrem/div/i8div_cs_do.csproj`
 
-2) `dir <test-folder>` - build all test projects within a given directory path, either absolute
-or relative to `src\tests`. The option can be specified multiple times on the command line to request
-building projects in several folders; alternatively, a single instance of the option
-can represent several project folders separated by semicolons.
+2. `dir <test-folder>` - build all test projects within a given directory path, either absolute
+   or relative to `src\tests`. The option can be specified multiple times on the command line to request
+   building projects in several folders; alternatively, a single instance of the option
+   can represent several project folders separated by semicolons.
 
 **Example**: `src\tests\build.cmd dir JIT/Methodical/Arrays/huge;JIT/Methodical/divrem/div`
 
-3) `tree <root-folder>` - build all test projects within the subtree specified by its root path,
-either absolute or relative to `src\tests`. The option can be specified multiple times on the command
-line to request building projects in several subtrees; alternatively, a single instance of the option
-can represent several project subtree root folder paths separated by semicolons.
+3. `tree <root-folder>` - build all test projects within the subtree specified by its root path,
+   either absolute or relative to `src\tests`. The option can be specified multiple times on the command
+   line to request building projects in several subtrees; alternatively, a single instance of the option
+   can represent several project subtree root folder paths separated by semicolons.
 
 **Example**: `src\tests\build.cmd tree baseservices/exceptions;JIT/Methodical`
 
@@ -114,9 +113,9 @@ anyway.
 
 **Note:** `build.cmd skipmanaged [Any additional flags]` needs to be run at least once if the individual test has native assets.
 
-* Native Test: Build the generated Visual Studio solution or makefile corresponding to test cmake file.
+-   Native Test: Build the generated Visual Studio solution or makefile corresponding to test cmake file.
 
-* Managed Test: Use `dotnet.cmd` from the root of the repo on the test project directly.
+-   Managed Test: Use `dotnet.cmd` from the root of the repo on the test project directly.
 
 In addition to the test assembly, this will generate a `.cmd` script next to the test assembly in the test's output folder. The test's output folder will be under `<repo_root>\artifacts\tests\coreclr\windows.<arch>.<configuration>` at a subpath based on the test's location in source.
 
@@ -144,8 +143,8 @@ The output of the test will be available in `Test` reports directory, but by def
 
 There are 2 files of interest:
 
-- `Finalizer.output.txt` - Contains all the information logged by the test.
-- `Finalizer.error.txt` - Contains the information reported by CoreRun.exe (which executed the test) when the test process crashes.
+-   `Finalizer.output.txt` - Contains all the information logged by the test.
+-   `Finalizer.error.txt` - Contains the information reported by CoreRun.exe (which executed the test) when the test process crashes.
 
 To re-run a failed test, follow the instructions for [running individual tests](#running-individual-tests). The test report for the failed test will contain the test command to run - for example, `<repo_root>\artifacts\tests\coreclr\windows.x64.Checked\Exceptions\Finalization\Finalizer.cmd`.
 
@@ -153,11 +152,11 @@ To re-run a failed test, follow the instructions for [running individual tests](
 
 After [building an individual test](#building-individual-tests), to run the test:
 
-1) Set the `CORE_ROOT` environment variable to the [Core_Root folder](#generating-core_root).
+1. Set the `CORE_ROOT` environment variable to the [Core_Root folder](#generating-core_root).
 
-2) Run the test using the `.cmd` generated for the test.
+2. Run the test using the `.cmd` generated for the test.
 
-If you wish to run the test under a debugger (e.g. [WinDbg](http://msdn.microsoft.com/library/windows/hardware/ff551063(v=vs.85).aspx)), append `-debug <debuggerFullPath>` to the test command.
+If you wish to run the test under a debugger (e.g. [WinDbg](<http://msdn.microsoft.com/library/windows/hardware/ff551063(v=vs.85).aspx>)), append `-debug <debuggerFullPath>` to the test command.
 
 ## Modifying a test
 
