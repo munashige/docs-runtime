@@ -1,163 +1,154 @@
-# Building and running tests on Windows
+# Сборка и запуск тестов на Windows
 
-## Building Tests
+## Сборка тестов
 
-Building coreclr tests must be done using a specific script as follows:
+Сборка тестов coreclr выполняется с использованием специального скрипта:
 
 ```
 src\tests\build.cmd
 ```
 
-By default, the test build uses Release as the libraries configuration. To use a different configuration, set the `LibrariesConfiguration` property to the desired configuration. For example:
+По умолчанию сборка тестов использует конфигурацию библиотек _Release_. Чтобы использовать другую конфигурацию, установите параметр `LibrariesConfiguration` на желаемую конфигурацию. Например:
 
 ```
 src\tests\build.cmd /p:LibrariesConfiguration=Debug
 ```
 
-## Building Native Test Components
+## Сборка нативных тестовых компонентов
 
-Sometimes you want to only build the native test components instead of the managed and native components. To build the native test components only, pass the `skipmanaged` and `skipgeneratelayout` parameters to the build script as follows:
+Чтобы собрать только нативные тестовые компоненты, передайте параметры `skipmanaged` и `skipgeneratelayout` в скрипт сборки как показано ниже:
 
 ```
 src\tests\build.cmd skipmanaged skipgeneratelayout
 ```
 
-## Building C++/CLI native test components against the live ref assemblies
+## Сборка нативных тестовых компонентов C++/CLI с использованием актуальных ref assemblies
 
-By default, the C++/CLI native test components build against the ref pack from the SDK specified in the `global.json` file in the root of the repository. To build these components against the ref assemblies produced in the build, pass the `-cmakeargs -DCPP_CLI_LIVE_REF_ASSEMBLIES=1` parameters to the test build. For example:
+По умолчанию нативные тестовые компоненты C++/CLI собираются с использованием пакета ссылок (ref packs) из SDK, указанного в файле `global.json` в корне репозитория. Чтобы собрать эти компоненты с использованием сборок ссылок, созданных в процессе сборки, передайте параметры `-cmakeargs -DCPP_CLI_LIVE_REF_ASSEMBLIES=1` в сборку тестов. Например:
 
 ```
 src\tests\build.cmd skipmanaged -cmakeargs -DCPP_CLI_LIVE_REF_ASSEMBLIES=1
 ```
 
-## Building Precompiled Tests
+## Сборка предварительно скомпилированных тестов
 
 ```
 src\tests\build.cmd crossgen
 ```
 
-This will use `crossgen.exe` to precompile test executables before they are executed.
+Эта команда использует `crossgen.exe` для предварительной компиляции исполняемых файлов тестов перед их запуском.
 
-## Building Specific Priority Tests
+## Сборка тестов с определенным приоритетом
 
 ```
 src\tests\build.cmd -priority=1
 ```
 
-The above is an example of requesting that priority '1' and below be built. The default priority value is '0'. If '1' is specified, all tests with `CLRTestPriority` `0` **and** `1` will be built and run.
+Выше приведен пример запроса на сборку тестов с приоритетом '1' и ниже. Значение приоритета по умолчанию равно '0'. Если указано '1', будут собраны и выполнены все тесты с `CLRTestPriority` `0` **и** `1`.
 
-## Generating Core_Root
+## Генерация Core_Root
 
-The `src\tests\build.cmd` script generates the Core_Root folder, which contains the test host (`corerun`), libraries, and coreclr product binaries necessary to run a test. To generate Core_Root without building the tests:
+Скрипт `src\tests\build.cmd` генерирует папку Core_Root, которая содержит тест-хост (`corerun`), библиотеки и бинарные файлы продукта coreclr. Эти файлы необходимы для выполнения теста.
+
+Чтобы сгенерировать Core_Root без сборки тестов используйте:
 
 ```
 src\tests\build.cmd generatelayoutonly
 ```
 
-The output will be at `<repo_root>\artifacts\tests\coreclr\windows.<arch>.<configuration>\Tests\Core_Root`. For example, the location for x64 checked would be: `<repo_root>\artifacts\tests\coreclr\windows.x64.Checked\Tests\Core_Root`
+Результат будет находиться в директории: `<repo_root>\artifacts\tests\coreclr\windows.<arch>.<configuration>\Tests\Core_Root`.
 
-## Examples
+Например, для x64-архитектуры: `<repo_root>\artifacts\tests\coreclr\windows.x64.Checked\Tests\Core_Root`
 
-To build crossgen'd priority '0' and '1' tests:
+## Примеры
+
+Чтобы собрать тесты с приоритетом '0' и '1', скомпилированных с помощью crossgen:
 
 ```
 src\tests\build.cmd crossgen -priority=1
 ```
 
-To generate Core_Root for x86 release without building tests:
+Чтобы сгенерировать Core_Root для x86 в конфигурации _Release_ без сборки тестов:
 
 ```
 src\tests\build.cmd x86 Release generatelayoutonly
 ```
 
-For additional supported parameters use the following:
+Для обзора дополнительных поддерживаемых параметров используйте следующее:
 
 ```
 src\tests\build.cmd -?
 ```
 
-## Building Test Subsets
+## Сборка подмножеств тестов
 
-The `src\tests\build.cmd` script supports three options that let you limit the set of tests to build;
-when none of these is specified, the entire test tree (under `src\tests`) gets built but that can be
-lengthy (especially in `-priority=1` mode) and unnecessary when working on a particular test.
+Скрипт `src\tests\build.cmd` поддерживает три опции, которые позволяют ограничить набор тестов для сборки. Если ни одна из этих опций не указана, собирается все древо тестов (в каталоге `src\tests`). Такая сборка может занять много времени (особенно в режиме `-priority=1`), а также может быть необязательной при работе над конкретным тестом.
 
-1. `test <test-project>` - build a particular test project specified by its project file path,
-   either absolute or relative to `src\tests`. The option can be specified multiple times on the command
-   line to request building several individual projects; alternatively, a single occurrence of the option
-   can represent several project paths separated by semicolons.
+1. `test <test-project>` - собрает конкретный тестовый проект, указанный по пути к файлу проекта, либо абсолютному, либо относительному к `src\tests`. Эту опцию можно указать несколько раз в командной строке, чтобы запросить сборку нескольких отдельных проектов. Также опцию можно указать только один раз и указать несколько путей к проектам, разделенных точками с запятой.
 
-**Example**: `src\tests\build.cmd test JIT/Methodical/divrem/div/i4div_cs_do.csproj;JIT/Methodical/divrem/div/i8div_cs_do.csproj`
+    _Пример_: `src\tests\build.cmd test JIT/Methodical/divrem/div/i4div_cs_do.csproj;JIT/Methodical/divrem/div/i8div_cs_do.csproj`
 
-2. `dir <test-folder>` - build all test projects within a given directory path, either absolute
-   or relative to `src\tests`. The option can be specified multiple times on the command line to request
-   building projects in several folders; alternatively, a single instance of the option
-   can represent several project folders separated by semicolons.
+2. `dir <test-folder>` - собирает все тестовые проекты в указанной директиве, либо абсолютной, либо относительной к `src\tests`. Опцию можно указать несколько раз в командной строке, чтобы запросить сборку проектов в нескольких папках. Также опцию можно указать только один раз и указать несколько путей к проектам, разделенных точками с запятой.
 
-**Example**: `src\tests\build.cmd dir JIT/Methodical/Arrays/huge;JIT/Methodical/divrem/div`
+    _Пример_: `src\tests\build.cmd dir JIT/Methodical/Arrays/huge;JIT/Methodical/divrem/div`
 
-3. `tree <root-folder>` - build all test projects within the subtree specified by its root path,
-   either absolute or relative to `src\tests`. The option can be specified multiple times on the command
-   line to request building projects in several subtrees; alternatively, a single instance of the option
-   can represent several project subtree root folder paths separated by semicolons.
+3. `tree <root-folder>` - собирает все тестовые проекты в поддреве, указанном по его корневому пути, либо абсолютному, либо относительному к `src\tests`. Опцию можно указать несколько раз в командной строке, чтобы запросить сборку проектов в нескольких поддревах. Опцию также можно указать один раз и указать несколько корневых директив к поддревам, разделенных точками с запятой.
 
-**Example**: `src\tests\build.cmd tree baseservices/exceptions;JIT/Methodical`
+    _Пример_: `src\tests\build.cmd tree baseservices/exceptions;JIT/Methodical`
 
-**Please note** that priority filtering is orthogonal to specifying test subsets; even when you request
-building a particular test and the test is Pri1, you need to specify `-priority=1` in the command line,
-otherwise the test build will get skipped. While somewhat unintuitive, 'fixing' this ad hoc would likely
-create more harm than good and we're hoping to ultimately get rid of the test priorities in the long term
-anyway.
+**Обратите внимание**, что фильтрация по приоритету не зависит от указания подмножеств тестов. Даже при сборке конкретного теста с приоритетом `Pri1` нужно указать `-priority=1` в командной строке, иначе сборка теста будет пропущена.
 
-## Building Individual Tests
+Это несколько неинтуитивно, но "исправление" команд по ходу работы принесет больше вреда, чем пользы.
 
-**Note:** `build.cmd skipmanaged [Any additional flags]` needs to be run at least once if the individual test has native assets.
+## Сборка отдельных тестов
 
--   Native Test: Build the generated Visual Studio solution or makefile corresponding to test cmake file.
+**Примечание:** `build.cmd skipmanaged [Любые дополнительные флаги]` необходимо запустить хотя бы один раз, если у конкретного теста имеются нативные ресурсы.
 
--   Managed Test: Use `dotnet.cmd` from the root of the repo on the test project directly.
+-   Нативный тест: Соберите сгенерированное решение Visual Studio или makefile, который соответствует cmake-файлу теста.
 
-In addition to the test assembly, this will generate a `.cmd` script next to the test assembly in the test's output folder. The test's output folder will be under `<repo_root>\artifacts\tests\coreclr\windows.<arch>.<configuration>` at a subpath based on the test's location in source.
+-   Управляемый тест: Используйте `dotnet.cmd` из корня репозитория непосредственно на тестовом проекте.
 
-## Running Tests
+В дополнение к сборке теста, команда создаст скрипт `.cmd` в папке рядом с тестовой сборкой. Папка будет находиться по адресу `<repo_root>\artifacts\tests\coreclr\windows.<arch>.<configuration>` в подпапке, основанной на расположении теста в исходном коде.
 
-Will list supported parameters.
+## Запуск тестов
+
+Для обзора поддерживаемых параметров используйте команду ниже:
 
 ```
 src\tests\run.cmd /?
 ```
 
-In order to run all of the tests using your checked build:
+Чтобы запустить все тесты, используя вашу сборку с проверкой:
 
 ```
 src\tests\run.cmd checked
 ```
 
-This will generate a report named `TestRun_<arch>_<flavor>.html` (e.g. `TestRun_windows_x64_Checked.html`) in the subdirectory `<repo_root>\artifacts\log`. Any tests that failed will be listed in `TestRunResults_windows_x64_Checked.err`.
+Команда создаст отчет в формате `TestRun_<arch>_<flavor>.html` (например, `TestRun_windows_x64_Checked.html`) в подкаталоге `<repo_root>\artifacts\log`. Все тесты, которые не прошли проверку, будут перечислены в файле `TestRunResults_windows_x64_Checked.err`.
 
-### Investigating Test Failures
+### Исследование сбоев тестов
 
-Upon completing a test run, you may find one or more tests have failed.
+По завершению один или несколько тестов могут вернуть ошибку.
 
-The output of the test will be available in `Test` reports directory, but by default the directory will be something like `<repo_root>\artifacts\tests\coreclr\windows.x64.Checked\Reports\Exceptions\Finalization`.
+Вывод теста будет доступен в директории отчетов `Test`, но по умолчанию директория будет выглядеть следующим образом: `<repo_root>\artifacts\tests\coreclr\windows.x64.Checked\Reports\Exceptions\Finalization`.
 
-There are 2 files of interest:
+Здесь имеются 2 файла, на которые стоит обратить внимание:
 
--   `Finalizer.output.txt` - Contains all the information logged by the test.
--   `Finalizer.error.txt` - Contains the information reported by CoreRun.exe (which executed the test) when the test process crashes.
+-   `Finalizer.output.txt` - содержит всю информацию, записанную тестом.
+-   `Finalizer.error.txt` - содержит информацию в случае сбоя теста, которую сообщает `CoreRun.exe` ( который также запускает тесты).
 
-To re-run a failed test, follow the instructions for [running individual tests](#running-individual-tests). The test report for the failed test will contain the test command to run - for example, `<repo_root>\artifacts\tests\coreclr\windows.x64.Checked\Exceptions\Finalization\Finalizer.cmd`.
+Чтобы повторно запустить упавший тест, следуйте инструкциям по [запуску отдельных тестов](#running-individual-tests). Отчет для упавшего теста будет содержать команду теста для выполнения. Например, `<repo_root>\artifacts\tests\coreclr\windows.x64.Checked\Exceptions\Finalization\Finalizer.cmd`.
 
-## Running Individual Tests
+## Запуск отдельных тестов
 
-After [building an individual test](#building-individual-tests), to run the test:
+После [сборки отдельного теста](#building-individual-tests) следуйте шагам ниже:
 
-1. Set the `CORE_ROOT` environment variable to the [Core_Root folder](#generating-core_root).
+1. Установите переменную окружения `CORE_ROOT` на [папку Core_Root](#generating-core_root).
 
-2. Run the test using the `.cmd` generated for the test.
+2. Запустите тест, используя сгенерированный для теста файл `.cmd`.
 
-If you wish to run the test under a debugger (e.g. [WinDbg](<http://msdn.microsoft.com/library/windows/hardware/ff551063(v=vs.85).aspx>)), append `-debug <debuggerFullPath>` to the test command.
+Если вы хотите запустить тест с отладчиком (например, [WinDbg](<http://msdn.microsoft.com/library/windows/hardware/ff551063(v=vs.85).aspx>)), добавьте `-debug <fullPathToDebugger>` к команде теста.
 
-## Modifying a test
+## Модификация теста
 
-If test changes are needed, make the change, and re-build the test project. This will binplace the binaries in the test binaries folder (e.g. `<repo_root>\artifacts\tests\coreclr\windows.x64.Checked\Exceptions\Finalization`). Then re-run the test following the instructions above.
+Если необходимо внести изменения в тест, внесите изменения и пересоберите проект теста. Сборка поместит бинарные файлы в соответствующую папку бинарных файлов теста (например, `<repo_root>\artifacts\tests\coreclr\windows.x64.Checked\Exceptions\Finalization`). Затем повторно запустите тест, следуя инструкциям выше.
