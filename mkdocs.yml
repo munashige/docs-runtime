@@ -115,7 +115,7 @@ nav:
         - Инструкции для Unix: workflow/testing/coreclr/unix-test-instructions.md
         - AutoTrace: workflow/testing/coreclr/automated-stress-testing-diagnostic-server.md
         - Верификация вывода дизассемблирования: workflow/testing/coreclr/disasm-checks.md
-        - Stress run для изменений GC: workflow/testing/coreclr/gc-stress-run-readme.md
+        - Стресс-тесты для изменений GC: workflow/testing/coreclr/gc-stress-run-readme.md
         - Benchmark Driver 2: workflow/testing/coreclr/running-aspnet-benchmarks-with-crossgen2.md
       - Хосты:
         - Тестирование: workflow/testing/host/testing.md
