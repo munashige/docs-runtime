@@ -1,54 +1,52 @@
-# Deciding whether you should run stress for GC changes
+# О необходимости стресс-тестов при изменениях в GC
 
-Most of the code in `gc.cpp` is intricate - unless you are touching something that you are very confident will not have any adverse effect, you should run stress. When in doubt, feel free to ask.
+Работа с большей частью кода в `gc.cpp` сложна. Поэтому при изменениях, которые могут дать побочные эффекты, следует запускать стресс-тесты.
 
-# What is this stress run?
+# Что такое этот стресс-тест?
 
-This was adapted from one of the ways we run stress internally. The idea is that it takes a config that specifies the tests to run and runs them all in one process to stress random combinations of allocation and survival patterns.
+Адаптированная версия одного из внутренних способов запуска стресс-тестов. Идея в том, что он берёт конфиг с указанием тестов и запускает их все в одном процессе, создавая случайные комбинации паттернов аллокации и выживания (allocation & survival patterns).
 
-Note that these tests were picked from functional tests so some of them could have failures because some condition it checks for is not met. In stress runs, we only care about AVs so we want to run them as long as possible and don't care about failures indicated by the tests themselves.
+Обратите внимание, что эти тесты взяты из функциональных тестов, поэтому некоторые могут падать из-за невыполнения проверяемых условий. В стресс-тестах нас интересуют только AV (access violations) - их рекомендуется запускать их как можно дольше, игнорируя обычные падения тестов.
 
-This is a pretty crude implementation. Feel free to improve it!
+Реализация довольно грубая. Улучшения приветствуются!
 
-# Setting up stress
+# Настройка стресс-теста
 
-It has 3 parts:
+Состоит из 3 частей:
 
-- The stress framework is built from `<REPO_ROOT>\src\tests\GC\Stress\Framework`
+-   Фреймворк: `<REPO_ROOT>\src\tests\GC\Stress\Framework`
+-   Тесты: `<REPO_ROOT>\src\tests\GC\Stress\Tests`
+-   Конфиг: `<REPO_ROOT>\src\tests\GC\Stress\testmix_gc.config` (копируется в выходную папку Framework)
 
-- The tests are built from `<REPO_ROOT>\src\tests\GC\Stress\Tests`
+Проще всего собрать Framework+Tests командой из `<REPO_ROOT>`:
+`dotnet msbuild src\tests\GC\Stress\Framework\ReliabilityFramework.csproj`
 
-- The config is at `<REPO_ROOT>\src\tests\GC\Stress\testmix_gc.config`, this will be copied to the output folder of Framework
+# Запуск стресс-теста
 
-The easiest way to build the Framework+Tests is by running `dotnet msbuild` from `<REPO_ROOT>` on `src\tests\GC\Stress\Framework\ReliabilityFramework.csproj`.
+Бинарники тестов должны находиться в папке `Tests` рядом с `ReliabilityFramework.dll`. Если оставить `ReliabilityFramework.dll` на месте, тесты будут скопированы в `<TestBin>\GC\Stress\Framework\ReliabilityFramework\Tests`.
 
-# Running stress
-
-The test binaries need to be in a directory called Tests next to `ReliabilityFramework.dll`. So if you keep `ReliabilityFramework.dll` where it is, you should see the test binaries copied to the `<TestBin>\GC\Stress\Framework\ReliabilityFramework\Tests`.
-
-To run stress:
-
+Команда запуска:
 `%CORE_ROOT%\corerun ReliabilityFramework.dll testmix_gc.config`
 
-(or if you copied `testmix_gc.config` somewhere else you need to tell it so, eg, `c:\TestConfigs\testmix_gc.config`)
+(или указать другой путь к конфигу, например: `c:\TestConfigs\testmix_gc.config`)
 
-We recommend to run it for 48 hours (see the comments below on `maximumExecutionTime` in test config for more detail).
+Рекомендуемое время выполнения - 48 часов (см. комментарии к параметру `maximumExecutionTime` ниже).
 
-# Test config
+# Конфигурация теста
 
-There are a few interesting things in this config:
+Ключевые параметры конфига:
 
-  `suppressConsoleOutputFromTests`
+`suppressConsoleOutputFromTests`
 
-Set this to true if you want to see the console output from tests.
+Установите `true`, чтобы видеть вывод тестов в консоль.
 
-  `concurrentCopies`
+`concurrentCopies`
 
-If you specify this to something >1 it will load that many concurrent copies.
+Задаёт количество параллельно запускаемых копий (>1).
 
-  `maximumExecutionTime`
+`maximumExecutionTime`
 
-Right now I set it to about 15 hours (instead of 48) because some of the tests will keep growing in memory usage. If you don't have a machine with a decent amount of memory you can change this to a smaller amount. You can always run this in a loop in a .cmd file for 48 hours:
+По умолчанию ~15 часов (вместо 48), так как некоторые тесты увеличивают потребление памяти. Для машин с небольшим объёмом памяти можно уменьшить. Альтернатива - запуск в цикле через .cmd-файл:
 
 ```
 :test
@@ -56,6 +54,6 @@ Right now I set it to about 15 hours (instead of 48) because some of the tests w
 goto test
 ```
 
-Feel free to write your own tests and put them in the Tests directory and specify them in the config to run.
+Вы можете добавлять свои тесты в папку Tests и прописывать их в конфиге.
 
-If you get an AV, often you would see it in different tests. But if you do get one that's consistently in one test, it's a good sign - it means it's likely that running that one test will give you the AV sooner because it exhibits a certain pattern that causes the AV.
+При возникновении AV он часто проявляется в разных тестах. Но если ошибка стабильно воспроизводится в одном тесте - это хороший знак: значит этот тест быстрее выявит проблему благодаря специфичному паттерну работы.
