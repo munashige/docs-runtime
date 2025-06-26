@@ -1,44 +1,42 @@
-# Working with Benchmarks Driver 2
+# Работа с Benchmarks Driver 2
 
-This document describes how to run the ASP&#46;NET Benchmarks with _crossgen2_
-using the latest driver and servers.
+Этот документ описывает процесс запуска ASP.NET бенчмарков с использованием _crossgen2_ через последнюю версию драйвера и серверов.
 
-## Requirements
+## Требования
 
-* A clone of the [ASP.NET Benchmarks repo](https://github.com/aspnet/benchmarks).
-* A clone of the [runtime repo](https://github.com/dotnet/runtime).
-* A code editor of your choice.
+* Локальная копия [репозитория ASP.NET Benchmarks](https://github.com/aspnet/benchmarks)
+* Локальная копия [репозитория Runtime](https://github.com/vitacore-company/runtime)
+* Любой удобный редактор кода
 
-## Setup
+## Настройка
 
-Before using the remote servers for the benchmarks, you will need to follow the
-steps described in the next sections.
+Перед использованием удалённых серверов для бенчмарков необходимо выполнить следующие шаги.
 
-### Build CoreCLR and generate the Core_Root
+### Сборка CoreCLR и генерация Core_Root
 
-In the runtime repo, you will need the CoreCLR binaries and the Core_Root to do
-the crossgen'ing of the ASP&#46;NET application. The simplest steps you can do for
-this are below.
+В репозитории Runtime вам понадобятся:
+- бинарные файлы CoreCLR
+- сгенерированный Core_Root
 
-For Windows:
+для выполнения кроссген-компиляции ASP.NET приложения. Базовые шаги:
+
+Для Windows:
 
 ```powershell
 .\build.cmd -subset clr+libs -c release
 .\src\tests\build.cmd Release generatelayoutonly
 ```
 
-For Linux:
+Для Linux:
 
 ```bash
 ./build.sh -subset clr+libs -c release
 ./src/tests/build.sh -release -generatelayoutonly
 ```
 
-### Generate a Configuration File for ASP&#46;NET Benchmarking Runs
+### Генерация конфигурационного файла для запуска ASP.NET бенчмарков
 
-The ASP&#46;NET Benchmarks are configured by means of profiles, which are specified
-in `yml` files. Here is a simple example of a configuration file, which we will
-be using throughout this document.
+Конфигурация ASP.NET бенчмарков задается с помощью профилей, которые определяются в `yml`-файлах. Ниже представлен простой пример конфигурационного файла, который мы будем использовать в этом документе:
 
 ```yml
 imports:
@@ -101,129 +99,105 @@ profiles:
           - http://asp-perf-load:5001
 ```
 
-Now, what does this configuration mean and how is it applied? Let's go over
-the most important fields to understand its main functionality.
+Теперь разберём, что означает эта конфигурация и как она применяется. Рассмотрим ключевые поля:
 
-* **Imports**: These are external tools hosted in the Benchmarks repo.
-In this case, we only need `wrk`, which is a tool that loads and tests
-performance in Web applications.
+* **Imports**: Внешние инструменты из репозитория Benchmarks. В данном случае используется только `wrk` - инструмент для нагрузочного тестирования веб-приложений.
 
-* **Jobs**: Here go the job descriptions. A job in this context is the set of
-server configuration, launch arguments, .NET version, etc.
-    * _Source_: This shows the repo where the Benchmarking application is hosted.
-    * _Variables_: These define how the communication with the server and the
-    information exchange will take place.
-    * _Channel_: Resolves the runtime versions. In this example, `edge` means it
-    will use the latest nightly build.
-    * _Framework_: Which .NET version will be used to build the application.
-    * _Arguments_: Command-line arguments to call onto the server.
+* **Jobs**: Описание задач. Здесь задаются:
+    * _Source_: Репозиторий с тестовым приложением
+    * _Variables_: Параметры взаимодействия с сервером
+    * _Channel_: Версия рантайма (`edge` - последняя nightly-сборка)
+    * _Framework_: Версия .NET для сборки
+    * _Arguments_: Аргументы командной строки для сервера
 
-* **Scenarios**: The scenarios describe how each job will be run (from the ones
-described in the previous section).
-    * _Application_: Here we choose which job will be selected as the application
-    to run the benchmarks on, as well as other variables.
-    * _Load_: This is the tool that will generate and send the requests to
-    benchmark the web application. In this example, we are using `wrk` with a
-    warmup of 5 seconds and running the test for 60 seconds. In this example,
-    we are using the `json` headers for the load generation. There are various
-    headers that can be used, and these are defined in `wrk.yml`, which is
-    referenced at the top of this configuration file.
+* **Scenarios**: Сценарии выполнения тестов:
+    * _Application_: Выбор задачи для тестирования
+    * _Load_: Инструмент нагрузочного тестирования (`wrk` с прогревом 5 сек и тестом 60 сек, заголовки `json`)
 
-* **Profiles**: The profiles describe the machines where the benchmarks will
-be run. This information was provided by the ASP&#46;NET team, who is in charge
-of these servers. In our example, there are two profiles, one for Windows,
-and one for Linux.
+* **Profiles**: Профили машин для запуска тестов (предоставлены командой ASP.NET), в примере - для Windows и Linux
 
-## Run the Benchmarks
+## Запуск бенчмарков
 
-Once you have your configuration file and CoreCLR built, it's time to run the
-initial benchmarks.
+После подготовки конфигурации и сборки CoreCLR можно запускать тесты.
 
-### Initial Application
+### Инициализация приложения
 
-From the `BenchmarksDriver2` folder, run the following command.
+Из папки `BenchmarksDriver2` выполните команду:
 
-On Windows:
+Для Windows:
 
 ```powershell
 dotnet run -- --config crossgen2-benchmarks.yml --scenario json --profile aspnet-physical-win
 --application.options.fetch true
 ```
 
-On Linux:
+Для Linux:
 
 ```bash
 dotnet run -- --config crossgen2-benchmarks.yml --scenario json --profile aspnet-physical-lin
 --application.options.fetch true
 ```
 
-Splitting and analyzing the previous command:
+#### Разбор и анализ предыдущей команды:
 
-* `--config crossgen2-benchmarks.yml`: This selects the configuration file to use.
-* `--scenario json`: This runs the scenario labelled as _json_ in the configuration file.
-* `--profile aspnet-physical-win`: This chooses the Windows profile from the configuration file.
-* `--application.options.fetch true`: This downloads the built application used for
-the benchmarks. We need these files to apply _crossgen2_ and then compare the benchmarks.
-Note that `application` is just the label given in the configuration file.
+* `--config crossgen2-benchmarks.yml` - выбирает конфигурационный файл для использования
+* `--scenario json` - запускает сценарий с меткой _json_ из конфигурационного файла
+* `--profile aspnet-physical-win` - выбирает Windows-профиль из конфигурационного файла
+* `--application.options.fetch true` - загружает собранное приложение, используемое для бенчмарков. Эти файлы нужны для применения _crossgen2_ и последующего сравнения результатов производительности.  
+  Примечание: `application` - это просто метка из конфигурационного файла
 
-At the end of the run, the tool will print a summary of statistics regarding
-how the performance went.
+После выполнения инструмент выведет сводку статистики о производительности.
 
 ### Crossgen2
 
-Grab the downloaded zip file with the application and extract it somewhere else.
-This is to avoid mixing up stuff or losing it when running `git clean` or the like.
+1. Возьмите загруженный ZIP-файл с приложением и распакуйте его в отдельное место.  
+   Это нужно чтобы избежать путаницы или случайного удаления при выполнении `git clean` и подобных команд.
 
-In this example, we will be using a new folder called `results` outside of the
-repos. Here, extract the zip into a folder we will refer to as `application`.
-Next, create another folder within `results` called `composite`. This is where
-the crossgen2'd assemblies will be stored.
+2. В этом примере мы будем использовать новую папку `results` вне репозиториев:
+   * Распакуйте ZIP в папку, которую мы будем называть `application`
+   * Создайте внутри `results` другую папку `composite` - здесь будут храниться обработанные _crossgen2_ сборки
 
-Now, go to your _Core\_Root_ inside the _runtime_ repo. From there, apply _crossgen2_
-using the following command.
+3. Перейдите в вашу папку `Core_Root` внутри репозитория _runtime_. Оттуда выполните _crossgen2_ следующей командой:
 
-On Windows:
+Для Windows:
 
 ```powershell
 CoreRun.exe \runtime\artifacts\bin\coreclr\windows.x64.Release\crossgen2\crossgen2.dll
 --Os --composite -o \path\to\results\composite\TotalComposite.dll \path\to\results\application\*.dll
 ```
 
-On Linux:
+Для Linux:
 
 ```bash
 corerun /runtime/artifacts/bin/coreclr/Linux.x64.Release/crossgen2/crossgen2.dll
 --Os --composite -o /path/to/results/composite/TotalComposite.dll /path/to/results/application/*.dll
 ```
 
-This will generate new assemblies within the `composite` folder that you will
-want to copy into the downloaded `application` one. Replace all those that
-already exist there.
+Это сгенерирует новые сборки в папке `composite`, которые нужно скопировать в загруженную папку `application`, заменив уже существующие там файлы.
 
-### Optimized Application
+### Оптимизированное приложение
 
-To run the optimized version of the application, go back to the `BenchmarksDriver2`
-folder, and run the driver with this other command line.
+Чтобы запустить оптимизированную версию приложения:
 
-On Windows:
+1. Вернитесь в папку `BenchmarksDriver2`
+2. Запустите драйвер со следующей командой:
+
+Для Windows:
 
 ```powershell
 dotnet run -- --config crossgen2-benchmarks.yml --scenario json --profile aspnet-physical-win
 --application.options.outputFile \path\to\results\application\*
 ```
 
-On Linux:
+Для Linux:
 
 ```bash
 dotnet run -- --config crossgen2-benchmarks.yml --scenario json --profile aspnet-physical-lin
 --application.options.outputFile /path/to/results/application/*.dll
 ```
 
-This is the same command as in the initial run, with one difference:
+Эта команда аналогична первоначальной, с одним отличием:
 
-* `--application.options.outputFile`: This instructs the tool to upload your
-crossgen2'd application and build and test with that one.
+* `--application.options.outputFile` - указывает инструменту загрузить ваше оптимизированное приложение (обработанное crossgen2) и проводить тестирование именно с этой версией
 
-Same as before, once the test finishes running, it will display a summary of the
-performance statistics, which you can compare to the original one and do some
-analysis later.
+Как и ранее, после завершения теста будет показана сводка статистики производительности, которую можно сравнить с исходными результатами для последующего анализа.
