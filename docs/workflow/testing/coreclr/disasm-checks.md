@@ -1,16 +1,20 @@
-# Disassembly output verification checks
-There are tests that the runtime executes that will be able to verify X64/ARM64 assembly output from the JIT.
-The tools used to accomplish this are LLVM FileCheck, SuperFileCheck, and the JIT's ability to output disassembly using `DOTNET_JitDisasm`. LLVM FileCheck is built in https://www.github.com/dotnet/llvm-project and provides several packages for the various platforms. See more about LLVM FileCheck and its syntax here: https://llvm.org/docs/CommandGuide/FileCheck.html. SuperFileCheck is a custom tool located in https://www.github.com/dotnet/runtime. It wraps LLVM FileCheck and provides a simplified workflow for writing these tests in a C# file by leveraging Roslyn's syntax tree APIs.
-# What is FileCheck?
-From https://www.llvm.org/docs/CommandGuide/FileCheck.html:
+# Проверка вывода дизассемблирования
+В среде выполнения существуют тесты, позволяющие проверять корректность вывода ассемблерного кода (X64/ARM64) из JIT. Для этого используются инструменты:
+- LLVM FileCheck
+- SuperFileCheck 
+- Возможность JIT выводить дизассемблированный код через `DOTNET_JitDisasm`
 
-> **FileCheck** reads two files (one from standard input, and one specified on the command line) and uses one
-to verify the other. This behavior is particularly useful for the testsuite, which wants to verify that the
-output of some tool (e.g. **llc**) contains the expected information (for example, a movsd from esp or
-whatever is interesting). This is similar to using **grep**, but it is optimized for matching multiple
-different inputs in one file in a specific order.
-# Converting an existing test to use disassembly checking
-We will use the existing test `JIT\Regression\JitBlue\Runtime_33972` as an example. The test's intent is to verify that on ARM64, the method `AdvSimd.CompareEqual` behaves correctly when a zero vector is passed as the second argument. Below are snippets of its use:
+LLVM FileCheck собирается из [репозитория dotnet/llvm-project](https://www.github.com/dotnet/llvm-project) и предоставляет пакеты для различных платформ. Подробнее о синтаксисе FileCheck: [документация LLVM](https://llvm.org/docs/CommandGuide/FileCheck.html). 
+
+SuperFileCheck — кастомный инструмент из [репозитория dotnet/runtime](https://www.github.com/dotnet/runtime). Это обёртка над LLVM FileCheck, упрощающая написание тестов на C# через использование Roslyn Syntax Tree API.
+
+# Что такое FileCheck?
+Из [официальной документации](https://www.llvm.org/docs/CommandGuide/FileCheck.html):
+
+> **FileCheck** читает два файла (один из стандартного ввода, второй указан в аргументах) и сверяет их содержимое. Это особенно полезно для тестовых сценариев, где нужно проверить, что вывод инструмента (например, **llc**) содержит ожидаемую информацию (например, инструкцию `movsd` с регистром `esp` или другие значимые паттерны). Похоже на использование **grep**, но оптимизировано для проверки множества различных входных данных в определённом порядке.
+
+# Конвертация существующего теста для проверки дизассемблирования
+Рассмотрим на примере теста `JIT\Regression\JitBlue\Runtime_33972`. Его цель — проверить корректность работы метода `AdvSimd.CompareEqual` на ARM64 при передаче нулевого вектора в качестве второго аргумента. Пример использования:
 ```csharp
     static Vector64<byte> AdvSimd_CompareEqual_Vector64_Byte_Zero(Vector64<byte> left)
     {
@@ -21,8 +25,7 @@ We will use the existing test `JIT\Regression\JitBlue\Runtime_33972` as an examp
         if (!ValidateResult_Vector64<byte>(AdvSimd_CompareEqual_Vector64_Byte_Zero(Vector64<byte>.Zero), Byte.MaxValue))
             result = -1;
 ```
-Currently, the test only verifies that the behavior is correct. It does not verify that the optimal ARM64 instruction was actually used. So now we will add this verification.
-First we need to modify the project file `Runtime_33972.csproj`:
+Сейчас тест только проверяет корректность поведения, но не удостоверяется, что были использованы оптимальные ARM64 инструкции. Мы добавим такую проверку.
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
