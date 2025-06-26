@@ -1,20 +1,25 @@
 # Проверка вывода дизассемблирования
+
 В среде выполнения существуют тесты, позволяющие проверять корректность вывода ассемблерного кода (X64/ARM64) из JIT. Для этого используются инструменты:
-- LLVM FileCheck
-- SuperFileCheck 
-- Возможность JIT выводить дизассемблированный код через `DOTNET_JitDisasm`
 
-LLVM FileCheck собирается из [репозитория dotnet/llvm-project](https://www.github.com/dotnet/llvm-project) и предоставляет пакеты для различных платформ. Подробнее о синтаксисе FileCheck: [документация LLVM](https://llvm.org/docs/CommandGuide/FileCheck.html). 
+-   LLVM FileCheck
+-   SuperFileCheck
+-   Возможность JIT выводить дизассемблированный код через `DOTNET_JitDisasm`
 
-SuperFileCheck — кастомный инструмент из [репозитория dotnet/runtime](https://www.github.com/dotnet/runtime). Это обёртка над LLVM FileCheck, упрощающая написание тестов на C# через использование Roslyn Syntax Tree API.
+LLVM FileCheck собирается из [репозитория dotnet/llvm-project](https://www.github.com/dotnet/llvm-project) и предоставляет пакеты для различных платформ. Подробнее о синтаксисе FileCheck: [документация LLVM](https://llvm.org/docs/CommandGuide/FileCheck.html).
+
+SuperFileCheck — кастомный инструмент из [репозитория runtime](https://github.com/vitacore-company/runtime/). Это обёртка над LLVM FileCheck, которая упрощяет написание тестов на C# через использование Roslyn Syntax Tree API.
 
 # Что такое FileCheck?
-Из [официальной документации](https://www.llvm.org/docs/CommandGuide/FileCheck.html):
 
-> **FileCheck** читает два файла (один из стандартного ввода, второй указан в аргументах) и сверяет их содержимое. Это особенно полезно для тестовых сценариев, где нужно проверить, что вывод инструмента (например, **llc**) содержит ожидаемую информацию (например, инструкцию `movsd` с регистром `esp` или другие значимые паттерны). Похоже на использование **grep**, но оптимизировано для проверки множества различных входных данных в определённом порядке.
+Из [официальной документации LLVM](https://www.llvm.org/docs/CommandGuide/FileCheck.html):
+
+> **FileCheck** читает два файла (один из стандартного ввода, второй указан в аргументах) и сверяет их содержимое. Это полезно для тестовых сценариев, где нужно проверить, что вывод инструмента (например, **llc**) содержит ожидаемую информацию (например, инструкцию `movsd` с регистром `esp` или другие значимые паттерны). Похоже на использование **grep**, но оптимизировано для проверки множества различных входных данных в определённом порядке.
 
 # Конвертация существующего теста для проверки дизассемблирования
+
 Рассмотрим на примере теста `JIT\Regression\JitBlue\Runtime_33972`. Его цель — проверить корректность работы метода `AdvSimd.CompareEqual` на ARM64 при передаче нулевого вектора в качестве второго аргумента. Пример использования:
+
 ```csharp
     static Vector64<byte> AdvSimd_CompareEqual_Vector64_Byte_Zero(Vector64<byte> left)
     {
@@ -25,7 +30,9 @@ SuperFileCheck — кастомный инструмент из [репозит�
         if (!ValidateResult_Vector64<byte>(AdvSimd_CompareEqual_Vector64_Byte_Zero(Vector64<byte>.Zero), Byte.MaxValue))
             result = -1;
 ```
+
 Сейчас тест только проверяет корректность поведения, но не удостоверяется, что были использованы оптимальные ARM64 инструкции. Мы добавим такую проверку.
+
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
@@ -41,13 +48,17 @@ SuperFileCheck — кастомный инструмент из [репозит�
   </ItemGroup>
 </Project>
 ```
-Looking at the `ItemGroup`:
+
+Обратите внимание на `ItemGroup`:
+
 ```xml
   <ItemGroup>
     <Compile Include="$(MSBuildProjectName).cs" />
   </ItemGroup>
 ```
-We want to add `<HasDisasmCheck>true</HasDisasmCheck>` as a child of the `Compile` tag:
+
+Здесь нужно добавить `<HasDisasmCheck>true</HasDisasmCheck>` как дочерний элемент тега `Compile`:
+
 ```xml
   <ItemGroup>
     <Compile Include="$(MSBuildProjectName).cs">
@@ -55,7 +66,12 @@ We want to add `<HasDisasmCheck>true</HasDisasmCheck>` as a child of the `Compil
     </Compile>
   </ItemGroup>
 ```
-Doing this lets the test builder and runner know that this test has assembly that needs to be verified. Finally, we need to write the assembly check and put the `[MethodImpl(MethodImplOptions.NoInlining)]` attribute on the method `AdvSimd_CompareEqual_Vector64_Byte_Zero`:
+
+Настройка позволяет сборщику и исполнителю тестов узнать, что у данного теста есть ассемблерный код, который нужно проверить.
+
+Наконец, нам нужно написать проверку ассемблерного кода и добавить атрибут  
+`[MethodImpl(MethodImplOptions.NoInlining)]` к методу `AdvSimd_CompareEqual_Vector64_Byte_Zero`:
+
 ```csharp
     [MethodImpl(MethodImplOptions.NoInlining)]
     static Vector64<byte> AdvSimd_CompareEqual_Vector64_Byte_Zero(Vector64<byte> left)
@@ -64,42 +80,47 @@ Doing this lets the test builder and runner know that this test has assembly tha
         return AdvSimd.CompareEqual(left, Vector64<byte>.Zero);
     }
 ```
-And that is it. A few notes about the above example:
-- `ARM64-FULL-LINE` checks to see if there is an exact line that matches the disassembly output of the method `AdvSimd_CompareEqual_Vector64_Byte_Zero` - leading and trailing spaces are ignored.
-- Method bodies that have FileCheck syntax, e.g. `ARM64-FULL-LINE:`/`X64:`/etc, must have the attribute `[MethodImpl(MethodImplOptions.NoInlining)]`. If it does not, then an error is reported.
-- FileCheck syntax outside of a method body will also report an error.
-# Additional functionality
-LLVM has a different setup where each test file is passed to `lit`, and `RUN:` lines inside the test specify
-configuration details such as architectures to run, FileCheck prefixes to use, etc.  In our case, the build
-files handle a lot of this with build conditionals and `.cmd`/`.sh` file generation.  Additionally, LLVM tests
-rely on the order of the compiler output corresponding to the order of the input functions in the test file.
-When running under the JIT, the compilation order is dependent on execution, not the source order.
 
-Functionality that has been added or moved to MSBuild:
-- Conditionals controlling test execution
-- Automatic specificiation of `CHECK` and `<architecture>` as check prefixes
+И это всё. Несколько замечаний о приведённом примере:
 
-Functionality that has been added or moved to SuperFileCheck:
-- Each function is run under a separate invocation of FileCheck. SuperFileCheck adds additional `CHECK` lines
-  that search for the beginning and end of the output for each function. This ensures that output from
-  different functions don't contaminate each other. The separate invocations remove any dependency on the
-  order of the functions.
-- `<check-prefix>-FULL-LINE:` - same as using FileCheck's `<check-prefix>:`, but checks that the line matches exactly; leading and trailing whitespace is ignored.
-- `<check-prefix>-FULL-LINE-NEXT:` - same as using FileCheck's `<check-prefix>-NEXT:`, but checks that the line matches exactly; leading and trailing whitespace is ignored.
-# Test Run Limitations
-1. Disasm checks will not run if these environment variables are set:
-- `DOTNET_JitStress`
-- `DOTNET_JitStressRegs`
-- `DOTNET_TailcallStress`
-- `DOTNET_TieredPGO`
-2. Disasm checks will not run under GCStress test modes.
-3. Disasm checks will not run under heap-verify test modes.
-4. Disasm checks will not run under cross-gen2 test modes.
-# Method Disassembly Limitations
-There are a few limitations when using FileChecked methods that the user should be aware of:
-1. Local functions are not supported.
-2. Conditional defines are not recognized by the `.csproj`.
-3. Overloaded methods are not supported. Snippet below will not work:
+-   `ARM64-FULL-LINE` проверяет, есть ли точное соответствие строки в выводе дизассемблирования метода `AdvSimd_CompareEqual_Vector64_Byte_Zero` — ведущие и завершающие пробелы игнорируются.
+-   Тела методов, содержащие синтаксис FileCheck (например, `ARM64-FULL-LINE:`, `X64:` и т. д.), должны иметь атрибут `[MethodImpl(MethodImplOptions.NoInlining)]`. В противном случае будет выдана ошибка.
+-   Синтаксис FileCheck вне тела метода также приведёт к ошибке.
+
+# Дополнительная функциональность
+
+В LLVM используется другая структура, где каждый тестовый файл передаётся в `lit`, а строки `RUN:` внутри теста определяют параметры конфигурации, такие как архитектуры для запуска, префиксы FileCheck и т. д. В нашем случае сборка управляется условиями в файлах `.csproj` и генерацией `.cmd`/`.sh` скриптов. Кроме того, тесты LLVM полагаются на порядок вывода компилятора, соответствующий порядку функций в тестовом файле. При работе под JIT порядок компиляции зависит от выполнения, а не от порядка в исходном коде.
+
+Функциональность, перенесённая или добавленная в MSBuild:
+
+-   Условные операторы для управления выполнением тестов
+-   Автоматическое указание `CHECK` и `<архитектура>` в качестве префиксов проверки
+
+Функциональность, добавленная или перенесённая в SuperFileCheck:
+
+-   Каждая функция выполняется в отдельном вызове FileCheck. SuperFileCheck добавляет дополнительные строки `CHECK`, которые ищут начало и конец вывода для каждой функции. Это гарантирует, что вывод разных функций не смешивается. Раздельные вызовы устраняют зависимость от порядка функций.
+-   `<check-prefix>-FULL-LINE:` — аналогично `<check-prefix>:` в FileCheck, но проверяет точное соответствие строки (игнорируются ведущие и завершающие пробелы).
+-   `<check-prefix>-FULL-LINE-NEXT:` — аналогично `<check-prefix>-NEXT:`, но проверяет точное соответствие строки (игнорируются пробелы).
+
+# Ограничения при запуске тестов
+
+1. Проверки дизассемблирования не выполняются, если установлены переменные окружения:
+    - `DOTNET_JitStress`
+    - `DOTNET_JitStressRegs`
+    - `DOTNET_TailcallStress`
+    - `DOTNET_TieredPGO`
+2. Проверки не выполняются в режимах тестирования GCStress.
+3. Проверки не выполняются в режимах проверки кучи (heap-verify).
+4. Проверки не выполняются в режимах cross-gen2.
+
+# Ограничения дизассемблирования методов
+
+Есть несколько ограничений при использовании методов с FileCheck, о которых следует знать:
+
+1. Локальные функции не поддерживаются.
+2. Условные директивы препроцессора (conditional defines) не распознаются в `.csproj`.
+3. Перегруженные методы не поддерживаются. Пример ниже **не сработает**:
+
 ```csharp
     [MethodImpl(MethodImplOptions.NoInlining)]
     static int Test(int x)
@@ -115,7 +136,9 @@ There are a few limitations when using FileChecked methods that the user should 
         return 1;
     }
 ```
-4. Using a FileChecked generic method with different type arguments may result in ambiguity when FileCheck looks at the disassembly output. The snippet below will work, but the test itself is brittle and may fail:
+
+4. Использование обобщённого метода (generic) с проверкой FileCheck и разными аргументами типов может привести к неоднозначности при анализе вывода дизассемблирования. Следующий пример **работает**, но тест становится хрупким и может неожиданно завершиться ошибкой:
+
 ```csharp
     [MethodImpl(MethodImplOptions.NoInlining)]
     static void Test<T>()
@@ -126,21 +149,30 @@ There are a few limitations when using FileChecked methods that the user should 
 
     static int Main(string args[])
     {
-        // Disassembly output will have two specialized methods, each with different codegen that
-        // is ambiguous with our CHECK:
+        // Вывод дизассемблирования будет содержать две
+        // специализированные версии метода, каждая с разной
+        // генерацией кода, что создает неоднозначность
+        // при использовании наших CHECK:
         Test<float>();
         Test<int>();
         return 200;
     }
 ```
-The reason for these limitations are that SuperFileCheck only relies on the C# syntax tree. In the future, it may be possible to get the semantic model that will allow getting an accurate method signature, complete with types. However, it is non-trivial to resolve all required assemblies from the `.csproj` and feed them into C#'s compilation - it also adds a performance cost when using a full compilation compared to just the syntax tree.
-# Future Improvements
-- SuperFileCheck supports writing FileChecked methods where the methods are in any order. It can do this by determining the *start* and *end* "anchors" of the JIT disassembly output. However, these anchors are not necessarily standardized and changes to its current output would break disasm check tests. We should improve this by being very explicit with the output of the anchors. Below is an example of what the current anchor output is today:
+
+Причина этих ограничений в том, что SuperFileCheck полагается только на синтаксическое дерево C#. В будущем возможно получение семантической модели, которая позволит определять точную сигнатуру метода, включая типы. Однако нетривиально разрешить все требуемые сборки из `.csproj` и передать их в компиляцию C# - это также добавляет затраты производительности при использовании полной компиляции по сравнению с простым синтаксическим деревом.
+
+# Будущие улучшения
+
+-   SuperFileCheck поддерживает написание методов с проверкой FileCheck в любом порядке. Это возможно благодаря определению _начальных_ и _конечных_ "якорей" в выводе дизассемблирования JIT. Однако эти якоря не обязательно стандартизированы, и изменения в текущем выводе могут сломать тесты проверки дизассемблирования. Мы должны улучшить это, сделав вывод якорей более явным. Ниже приведен пример текущего вывода якорей:
+
 ```
 ; Assembly listing for method Program:PerformMod_1(uint):uint     <-- start anchor
 .......
 ; Total bytes of code 6, prolog size 0, PerfScore 2.10, instruction count 3, allocated bytes for code 6 (MethodHash=e2c7b489) for method Program:PerformMod_1(uint):uint     <-- end anchor
 ```
-- SuperFileCheck does not use a command line library today due to it being so minimal and most of the heavy lifting is done passing the arguments to FileCheck itself. As SuperFileCheck continues to grow, we will need to use a command line library, such as System.CommandLine.
-- Support various JIT test modes to allow testing codegen under specific scenarios. (Note: these can already be partially done by setting environment variables (like `DOTNET_JITMinOpts`) in the test itself.)
-- JIT IR Testing - we may want to allow testing against certain phases of a method by looking at the IR. There are a lot of unknowns surrounding this, but it would be useful to have a prototype.
+
+-   В текущей реализации SuperFileCheck не использует библиотеку для обработки командной строки из-за минималистичного подхода - основная работа выполняется при передаче аргументов непосредственно в FileCheck. По мере развития SuperFileCheck потребуется внедрение библиотеки для работы с командной строкой, например System.CommandLine.
+
+-   Необходима поддержка различных режимов тестирования JIT для проверки генерации кода в специфических сценариях. (Примечание: частично это уже можно реализовать путем установки переменных окружения, таких как `DOTNET_JITMinOpts`, непосредственно в тестах.)
+
+-   Тестирование IR JIT - в перспективе может потребоваться возможность проверки различных фаз обработки метода через анализ промежуточного представления (IR).
