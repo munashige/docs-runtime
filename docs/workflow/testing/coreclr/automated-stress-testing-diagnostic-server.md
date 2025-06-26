@@ -1,23 +1,20 @@
 # AutoTrace:
 
-> see: `src/vm/autotrace.h|cpp` for the code
+> см. код в файлах `src/vm/autotrace.h|cpp`
 
-AutoTrace is used to run automated testing of the Diagnostic Server based tracing and specifically
-EventPipe.  The feature itself is enabled via the feature flag `FEATURE_AUTO_TRACE` in [clrfeatures.cmake](../../../../src/coreclr/clrfeatures.cmake)
+AutoTrace предназначен для автоматизированного тестирования трассировки на основе Diagnostic Server, в частности EventPipe. Функциональность активируется с помощью флага `FEATURE_AUTO_TRACE` в файле [clrfeatures.cmake](https://github.com/vitacore-company/runtime/blob/main/src/coreclr/clrfeatures.cmake).
 
-## Mechanism:
+## Механизм работы:
 
-AutoTrace injects a waitable event into the startup path of the runtime and waits on that event until
-some number of Diagnostics IPC (see: Diagnostics IPC in the dotnet/diagnostics repo) connections have occurred.
-The runtime then creates some number of processes using a supplied path that typically are Diagnostics IPC based tracers.
-Once all the tracers have connected to the server, the event will be signaled and execution will continue as normal.
+AutoTrace внедряет ожидаемое событие (waitable event) в процесс запуска runtime и ожидает его сигнала до тех пор, пока не установится заданное количество подключений через `Diagnostics IPC` (см. Diagnostics IPC в репозитории dotnet/diagnostics). Затем runtime создаёт указанное количество процессов, используя предоставленный путь к исполняемому файлу (обычно это трассировщики на основе `Diagnostics IPC`). После подключения всех трассировщиков к серверу событие даст сигнал, и выполнение процесса продолжится в обычном режиме.
 
-## Use:
+## Использование:
 
-Two environment variables dictate behavior:
-- `DOTNET_AutoTrace_N_Tracers`: The number of tracers to create.  Should be a number in `[0,64]` where `0` will bypass the wait for attach.
-- `DOTNET_AutoTrace_Command`: The path to the executable to be invoked.  Typically this will be a `run.sh|cmd` script.
+Поведение AutoTrace определяется двумя переменными окружения:
 
-> (NB: you should `cd` into the directory you intend to execute `DOTNET_AutoTrace_Command` from as the first line of the script.)
+-   `DOTNET_AutoTrace_N_Tracers`: Количество создаваемых трассировщиков. Допустимые значения — число в диапазоне `[0,64]`, где `0` отключает ожидание подключения.
+-   `DOTNET_AutoTrace_Command`: Путь к исполняемому файлу (обычно это скрипт `run.sh|cmd`).
 
-Once turned on, AutoTrace will run the specified command `DOTNET_AutoTrace_N_Tracers` times.
+> **Примечание:** перед выполнением `DOTNET_AutoTrace_Command` рекомендуется перейти в целевую директорию первой строкой скрипта.
+
+После активации AutoTrace запускает указанную команду `DOTNET_AutoTrace_N_Tracers` раз.
