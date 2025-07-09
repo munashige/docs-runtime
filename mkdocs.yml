@@ -118,8 +118,7 @@ nav:
         - Стресс-тесты для изменений GC: workflow/testing/coreclr/gc-stress-run-readme.md
         - Benchmark Driver 2: workflow/testing/coreclr/running-aspnet-benchmarks-with-crossgen2.md
       - Хосты:
-        - Тестирование: workflow/testing/host/testing.md
-        - Запуск и сборка хост-тестов: workflow/testing/host/using-apphost.md
+        - Сборка и запуск тестов: workflow/testing/host/testing.md
         - Работа с Apphost: workflow/testing/host/using-apphost.md 
       - Библиотеки:
         - Отладка библиотек: workflow/testing/libraries/debugging-wasm.md

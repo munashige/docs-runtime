@@ -1,100 +1,110 @@
-# Building and running host tests
+# Сборка и запуск тестов хоста
 
-The [host tests](/src/installer/tests) use [xunit](http://xunit.github.io/) for their testing framework.
+[Тесты хоста](https://github.com/vitacore-company/runtime/tree/main/src/installer/tests) используют [xunit](https://github.com/xunit/xunit) для работы с фреймворком.
 
-## Building tests
+## Сборка тестов
 
-To build the host tests, first build the product:
+Перед запуском тестов сначала соберите проект:
 
-1.  Build CoreCLR and libraries (`clr` and `libs` subsets):
+1.  Соберите CoreCLR и библиотеки (подмножества `clr` и `libs`):
+
     ```
     build.cmd/sh -subset clr+libs -c Release
     ```
-    * [CoreCLR](../../building/coreclr/README.md) build instructions
-    * [Libraries](../../building/libraries/README.md) build instructions
 
-2.  Build the host:
+    -   [Инструкция по сборке CoreCLR](../../building/coreclr/README.md)
+    -   [Инструкция по сборке библиотек](../../building/libraries/README.md)
+
+2.  Соберите хост:
     ```
     build.cmd/sh -subset host -runtimeConfiguration Release -librariesConfiguration Release
     ```
-    If using a configuration other than Release for CoreCLR/libraries, specify the desired configuration in the `-runtimeConfiguration`/`-librariesConfiguration` arguments.
+    При использовании конфигурации отличной от Release для CoreCLR/библиотек, укажите нужную конфигурацию при помощи аргументов `-runtimeConfiguration` и`-librariesConfiguration`.
 
-### Building all tests
+### Сборка всех тестов
 
-The host tests are part of the `host` subset by default, so building the `host` subset also builds the host tests. To build just the host tests:
+По умолчанию тесты хоста входят в подмножество `host`, поэтому используйте соответствующий флаг, чтобы собрать эти тесты. Чтобы собрать только тесты хоста:
+
 ```
 build.cmd/sh -subset host.tests -runtimeConfiguration Release -librariesConfiguration Release
 ```
 
-### Building specific tests
+### Сборка отдельного теста
 
-A specific test project can also be directly built. For example:
+Также может быть собран и отдельный тест, например:
+
 ```
 dotnet build src\installer\tests\HostActivation.Tests
 ```
 
-## Test context
+## Контекст теста
 
-The host tests depend on:
-  1. Pre-built [test project](/src/installer/tests/Assets/Projects) output which will be copied and run by the tests. The `host.pretest` subset builds these projects.
-  2. Product binaries in a directory layout matching that of a .NET install. The `host.pretest` subset creates this layout.
-  3. TestContextVariables.txt files with property and value pairs which will be read by the tests. The `host.tests` subset creates these files as part of building the tests.
+Тесты хоста зависят от:
 
-When [running all tests](#running-all-tests), the build is configured such that these are created/performed before the start of the test run.
+1. Пресобранного вывода [проекта тестирования](https://github.com/vitacore-company/runtime/tree/main/src/installer/tests/Assets/Projects), который будет скопирован и запущен тестами. Подмножества `host.pretest` собирает эти проекты.
+2. Двоичные файлы продукта организованы по структуре каталогов, схожей с установленной структурой .NET. Подмножество `host.pretest` создает эту структуру.
+3. TestContextVariables.txt содержит пары свойства и значений, которые будут использоваться тестами для настройки контекста. Подмножество `host.tests` генерирует эти файлы при подготовке к выполнению тестов.
 
-In order to create (or update) these dependencies without running all tests:
-  1. Build the `host.pretest` subset. By default, this is included in the `host` subset. This corresponds to (1) and (2) above.
-  2. Build the desired test project. This corresponds to (3) above. Building the test itself will run the `SetupTestContextVariables` target, but it can also be run independently - for example:
-  ```
-  dotnet build src\installer\tests\HostActivation.Tests -t:SetupTestContextVariables -p:RuntimeConfiguration=Release -p:LibrariesConfiguration=Release
-  ```
+При [запуске всех тестов](#запуск-всех-тестов) сборка настроена так, что
+эти файлы создаются/используются перед началом запуска тестов.
 
-## Running tests
+Чтобы создать (или обновить) эти зависимости без выполнения всех тестов:
 
-### Running all tests
+1. Соберите подмножество `host.pretest`. По умолчанию это включено в подмножество `host`, что соответствует пункту (1) и (2) выше.
+2. Соберите необходимый проект тестирования, что соответствует вышеупомянутому пункту (3). Сборка теста запускает цель `SetupTestContextVariables`, но она также может быть запущена отдельно, например:
 
-To run all host tests:
+```
+dotnet build src\installer\tests\HostActivation.Tests -t:SetupTestContextVariables -p:RuntimeConfiguration=Release -p:LibrariesConfiguration=Release
+```
+
+## Запуск тестов
+
+### Запуск всех тестов
+
+Для запуска всех тестов хоста:
+
 ```
 build.cmd/sh -subset host.tests -test
 ```
 
-By default, the above command will also build the tests before running them. To run the tests without building them, specify `-testnobuild`.
+По умолчанию команда выше собирает нужные тесты перед запуском. Для запуска тестов без сборки укажите флаг `-testnobuild`.
 
-### Running specific tests
+### Запуск отдельного теста
 
-If all tests have not been previously run, make sure the [test context](#test-context) is set up for the test library.
+Если все тесты не были ранее запущены, убедитесь, что [контекст теста](#контекст-теста) настроен для библиотеки тестов.
 
-Tests from a specific test project can be run using [`dotnet test`](https://learn.microsoft.com/dotnet/core/tools/dotnet-test) targeting the built test binary. For example:
+Тесты от отдельного проекта тестирования могут быть запущены с помощью [`теста dotnet `](https://learn.microsoft.com/dotnet/core/tools/dotnet-test), направленного на сборку двоичных файлов тестов, например:
+
 ```
 dotnet test artifacts/bin/HostActivation.Tests/Debug/net10.0/HostActivation.Tests.dll --filter category!=failing
 ```
 
-To filter to specific tests within the test library, use the [filter options](https://learn.microsoft.com/dotnet/core/tools/dotnet-test#filter-option-details) available for `dotnet test`. For example:
+Для выбора отдельного теста из библиотеки тестов используйте [настройки фильтрации](https://learn.microsoft.com/dotnet/core/tools/dotnet-test#filter-option-details), которые доступны для `dotnet test`. Например:
+
 ```
 dotnet test artifacts/bin/HostActivation.Tests/Debug/net10.0/HostActivation.Tests.dll --filter "DependencyResolution&category!=failing"
 ```
 
-The `category!=failing` is to respect the [filtering traits](../libraries/filtering-tests.md) used by the runtime repo.
+`category!=failing` используется для соблюдения [фильтрующих признаков](../libraries/filtering-tests.md), применяемых в репозитории runtime.
 
 ### Visual Studio
 
-The [Microsoft.DotNet.CoreSetup.sln](/src/installer/Microsoft.DotNet.CoreSetup.sln) can be used to run and debug host tests through Visual Studio. When using the solution, the product should have already been [built](#building-tests) and the [test context](#test-context) set up.
+[Microsoft.DotNet.CoreSetup.sln](https://github.com/vitacore-company/runtime/tree/main/src/installer/Microsoft.DotNet.CoreSetup.sln) можно использовать для запуска и отладки тестов хоста через Visual Studio. При использовании решения продукт должен быть уже [собран](#сборка-тестов) и [контекст теста](#контекст-теста) настроен.
 
-If you built the runtime or libraries with a different configuration from the host, you have to specify this when starting visual studio:
+Если runtime или библиотеки уже собраны с конфигурацией, отличной от хоста, вам необходимо указать это при запуске Visual Studio:
 
 ```console
 build.cmd -vs Microsoft.DotNet.CoreSetup -rc Release -lc Release
 ```
 
-## Investigating failures
+## Исследование сбоев
 
-When [running all tests](#running-all-tests), reports with results will be generated under `<repo_root>\artifacts\TestResults`. When [running individual tests](#running-specific-tests), results will be output to the console by default and can be configured via [`dotnet test` options](https://learn.microsoft.com/dotnet/core/tools/dotnet-test#options).
+При [запуске всех тестов](#запуск-всех-тестов) отчеты с результатами будут сгенерированы в каталоге `<repo_root>\artifacts\TestResults`. При [запуске отдельных тестов](#запуск-отдельного-теста) результаты по умолчанию выводятся в консоль и могут быть настроены с помощью опций [`dotnet test`](https://learn.microsoft.com/dotnet/core/tools/dotnet-test#options).
 
-In order to test the hosting components, the tests launch a separate process (e.g. `dotnet`, apphost, native host) and validate the expected output (standard output and error) of the launched process. This usually involves copying or creating test artifacts in the form of an application to run or a .NET install to run against.
+Для тестирования компонентов хостинга тесты запускают отдельный процесс (например, `dotnet`, apphost, нативный хост) и проверяют ожидаемый вывод (стандартный вывод и ошибки) запущенного процесса. Обычно это включает в себя копирование или создание тестовых артефактов в виде приложения для запуска или установки .NET, с которой нужно работать.
 
-On failure, tests will report the file, arguments, and environment for the launched process that failed validation. With [preserved test artifacts](#preserving-test-artifacts), this information can be used to directly debug the specific scenario that the test was running.
+В случае сбоя тесты сообщат о файле, аргументах и окружении для запущенного процесса, который не прошел валидацию. С помощью [сохраненных тестовых артефактов](#Сохранение-тестовых-артефактов) эта информация может быть использована для непосредственной отладки отдельного сценария, который выполнялся в тесте.
 
-### Preserving test artifacts
+### Сохранение тестовых артефактов
 
-The tests will delete any generated test artifacts after the test finishes. To allow inspection or usage after the test finishes, set the environment variable `PRESERVE_TEST_RUNS=1` to avoid deleting the test artifacts.
-
+Тесты удалят любые сгенерированные тестовые артефакты после завершения теста. Чтобы разрешить их инспекцию или использование после завершения теста, установите переменную окружения `PRESERVE_TEST_RUNS=1`, чтобы избежать удаления тестовых артефактов.
