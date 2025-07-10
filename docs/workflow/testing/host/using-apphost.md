@@ -1,8 +1,8 @@
-# Using a local build of `apphost`
+# Использование локальной сборки `apphost`
 
-When building a .NET application, [`apphost`](../../../design/features/host-components.md#entry-point-hosts) is used as the executable for the application. It is renamed to match the application and updated to be associated with the application's managed `.dll`. The .NET SDK looks for the `apphost` to use by looking for `Microsoft.NETCore.App.Host` packages installed alongside under `<dotnet_root>/packs` with a matching OS, architecture, and version. If no match is found, it downloads the matching NuGet package.
+При сборке .NET приложения [`apphost`](../../../design/features/host-components.md#entry-point-hosts) используется в качестве исполняемого файла для приложения. Он переименовывается, чтобы соответствовать приложению, и обновляется, чтобы ассоциироваться с управляемым `.dll` приложения. .NET SDK ищет `apphost`, проверяя установленные пакеты `Microsoft.NETCore.App.Host` в каталоге `<dotnet_root>/packs`, соответствующие операционной системе, архитектуре и версии. Если совпадение не найдено, он загружает соответствующий пакет NuGet.
 
-To make the SDK use a specific `apphost` when building a project, set the [`AppHostSourcePath` property](https://github.com/dotnet/sdk/blob/f106bca2c28aeb4de8cafa8ff818bd8613908964/src/Tasks/Microsoft.NET.Build.Tasks/targets/Microsoft.NET.Sdk.FrameworkReferenceResolution.targets#L295) to the full path to your local `apphost` binary - for example, `<repo_root>/artifacts/bin/<os>-<arch>.<configuration>/corehost/apphost[.exe]`.
+Чтобы заставить SDK использовать конкретный `apphost` при сборке проекта, установите параметр [`AppHostSourcePath`](https://github.com/dotnet/sdk/blob/f106bca2c28aeb4de8cafa8ff818bd8613908964/src/Tasks/Microsoft.NET.Build.Tasks/targets/Microsoft.NET.Sdk.FrameworkReferenceResolution.targets#L295) на полный путь к вашему локальному бинарному файлу `apphost` - например, `<repo_root>/artifacts/bin/<os>-<arch>.<configuration>/corehost/apphost[.exe]`.
 
 ```xml
 <PropertyGroup>
@@ -10,7 +10,7 @@ To make the SDK use a specific `apphost` when building a project, set the [`AppH
 </PropertyGroup>
 ```
 
-For single-file, set the [`SingleFileHostSourcePath` property](https://github.com/dotnet/sdk/blob/f106bca2c28aeb4de8cafa8ff818bd8613908964/src/Tasks/Microsoft.NET.Build.Tasks/targets/Microsoft.NET.Sdk.FrameworkReferenceResolution.targets#L305) to the full path to your local `singlefilehost` binary - for example, `<repo_root>/artifacts/bin/<os>-<arch>.<configuration>/corehost/singlefilehost[.exe]`
+Для однофайлового приложения устан5овите свойство [`SingleFileHostSourcePath`](https://github.com/dotnet/sdk/blob/f106bca2c28aeb4de8cafa8ff818bd8613908964/src/Tasks/Microsoft.NET.Build.Tasks/targets/Microsoft.NET.Sdk.FrameworkReferenceResolution.targets#L305) на полный путь к локальному бинарному файлу `singlefilehost` - например, `<repo_root>/artifacts/bin/<os>-<arch>.<configuration>/corehost/singlefilehost[.exe]`.
 
 ```xml
 <PropertyGroup>
@@ -19,12 +19,12 @@ For single-file, set the [`SingleFileHostSourcePath` property](https://github.co
 </PropertyGroup>
 ```
 
-Building and publishing your project should now use the `apphost`/`singlefilehost` that you have specified.
+Сборка и публикация проекта теперь должны использовать указанные `apphost`/`singlefilehost`.
 
-Alternatives to this method include copying the desired apphost to the appropriate `<dotnet_root>/packs` and NuGet cache directories or building the NuGet packages locally and configuring the application to use them via a NuGet.config and the `KnownAppHostPack` item.
+Альтернативно, можно скопировать желаемый apphost в соответствующие директории `<dotnet_root>/packs` и кэша NuGet. Можно также собрать пакеты NuGet локально и настроить приложение на использование собранных пакетов через файл **NuGet.config** и элемент `KnownAppHostPack`.
 
-# Pointing at a local .NET root
+# Указать локальный .NET root
 
-For a [framework-dependent application](https://learn.microsoft.com/dotnet/core/deploying/#publish-framework-dependent), you can set the `DOTNET_ROOT` environment variable to point at a local .NET layout.
+Для приложения, зависящего от фреймворка ([framework-dependent application](https://learn.microsoft.com/dotnet/core/deploying/#publish-framework-dependent)), вы можете установить переменную окружения `DOTNET_ROOT`, чтобы указать на локальную структуру .NET.
 
-The [libraries tests](../libraries/testing.md) construct and use such a layout based on your local runtime, host, and libraries build as part of the `libs.pretest` subset. To use that layout, set `DOTNET_ROOT=<repo_root>/artifacts/bin/testhost/net<version>-<os>-<configuration>-<arch>` and then run the .NET application.
+Тесты [библиотек](../libraries/testing.md) создают и используют такую структуру на основе вашей локальной сборки runtime, хоста и библиотек в рамках подмножества `libs.pretest`. Чтобы использовать эту структуру, укажите `DOTNET_ROOT=<repo_root>/artifacts/bin/testhost/net<version>-<os>-<configuration>-<arch>`, а затем запустите .NET приложение.

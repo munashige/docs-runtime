@@ -1,10 +1,10 @@
-# Debugging libraries
+# Отладка библиотек
 
-For building libraries or testing them without debugging, read:
-- [Building libraries](https://github.com/dotnet/runtime/blob/main/docs/workflow/building/libraries/README.md),
-- [Testing libraries](https://github.com/dotnet/runtime/blob/main/docs/workflow/testing/libraries/testing.md).
+Для сборки библиотек и их тестировании без отладки см.:
+- [Сборка библиотек](https://github.com/dotnet/runtime/blob/main/docs/workflow/building/libraries/README.md),
+- [Тестирование библиотек](https://github.com/dotnet/runtime/blob/main/docs/workflow/testing/libraries/testing.md).
 
-## Run the tests with debugger support
+## Запуск тестов с поддержкой отладчика
 
 Run the selected library tests in the browser, e.g. `System.Collections.Concurrent.Tests` this way:
 ```
