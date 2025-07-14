@@ -1,181 +1,179 @@
 # Testing Libraries
 
-## Full Build and Test Run
+## Полная сборка и запуск тестов
 
-These example commands automate the test run and all pre-requisite build steps in a single command from a clean enlistment.
+Примеры команд иже автоматизируют запуск тестов и все предварительные шаги сборки в одной команде из чистой версии.
 
-- Run all tests - Builds clr in release, libs+tests in debug:
+-   Запуск всех тестов - сборка clr в режиме _release_, библиотек и тестов в режиме _debug_:
 
 ```
 build.cmd/sh -subset clr+libs+libs.tests -test -rc Release
 ```
 
-- Run all tests - Builds Mono in release, libs+tests in debug:
+-   Запуск всех тестов - cборка Mono в режиме _release_, библиотеки и тесты в режиме _debug_:
 
 ```
 build.cmd/sh -subset mono+libs+libs.tests -test -rc Release
 ```
 
-- Run all tests - Build Mono and libs for x86 architecture in debug (choosing debug for runtime will run very slowly):
+-   Запуск всех тестов - сборка Mono и библиотек для архитектуры x86 в режиме _debug_ (режим _debug_ для runtime запускается очень долго):
 
 ```
 build.cmd/sh -subset mono+libs+libs.tests -test -arch x86
 ```
 
-## Partial Build and Test Runs
+## Частичная сборка и запуск тестов
 
-Doing full build and test runs takes a long time and is very inefficient if you need to iterate on a change. For greater control and efficiency individual parts of the build + testing workflow can be run in isolation. See the [Building instructions](../../building/libraries/README.md) for more info on build options.
+Полная сборка и запуск тестов занимают много времени и являются неэффективными, если вам нужно внести изменения. Для большей гибкости и эффективности отдельные части рабочего процесса сборки и тестирования могут выполняться изолированно. См. [Инструкции по сборке](../../building/libraries/README.md) для получения дополнительной информации о параметрах сборки.
 
-### Test Run Pre-requisites
+### Предварительные условия для запуска тестов
 
-Before any tests can run we need a complete build to run them on. This requires building (1) a runtime, and (2) all the libraries. Examples:
+Перед запуском любых тестов нам нужна полная сборка, на которой они будут выполняться. Это требует сборки (1) runtime и (2) всех библиотек. Примеры:
 
-- Build release clr + debug libraries
+-   Сборка релизной версии clr + библиотек в _debug_:
 
 ```
 build.cmd/sh -subset clr+libs -rc Release
 ```
 
-- Build release mono + debug libraries
+-   Сборка Mono в _release_ + библиотек в _debug_:
 
 ```
 build.cmd/sh -subset mono+libs -rc Release
 ```
 
-Building the `libs` subset or any of individual library projects automatically copies product binaries into the testhost folder in the bin directory. This is where the tests will load the binaries from during the run. However System.Private.CorLib is an exception - the build does not automatically copy it to the testhost folder. If you [rebuild System.Private.CoreLib](https://github.com/dotnet/runtime/blob/main/docs/workflow/building/libraries/README.md#iterating-on-systemprivatecorelib-changes) you must also build the `libs.pretest` subset to ensure S.P.C is copied before running tests.
+Сборка подмножества `libs` или любого из отдельных проектов библиотек автоматически копирует бинарные файлы продукта в папку bin/testhost. Именно оттуда тесты будут загружать бинарные файлы во время выполнения. Обратите внимание, что **System.Private.CorLib** является исключением — сборка не копирует его автоматически в папку testhost. Если нужно [пересобирать System.Private.CoreLib](https://github.com/dotnet/runtime/blob/main/docs/workflow/building/libraries/README.md#iterating-on-systemprivatecorelib-changes), необходимо собрать подмножество `libs.pretest`, чтобы S.P.C был также скопирован перед запуском тестов.
 
-### Running tests for all libraries
+### Запуск тестов для всех библиотек
 
-- Build and run all tests in release configuration.
+-   Сборка и запуск всех тестов в конфигурации _релиз_:
 
 ```
 build.cmd/sh -subset libs.tests -test -c Release
 ```
 
-- Build the tests without running them
+-   Сборка всех тестов без запуска:
 
 ```
 build.cmd/sh -subset libs.tests
 ```
 
-- Run the tests without building them
+-   Запуск всех тестов без сборки:
 
 ```
 build.cmd/sh -subset libs.tests -test -testnobuild
 ```
 
-- The following example shows how to pass extra msbuild properties to ignore tests ignored in CI.
+-   Следующий пример показывает, как передать дополнительные свойства msbuild, чтобы игнорировать тесты, которые игнорированы в CI.
 
 ```
 build.cmd/sh -subset libs.tests -test /p:WithoutCategories=IgnoreForCI
 ```
 
-### Running tests for a single library
+### Запуск тестов для одной библиотеки
 
-The easiest (and recommended) way to build and run the tests for a specific library, is to invoke the `Test` target on that library:
+Самый простой (и рекомендуемый) способ собрать и запустить тесты для конкретной библиотеки — это вызвать цель `Test` для этой библиотеки:
 
 ```cmd
 cd src\libraries\System.Collections.Immutable\tests
 dotnet build /t:Test
 ```
 
-**NOTE**: if your environment doesn't have the required SDK installed (e.g. inside [Docker container](/docs/workflow/building/coreclr/linux-instructions.md#build-using-docker)),
-use `./dotnet.sh`/`.\dotnet.cmd` instead of `dotnet`.
+**ПРИМЕЧАНИЕ**: если в вашей среде не установлен необходимый SDK (например, внутри [контейнера Docker](/docs/workflow/building/coreclr/linux-instructions.md#build-using-docker)), используйте `./dotnet.sh`/`.\dotnet.cmd` вместо `dotnet`.
 
-### Running only certain tests
+### Запуск конкретных тестов
 
-It is possible to pass parameters to the underlying xunit runner via the `XUnitOptions` parameter, e.g., to filter to tests in just one fixture (class):
+Можно передать настройки в раннер xunit через параметр `XUnitOptions`. Например, чтобы отфильтровать тесты только в одной фикстуре (классе):
 
 ```cmd
 dotnet build /t:Test /p:XUnitOptions="-class Test.ClassUnderTests"
 ```
 
-or to just one test method:
+или только для одного метода теста.
 
 ```cmd
 dotnet build /t:test /p:outerloop=true /p:xunitoptions="-method System.Text.RegularExpressions.Tests.RegexMatchTests.StressTestDeepNestingOfLoops"
 ```
 
-### Running only specific architectures
+### Запуск конкретной архитектуры
 
-To run tests as `x86` on a `x64` machine:
+Для запуска тестов с `x86`-архитектурой на `x64`-машине:
 
 ```cmd
 dotnet build /t:Test /p:TargetArchitecture=x86
 ```
 
-There may be multiple projects in some directories so you may need to specify the path to a specific test project to get it to build and run the tests.
+В некоторых папках может лежать несколько проектов, поэтому вам может потребоваться указать путь к конкретному проекту тестирования, чтобы он собрал и запустил тесты.
 
-### Running a single test on the command line
+### Запуск одного теста из командной строки
 
-To quickly run or debug a single test from the command line, set the XunitMethodName property, e.g.:
+Для быстрого запуска или отладки одного теста из командной строки, используйте параметр **XunitMethodName**, например:
 
 ```cmd
 dotnet build /t:Test /p:XunitMethodName={FullyQualifiedNamespace}.{ClassName}.{MethodName}
 ```
 
-### Running outer loop tests
+### Запуск тестов внешнего цикла (outer loops)
 
-To run all tests, including "outer loop" tests (which are typically slower and in some test suites less reliable, but which are more comprehensive):
+Чтобы запустить все тесты, включая тесты "внешнего цикла" (которые медленнее и в некоторых наборах менее надежны, но более детализированы):
 
 ```cmd
 dotnet build /t:Test /p:Outerloop=true
 ```
 
-### Running tests on a different target framework
+### Запуск тестов для другой конечной системы
 
-Each test project can potentially have multiple target frameworks. There are some tests that might be OS-specific, or might be testing an API that is available only on some target frameworks, so the `TargetFrameworks` property specifies the valid target frameworks.
+Каждый проект тестирования может иметь несколько конечных систем. Существуют тесты, которые могут быть специфичными для операционной системы или тестировании API. Используйте параметр `TargetFrameworks` для установки допустимых систем.
 
-### Running tests in custom compilation modes
+### Запуск тестов в пользовательских режимах компиляции
 
-There are several custom compilation modes for tests. These are enabled by setting a switch during the configuration. These switches are described in the following table:
+Существуют несколько пользовательских режимов компиляции для тестов. Они активируются путем установки переключателя во время конфигурации. Эти переключатели описаны в следующей таблице:
 
-| Mode           | Description                                               | Prerequisite Subsets |
-| -------------- | --------------------------------------------------------- | -------------------- |
-| TestSingleFile | Test using the single file compilation mode               | libs+clr             |
-| TestNativeAot  | Test by compiling using NativeAOT                         | libs+clr.aot         |
-| TestReadyToRun | Test compilation of the tests/libraries into R2R binaries | libs+clr             |
+| Режим          | Описание                                                      | Требуемые подмножества |
+| -------------- | ------------------------------------------------------------- | ---------------------- |
+| TestSingleFile | Тестирование с использованием режима компиляции в один файл   | libs+clr               |
+| TestNativeAot  | Тестирование с использованием компиляции NativeAOT            | libs+clr.aot           |
+| TestReadyToRun | Тестирование компиляции тестов/библиотек в R2R бинарные файлы | libs+clr               |
 
-To run a test in a specific mode, simply build the tests after building the prerequisite subsets, and specify the test mode in the command-line. For example, to use the _TestReadyToRun_ mode in Release configuration:
+Чтобы запустить тест в определенном режиме, достаточно просто собрать тесты после сборки предварительных подмножеств и указать режим тестирования в командной строке. Например, чтобы использовать режим `TestReadyToRun` в конфигурации _release_:
 
 ```bash
 dotnet build -c Release -t:Test -p:TestReadyToRun=true
 ```
 
 <!-- NOTE: It might be worth it to explain what each of these flags actually does. -->
-It is important to highlight that these tests do not use the standard XUnit test runner. Instead, they run with the [SingleFileTestRunner](/src/libraries/Common/tests/SingleFileTestRunner/SingleFileTestRunner.cs). The set of available commands is listed here:
 
-- `-xml`
-- `-notrait`
-- `-class`
-- `-class-`
-- `-noclass`
-- `-method`
-- `-method-`
-- `-nomethod`
-- `-namespace`
-- `-namespace-`
-- `-nonamespace`
-- `-parallel`
+Важно отметить, что эти тесты не используют стандартный тестовый раннер XUnit. Вместо этого они выполняются с помощью [SingleFileTestRunner](/src/libraries/Common/tests/SingleFileTestRunner/SingleFileTestRunner.cs). Набор доступных команд перечислен ниже:
 
-### Speeding up inner loop
+-   `-xml`
+-   `-notrait`
+-   `-class`
+-   `-class-`
+-   `-noclass`
+-   `-method`
+-   `-method-`
+-   `-nomethod`
+-   `-namespace`
+-   `-namespace-`
+-   `-nonamespace`
+-   `-parallel`
 
-A couple of flags that are sometimes helpful when iterating on a test project in the shell:
+### Ускорение внутреннего цикла
 
-- `/p:testnobuild=true`  -- modifies `/t:test` so that it doesn't do a build before running the tests. Useful if you didn't change any code and you don't want to even check timestamps.
-- `--no-restore` -- modifies `dotnet build` so that it doesn't attempt to restore packages. Useful if you're already up to date with NuGet packages.
+Ниже описаны флаги, которые могут быть полезны при итерации над проектом тестирования в оболочке:
 
-Together these can cut a couple seconds off when you're iterating.
+-   `/p:testnobuild=true` — изменяет `/t:test`, чтобы он не выполнял сборку перед запуском тестов. Полезен, если вы не изменяли код и не хотите проверять временные метки.
+-   `--no-restore` — изменяет `dotnet build`, чтобы он не пытался восстановить пакеты. Полезен, если у вас уже имеются актуальные пакеты NuGet.
 
-Putting these together, here's an example of running a single test method in a particular test project, with those flags applied:
+Эти флаги могут сократить время выполнения на несколько секунд при итерации. Пример запуска одного метода теста в конкретном проекте тестирования с применением этих флагов:
 
 ```cmd
-# assuming we're in src\libraries\System.Text.RegularExpressions
+# из папки src\libraries\System.Text.RegularExpressions
 dotnet build --no-restore /t:test /p:testnobuild=true /p:xunitoptions=" -method System.Text.RegularExpressions.Tests.RegexMatchTests.Match" tests\FunctionalTests
 ```
 
-If you change code, you'd need to remove `/p:testnobuild=true` from the command above.
+Если вы изменили код, нужно будет удалить `/p:testnobuild=true` из команды выше.
 
-### Viewing XUnit logs
+### Просмотр логов XUnit
 
-It's usually sufficient to see the test failure output in the console. There is also a test log file, which you can find in a location like `...\runtime\artifacts\bin\System.Text.RegularExpressions.Tests\Debug\net10.0\testResults.xml`. It can be helpful, for example, to grep through a series of failures, or to see how long a slow test actually took.
+Вывод ошибок тестов в отображается в консоли. Также создается файл лога тестов, который можно найти в папке: `...\runtime\artifacts\bin\System.Text.RegularExpressions.Tests\Debug\net10.0\testResults.xml`. Лог может быть полезен для поиска по серии ошибок, чтобы просмотреть, сколько времени занял медленный тест и т.д.

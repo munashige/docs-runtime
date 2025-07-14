@@ -121,12 +121,12 @@ nav:
         - Сборка и запуск тестов: workflow/testing/host/testing.md
         - Работа с Apphost: workflow/testing/host/using-apphost.md 
       - Библиотеки:
+        - Тестирование библиотек: workflow/testing/libraries/testing.md
         - Отладка библиотек: workflow/testing/libraries/debugging-wasm.md
         - Filtering libraries tests using traits: workflow/testing/libraries/filtering-tests.md
+        - Тестирование на WebAssembly: workflow/testing/libraries/testing-wasm.md
         - Тестирование на Android: workflow/testing/libraries/testing-android.md
         - iOS, tvOS, and MacCatalyst: workflow/testing/libraries/testing-apple.md
-        - Тестирование на WebAssembly: workflow/testing/libraries/testing-wasm.md
-        - Тестирование библиотек: workflow/testing/libraries/testing.md
       - Mono: workflow/testing/mono/testing.md 
     - Trimming: 
       - Файлы ILLink: workflow/trimming/ILLink-files.md
