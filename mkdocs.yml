@@ -123,7 +123,7 @@ nav:
       - Библиотеки:
         - Тестирование библиотек: workflow/testing/libraries/testing.md
         - Отладка библиотек: workflow/testing/libraries/debugging-wasm.md
-        - Filtering libraries tests using traits: workflow/testing/libraries/filtering-tests.md
+        - Фильтрация с атрибутами traits: workflow/testing/libraries/filtering-tests.md
         - Тестирование на WebAssembly: workflow/testing/libraries/testing-wasm.md
         - Тестирование на Android: workflow/testing/libraries/testing-android.md
         - iOS, tvOS, and MacCatalyst: workflow/testing/libraries/testing-apple.md

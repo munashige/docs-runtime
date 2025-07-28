@@ -1,173 +1,197 @@
-# Filtering libraries tests using traits
+# Фильтрация тестов библиотек с атрибутами traits
 
-The tests can be filtered based on xunit trait attributes defined in [`Microsoft.DotNet.XUnitExtensions`](https://github.com/dotnet/arcade/tree/master/src/Microsoft.DotNet.XUnitExtensions).
+Тесты могут быть отфильтрованы с помощью атрибутов xunit traits, указанных в библиотеке [`Microsoft.DotNet.XUnitExtensions`](https://github.com/dotnet/arcade/tree/master/src/Microsoft.DotNet.XUnitExtensions).
 
-Some of the attributes take arguments to restrict filtering to a subset of configurations, including platform, runtime, and target framework moniker:
+Некоторые атрибуты принимают аргументы для ограничения фильтрации определённым подмножеством конфигураций, включая платформу, runtime и моникер целевого фреймворка (Target Framework Moniker):
 
-`TestPlatforms` is defined [here](https://github.com/dotnet/arcade/blob/master/src/Microsoft.DotNet.XUnitExtensions/src/TestPlatforms.cs).
+-   `TestPlatforms` указаны [здесь](https://github.com/dotnet/arcade/blob/master/src/Microsoft.DotNet.XUnitExtensions/src/TestPlatforms.cs)
+-   `TestRuntimes` (CoreCLR, Mono) указаны [здесь](https://github.com/dotnet/arcade/blob/main/src/Microsoft.DotNet.XUnitExtensions/src/TestRuntimes.cs)
+-   `TargetFrameworkMonikers` (Netcoreapp, NetFramework) указаны [здесь](https://github.com/dotnet/arcade/blob/main/src/Microsoft.DotNet.XUnitExtensions/src/TargetFrameworkMonikers.cs)
 
-`TestRuntimes` (CoreCLR, Mono) is defined [here](https://github.com/dotnet/arcade/blob/main/src/Microsoft.DotNet.XUnitExtensions/src/TestRuntimes.cs).
-
-`TargetFrameworkMonikers` (Netcoreapp, NetFramework) is defined [here](https://github.com/dotnet/arcade/blob/main/src/Microsoft.DotNet.XUnitExtensions/src/TargetFrameworkMonikers.cs).
-
-These attributes are specified above the test method's definition. The available attributes are:
+Эти атрибуты указываются над определением тестового метода. Доступные атрибуты включают:
 
 ## OuterLoopAttribute
 
 ```cs
 [OuterLoop()]
 ```
-Tests marked as `OuterLoop` are for scenarios that don't need to run every build. They may take longer than normal tests, cover seldom hit code paths, or require special setup or resources to execute. These tests are excluded by default when testing through `dotnet build` but can be enabled manually by adding the `-testscope outerloop` switch or `/p:TestScope=outerloop` e.g.
+
+Тесты, помеченные атрибутом `OuterLoop`, предназначены для сценариев, которые не требуется запускать при каждой сборке. Они могут выполняться дольше обычных тестов, так как покрывают редко используемые пути выполнения кода или требуют специальной настройки и ресурсов для запуска.
+
+По умолчанию эти тесты исключаются при выполнении `dotnet build`, но их можно включить вручную, добавив параметр: `-testscope outerloop` или `/p:TestScope=outerloop`. Пример:
 
 ```cmd
 build -test -testscope outerloop
 cd src/System.Text.RegularExpressions/tests && dotnet build /t:Test /p:TestScope=outerloop
 ```
 
-This attribute is defined [here](https://github.com/dotnet/arcade/blob/main/src/Microsoft.DotNet.XUnitExtensions/src/Attributes/OuterLoopAttribute.cs).
+Этот атрибут указан [здесь](https://github.com/dotnet/arcade/blob/main/src/Microsoft.DotNet.XUnitExtensions/src/Attributes/OuterLoopAttribute.cs).
 
 ## PlatformSpecificAttribute
 
 ```cs
 [PlatformSpecific(TestPlatforms platforms)]
 ```
-Use this attribute on test methods to specify that this test may only be run on the specified platforms. This attribute returns the following categories based on platform
-- `nonwindowstests` for tests that don't run on Windows
-- `nonlinuxtests` for tests that don't run on Linux
-- `nonosxtests` for tests that don't run on OS X
 
-**[Available Test Platforms](https://github.com/dotnet/arcade/blob/master/src/Microsoft.DotNet.XUnitExtensions/src/TestPlatforms.cs)**
+Используйте этот атрибут для тестовых методов, чтобы указать, что тест должен запускаться только на определённых платформах. Атрибут возвращает следующие категории в зависимости от платформы:
 
-When running tests by building a test project, tests that don't apply to the `TargetOS` are not run. For example, to run Linux-specific tests on a Linux box, use the following command line:
+-   `nonwindowstests` - для тестов, которые не выполняются на Windows;
+-   `nonlinuxtests` - для тестов, которые не выполняются на Linux;
+-   `nonosxtests` - для тестов, которые не выполняются на macOS.
+
+**[Доступные тестовые платформы](https://github.com/dotnet/arcade/blob/master/src/Microsoft.DotNet.XUnitExtensions/src/TestPlatforms.cs)**
+
+При запуске тестов через сборку тестового проекта, тесты, не соответствующие `TargetOS`, не выполняются. Например, для запуска Linux-специфичных тестов на Linux-машине используйте следующую команду:
+
 ```sh
 dotnet build <csproj_file> /t:Test /p:TargetOS=linux
 ```
-To run all Linux-compatible tests that are failing:
+
+Для запуска всех тестов, совместимых с Linux, а также с категорией failing:
+
 ```sh
 dotnet build <csproj_file> /t:Test /p:TargetOS=linux /p:WithCategories=failing
 ```
 
-This attribute is defined [here](https://github.com/dotnet/arcade/blob/main/src/Microsoft.DotNet.XUnitExtensions/src/Attributes/PlatformSpecificAttribute.cs).
-
 ## ActiveIssueAttribute
-This attribute is intended to be used when there is an active issue tracking the test failure and the failure needs to be fixed. This is a temporary attribute to skip the test until the issue is fixed. It is important that you limit the scope of the attribute to just the platforms and target monikers where the issue applies.
 
-This attribute can be applied either to a test class (will disable all the tests in that class) or to a test method. It allows multiple usages on the same member.
+Этот атрибут предназначен для использования, когда есть активная проблема, отслеживающая сбой теста, и этот сбой нужно исправить. Это временный атрибут для пропуска теста до устранения проблемы. Важно ограничить область действия атрибута только теми платформами и моникерами целевых фреймворков, где проблема применима.
 
-This attribute returns the 'failing' category, which is disabled by default.
+Атрибут может применяться либо к тестовому классу (отключит все тесты в этом классе), либо к тестовому методу. Он допускает множественное использование на одном и том же члене.
 
-This attribute is defined [here](https://github.com/dotnet/arcade/blob/main/src/Microsoft.DotNet.XUnitExtensions/src/Attributes/ActiveIssueAttribute.cs).
+Атрибут также возвращает категорию 'failing', которая по умолчанию отключена.
 
-**Disable for all platforms and all target frameworks:**
+Атрибут указан [здесь](https://github.com/dotnet/arcade/blob/main/src/Microsoft.DotNet.XUnitExtensions/src/Attributes/ActiveIssueAttribute.cs).
+
+**Отключить для всех платформ и всех фреймворков:**
 
 ```cs
 [ActiveIssue(string issue)]
 ```
-Example:
+
+Пример:
+
 ```cs
 [ActiveIssue("https://github.com/dotnet/runtime/issues/17845")]
 ```
 
-**Disable for specific platform:**
+**Отключить для конкретной платформы:**
 
 ```cs
 [ActiveIssue(string issue, TestPlatforms platforms)]
 ```
-Examples:
+
+Пример:
+
 ```cs
 [ActiveIssue("https://github.com/dotnet/runtime/issues/67853", TestPlatforms.tvOS)]
 [ActiveIssue("https://github.com/dotnet/runtime/issues/52072", TestPlatforms.iOS | TestPlatforms.tvOS | TestPlatforms.MacCatalyst)]
 ```
 
-**Disable for specific runtime:**
+**Отключить для runtime:**
 
 ```cs
 [ActiveIssue(string issue, TestRuntimes runtimes)]
 ```
-Example:
+
+Пример:
+
 ```cs
 [ActiveIssue("https://github.com/dotnet/runtime/issues/2337", TestRuntimes.Mono)]
 ```
 
-**Disable for specific target frameworks:**
+**Отключить для конкретного фреймворка:**
 
 ```cs
 [ActiveIssue(string issue, TargetFrameworkMonikers frameworks)]
 ```
-Example:
+
+Пример:
+
 ```cs
 [ActiveIssue("https://github.com/dotnet/runtime/issues/26624", TargetFrameworkMonikers.Netcoreapp)]
 ```
 
-**Disable for specific test platforms and target frameworks:**
+**Отключить для конкретных тестовых платформ и конкретных фреймворков**
 
 ```cs
 [ActiveIssue(string issue, TestPlatforms platforms, TargetFrameworkMonikers frameworks)]
 ```
 
-**Disable using PlatformDetection filter:**
+**Отключить при помощи фильтра PlatformDetection:**
 
 ```cs
 [ActiveIssue(string issue, typeof(PlatformDetection), nameof(PlatformDetection.{member name}))]
 ```
-Example:
+
+Пример:
+
 ```cs
 [ActiveIssue("https://github.com/dotnet/runtimelab/issues/155", typeof(PlatformDetection), nameof(PlatformDetection.IsNativeAot))]
 ```
 
-Use this attribute over test methods to skip failing tests only on the specific platforms and the specific target frameworks.
+Используйте этот атрибут над тестовыми методами, чтобы пропускать падающие тесты только на определенных платформах и определенных целевых фреймворках.
 
 ## SkipOnPlatformAttribute
-This attribute is intended to disable a test permanently on a platform where an API is not available or there is an intentional difference in behavior in between the tested platform and the skipped platform.
 
-This attribute can be applied either to a test assembly/class (will disable all the tests in that assembly/class) or to a test method. It allows multiple usages on the same member.
+Этот атрибут предназначен для постоянного отключения теста на платформе, где API недоступен или где специально расписано различие в поведении между тестируемой платформой и пропускаемой платформой.
+
+Этот атрибут может быть применен либо к тестовой сборке/классу (что отключит все тесты в этой сборке/классе), либо к тестовому методу. Он допускает множественное использование на одном и том же элементе.
 
 ```cs
 [SkipOnPlatform(TestPlatforms platforms, string reason)]
 ```
-Example:
+
+Пример:
+
 ```cs
 [SkipOnPlatform(TestPlatforms.Browser, "Credentials is not supported on Browser")]
 ```
 
-Use this attribute over test methods to skip tests only on the specific target platforms. The reason parameter doesn't affect the traits but we rather always use it so that when we see this attribute we know why it is being skipped on that platform.
+Используйте этот атрибут над тестовыми методами, чтобы пропускать тесты только на определенных целевых платформах. Параметр reason не влияет на traits, но мы всегда используем его, чтобы при виде этого атрибута было понятно, почему тест пропускается на данной платформе.
 
-If it needs to be skipped in multiple platforms and the reasons are different please use two attributes on the same test so that you can specify different reasons for each platform.
+Если тест нужно пропустить на нескольких платформах по разным причинам, используйте два атрибута на одном тесте, чтобы указать разные причины для каждой платформы.
 
-When you add the attribute on the whole test assembly it's a good idea to also add `<IgnoreForCI Condition="'$(TargetOS)' == '...'">true</IgnoreForCI>` to the test .csproj.
-That allows the CI build to skip sending this test assembly to Helix completely since it'd run zero tests anyway.
+При добавлении атрибута на всю тестовую сборку рекомендуется также добавить в тестовый файл .csproj:`<IgnoreForCI Condition="'$(TargetOS)' == '...'">true</IgnoreForCI>`
 
-**Currently these are the [Test Platforms](https://github.com/dotnet/arcade/blob/master/src/Microsoft.DotNet.XUnitExtensions/src/TestPlatforms.cs) that we support through our test execution infrastructure**
+Это позволяет CI-сборке полностью пропустить отправку тестовой сборки в Helix, так как она все равно не запустит тесты.
+
+**В настоящее время поддерживаются следующие [Test Platforms](https://github.com/dotnet/arcade/blob/master/src/Microsoft.DotNet.XUnitExtensions/src/TestPlatforms.cs)**
 
 ## SkipOnTargetFrameworkAttribute
-This attribute is intended to disable a test permanently on a framework where an API is not available or there is an intentional difference in behavior in between the tested framework and the skipped framework.
 
-This attribute can be applied either to a test class (will disable all the tests in that class) or to a test method. It allows multiple usages on the same member.
+Этот атрибут предназначен для постоянного отключения теста на фреймворке, где API недоступно или существует преднамеренное различие в поведении между тестируемым фреймворком и пропускаемым фреймворком.
+
+Атрибут может быть применен либо к тестовому классу (что отключит все тесты в этом классе), либо к тестовому методу. Он допускает множественное использование на одном элементе.
 
 ```cs
 [SkipOnTargetFramework(TargetFrameworkMonikers frameworks, string reason)]
 ```
-Example:
+
+Пример:
+
 ```cs
 [SkipOnTargetFramework(TargetFrameworkMonikers.NetFramework, ".NET Framework throws a NullReferenceException")]
 ```
 
-Use this attribute over test methods to skip tests only on the specific target frameworks. The reason parameter doesn't affect the traits but we rather always use it so that when we see this attribute we know why it is being skipped on that framework.
+Используйте этот атрибут над тестовыми методами, чтобы пропускать тесты только для определенных целевых фреймворков. Параметр reason не влияет на traits, но мы всегда используем его, чтобы при виде этого атрибута было понятно, почему тест пропускается для данного фреймворка.
 
-If it needs to be skipped in multiple frameworks and the reasons are different please use two attributes on the same test so that you can specify different reasons for each framework.
+Если тест нужно пропустить для нескольких фреймворков по разным причинам, используйте несколько атрибутов на одном тесте, чтобы указать разные причины для каждого фреймворка.
 
-**Currently these are the [Framework Monikers](https://github.com/dotnet/arcade/blob/master/src/Microsoft.DotNet.XUnitExtensions/src/TargetFrameworkMonikers.cs#L23-L26) that we support through our test execution infrastructure**
+**В настоящее время поддерживаются следующие [Framework Monikers](https://github.com/dotnet/arcade/blob/master/src/Microsoft.DotNet.XUnitExtensions/src/TargetFrameworkMonikers.cs#L23-L26)**
 
 ## ConditionalFactAttribute
-Use this attribute to run the test only when a condition is `true`. This attribute is used when `ActiveIssueAttribute` or `SkipOnTargetFrameworkAttribute` are not flexible enough due to needing to run a custom logic at test time. This test behaves as a `[Fact]` test that has no test data passed in as a parameter.
+
+Используйте этот атрибут для запуска теста только при выполнении условия (когда условие возвращает `true`). Этот атрибут применяется, когда `ActiveIssueAttribute` или `SkipOnTargetFrameworkAttribute` недостаточно гибки из-за необходимости выполнения пользовательской логики во время выполнения теста. Такой тест ведет себя как тест `[Fact]` без передачи тестовых данных в качестве параметра.
 
 ```cs
 [ConditionalFact(params string[] conditionMemberNames)]
 ```
 
-The conditional method needs to be a static method or property on this or any ancestor type, of any visibility, accepting zero arguments, and having a return type of Boolean.
+Условный метод должен быть статическим методом или свойством, принадлежащим текущему или любому родительскому типу, с любой областью видимости, не принимающим аргументов и возвращающим значение типа `Boolean`.
 
-**Example:**
+**Пример:**
+
 ```cs
 public class TestClass
 {
@@ -182,17 +206,19 @@ public class TestClass
 ```
 
 ## ConditionalTheoryAttribute
-Use this attribute to run the test only when a condition is `true`. This attribute is used when `ActiveIssueAttribute` or `SkipOnTargetFrameworkAttribute` are not flexible enough due to needing to run a custom logic at test time. This test behaves as a `[Theory]` test that has no test data passed in as a parameter.
+
+Используйте этот атрибут для выполнения теста только при выполнении условия (`true`). Этот атрибут применяется, когда `ActiveIssueAttribute` или `SkipOnTargetFrameworkAttribute` недостаточно гибки из-за необходимости выполнения пользовательской логики во время теста. Такой тест ведет себя как тест `[Theory]`, но без передачи тестовых данных в качестве параметра.
 
 ```cs
 [ConditionalTheory(params string[] conditionMemberNames)]
 ```
 
-This attribute must have `[MemberData(string member)]` or a `[ClassData(Type class)]` attribute, which represents an `IEnumerable<object>` containing the data that will be passed as a parameter to the test. Another option is to add multiple or one `[InlineData(object params[] parameters)]` attribute.
+Этот атрибут должен сопровождаться либо атрибутом `[MemberData(string member)]`, либо атрибутом `[ClassData(Type class)]`, которые представляют `IEnumerable<object>` с данными, передаваемыми в качестве параметров теста. Альтернативный вариант - добавление одного или нескольких атрибутов `[InlineData(object params[] parameters)]`.
 
-The conditional method needs to be a static method or property on this or any ancestor type, of any visibility, accepting zero arguments, and having a return type of Boolean.
+Условный метод должен быть статическим методом или свойством, принадлежащим текущему или любому родительскому типу, с любой областью видимости, не принимающим аргументов и возвращающим значение типа `Boolean`.
 
-**Example:**
+**Пример:**
+
 ```cs
 public class TestClass
 {
@@ -222,76 +248,93 @@ public class TestClass
 }
 ```
 
-**Note that all of the attributes above must include an issue link and/or have a comment next to them briefly justifying the reason. ActiveIssueAttribute and SkipOnTargetFrameworkAttribute should use their constructor parameters to do this**
+**Обратите внимание, что все вышеуказанные атрибуты должны включать ссылку на issue и/или содержать комментарий с кратким обоснованием причины. ActiveIssueAttribute и SkipOnTargetFrameworkAttribute должны использовать свои параметры конструктора для этого**
 
-_**A few common examples with the above attributes:**_
+_**Несколько распространенных примеров с вышеуказанными атрибутами:**_
 
-- Run all tests acceptable on Windows that are not failing:
+-   Запустить все тесты, которые работают на Windows и не являются падающими:
+
 ```cmd
 dotnet build <csproj_file> /t:Test /p:TargetOS=windows
 ```
-- Run all outer loop tests acceptable on OS X that are currently associated with active issues:
+
+-   Запустить все тесты категории OuterLoop, которые работают на OS X и в настоящее время связаны с активными issues:
+
 ```sh
 dotnet build <csproj_file> /t:Test /p:TargetOS=osx /p:WithCategories="OuterLoop;failing""
 ```
 
 ## SkipOnCoreClrAttribute
-This attribute is used to disable a test under specific conditions, only when run with CoreCLR (it doesn't affect tests run with Mono). Typically, this is when there is a failure in a particular test run configuration, such as under GCStress or JitStress.
 
-This attribute can be applied either to a test class (will disable all the tests in that class) or to a test method. It allows multiple usages on the same member.
+Этот атрибут используется для отключения теста при определенных условиях, только при запуске с CoreCLR (не влияет на тесты, запускаемые с Mono). Обычно применяется, когда возникает ошибка в конкретной конфигурации запуска теста, например при GCStress или JitStress.
 
-This attribute is defined [here](https://github.com/dotnet/arcade/blob/main/src/Microsoft.DotNet.XUnitExtensions/src/Attributes/SkipOnCoreClrAttribute.cs).
+Атрибут может быть применен:
 
-**Disable for all platforms and all target frameworks:**
+-   К тестовому классу (отключит все тесты в классе)
+-   К отдельному тестовому методу
+    Допускается множественное использование на одном элементе.
+
+Атрибут определен [здесь](https://github.com/dotnet/arcade/blob/main/src/Microsoft.DotNet.XUnitExtensions/src/Attributes/SkipOnCoreClrAttribute.cs).
+
+**Отключение для всех платформ и всех целевых фреймворков:**
 
 ```cs
 [SkipOnCoreClr(string reason)]
 ```
-Example:
+
+Пример:
+
 ```cs
 [SkipOnCoreClr("CoreCLR does track thread specific JIT information")]
 ```
 
-**Disable for specific platform:**
+**Отключить для конкретных платформ:**
 
 ```cs
 [SkipOnCoreClr(string reason, TestPlatforms testPlatforms)]
 ```
-Example:
+
+Пример:
+
 ```cs
 [SkipOnCoreClr("Long running tests: https://github.com/dotnet/runtime/issues/11980", TestPlatforms.Linux)
 ```
 
-**Disable for specific test mode:**
+**Отключить для конкретного тестового режима:**
 
-A test mode is a run configuration, like JitStress, JitStressRegs, JitMinOpts, TailcallStress, GCStress.
-`RuntimeTestModes` is defined [here](https://github.com/dotnet/arcade/blob/main/src/Microsoft.DotNet.XUnitExtensions/src/RuntimeTestModes.cs).
+Режим теста - это конфигурация запуска, такая как JitStress, JitStressRegs, JitMinOpts, TailcallStress, GCStress.
+`RuntimeTestModes` определен [здесь](https://github.com/dotnet/arcade/blob/main/src/Microsoft.DotNet.XUnitExtensions/src/RuntimeTestModes.cs).
 
 ```cs
 [SkipOnCoreClr(string reason, RuntimeTestModes testMode)]
 ```
-Examples:
+
+Пример:
+
 ```cs
 [SkipOnCoreClr("https://github.com/dotnet/runtime/issues/60240", RuntimeTestModes.JitStressRegs)]
 [SkipOnCoreClr("Long running tests: https://github.com/dotnet/runtime/issues/10680", RuntimeTestModes.JitMinOpts)]
 ```
 
-**Disable for specific runtime configuration:**
+**Отключить для конкретной конфигурации runtime:**
 
-A runtime configuration is a the build of the runtime: Debug, Checked, Release.
-`RuntimeConfiguration` is defined [here](https://github.com/dotnet/arcade/blob/main/src/Microsoft.DotNet.XUnitExtensions/src/RuntimeConfiguration.cs).
+Конфигурация runtime имеет следующие варианты сборки: Debug, Checked, Release.
+`RuntimeConfiguration` определен [здесь](https://github.com/dotnet/arcade/blob/main/src/Microsoft.DotNet.XUnitExtensions/src/RuntimeConfiguration.cs).
 
 ```cs
 [SkipOnCoreClr(string reason, RuntimeConfiguration runtimeConfigurations)]
 ```
-Example:
+
+Пример:
+
 ```cs
 [SkipOnCoreClr("https://github.com/dotnet/runtime/issues/45464", ~RuntimeConfiguration.Release)]
 ```
 
-**Disable for combinations of options:**
+**Отключение для комбинаций параметров:**
 
-There are additional attribute signatures for combinations of these configurations, where all the conditions must be met:
+Существуют дополнительные сигнатуры атрибутов для комбинаций этих конфигураций, где должны быть выполнены все условия:
+
 ```cs
 SkipOnCoreClr(string reason, RuntimeConfiguration runtimeConfigurations, RuntimeTestModes testModes)
 SkipOnCoreClr(string reason, TestPlatforms testPlatforms, RuntimeConfiguration runtimeConfigurations)
@@ -299,10 +342,11 @@ SkipOnCoreClr(string reason, TestPlatforms testPlatforms, RuntimeTestModes testM
 SkipOnCoreClr(string reason, TestPlatforms testPlatforms, RuntimeConfiguration runtimeConfigurations, RuntimeTestModes testModes)
 ```
 
-**Disable using multiple attributes:**
+**Отключение с использованием нескольких атрибутов:**
 
-This attribute can be used multiple times, in which case the test is disabled for any of the conditions. In this example,
-only Release builds where `DOTNET_JITMinOpts` is not set would run the test.
+Этот атрибут можно использовать несколько раз - в этом случае тест будет отключен при любом из указанных условий. В данном примере
+тест будет выполняться только для Release-сборок, где не установлен `DOTNET_JITMinOpts`.
+
 ```cs
 [SkipOnCoreClr("https://github.com/dotnet/runtime/issues/67886", ~RuntimeConfiguration.Release)]
 [SkipOnCoreClr("https://github.com/dotnet/runtime/issues/67886", RuntimeTestModes.JitMinOpts)]
@@ -310,42 +354,44 @@ only Release builds where `DOTNET_JITMinOpts` is not set would run the test.
 
 ## SkipOnMonoAttribute
 
-This attribute is used to disable a test only when run with Mono.
+Этот атрибут используется для отключения теста только при запуске с Mono.
 
-This attribute can be applied either to an assembly, class, or method.
+Атрибут может быть применен к сборке, классу или методу.
 
-This attribute is defined [here](https://github.com/dotnet/arcade/blob/main/src/Microsoft.DotNet.XUnitExtensions/src/Attributes/SkipOnMonoAttribute.cs).
+Атрибут определен [здесь](https://github.com/dotnet/arcade/blob/main/src/Microsoft.DotNet.XUnitExtensions/src/Attributes/SkipOnMonoAttribute.cs).
 
-**Disable for all platforms:**
+**Отключить для всех платформ:**
 
 ```cs
 [SkipOnMonoAttribute(string reason, TestPlatforms testPlatforms = TestPlatforms.Any)]
 ```
-Example:
+
+Пример:
+
 ```cs
 [SkipOnMono("No SAPI on Mono")]
 ```
 
 ## CollectionAttribute
 
-This is a standard xunit attribute, defined [here](https://github.com/xunit/xunit/blob/07663749ab0f62597acc5ff5f163df9f5a0ab8d5/src/xunit.v3.core/CollectionAttribute.cs).
+Это стандартный атрибут xunit, определенный [здесь](https://github.com/xunit/xunit/blob/07663749ab0f62597acc5ff5f163df9f5a0ab8d5/src/xunit.v3.core/CollectionAttribute.cs).
 
-A common usage in the libraries tests is the following:
+Типичное использование в тестах библиотек выглядит следующим образом:
 
 ```cs
 [Collection(nameof(DisableParallelization))]
 ```
 
-This is put on test classes to indicate that none of the tests in that class (which as usual run serially with respect to each other) may run concurrently with tests in another class. This is used for tests that use a lot of disk space or memory, or dominate all the cores, such that they are likely to disrupt any tests that run concurrently.
+Этот атрибут применяется к тестовым классам, чтобы указать, что ни один из тестов в этом классе (которые, как обычно, выполняются последовательно друг относительно друга) не может выполняться параллельно с тестами из другого класса. Это используется для тестов, которые потребляют много дискового пространства или памяти, или загружают все ядра, что может нарушить работу параллельно выполняемых тестов.
 
-## FactAttribute and `Skip`
+## FactAttribute и параметр `Skip`
 
-Another way to disable the test entirely is to use the `Skip` named argument that is used on the `FactAttribute`.
+Еще один способ полностью отключить тест - использовать именованный параметр `Skip` в атрибуте `FactAttribute`.
 
-Example:
+Пример:
+
 ```cs
 [Fact(Skip = "<reason for skipping>")]
 ```
 
-If the reason for skipping is a link to an issue, it is recommended to use the `ActiveIssueAttribute` instead.
-Otherwise, `Skip` allows for a more descriptive reason.
+Если причина пропуска теста - ссылка на issue, рекомендуется использовать `ActiveIssueAttribute`. В остальных случаях параметр `Skip` позволяет указать более детализированную причину.
