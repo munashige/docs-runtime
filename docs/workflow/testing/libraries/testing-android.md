@@ -1,23 +1,25 @@
-# Testing Libraries on Android
+# Тестирование библиотек на Android
 
-## Prerequisites
+## Необходимые компоненты
 
-The following dependencies should be installed in order to be able to run tests:
+Для запуска тестов должны быть установлены следующие зависимости:
 
-- OpenJDK
-- Android NDK
-- Android SDK
+-   OpenJDK
+-   Android NDK
+-   Android SDK
 
-To manage the dependencies, you can install them via terminal or using Android Studio.
+Установить зависимости можно через терминал или с помощью Android Studio.
 
-### Using a terminal
+### Использование терминала
 
-OpenJDK can be installed on Linux (Ubuntu) using `apt-get`:
+OpenJDK можно установить в Linux (Ubuntu) с помощью `apt-get`:
+
 ```bash
 sudo apt-get install openjdk-8-jdk zip unzip
 ```
 
-Android SDK and NDK can be automatically installed via the following script:
+Android SDK и NDK могут быть автоматически установлены с помощью следующего скрипта:
+
 ```bash
 #!/usr/bin/env bash
 set -e
@@ -37,13 +39,13 @@ else
     BASHRC=~/.bashrc
 fi
 
-# download Android NDK
+# скачать Android NDK
 export ANDROID_NDK_ROOT=~/android-ndk-${NDK_VER}
 curl https://dl.google.com/android/repository/android-ndk-${NDK_VER}-${HOST_OS}.zip -L --output ~/andk.zip
 unzip ~/andk.zip -d $(dirname ${ANDROID_NDK_ROOT}) && rm -rf ~/andk.zip
 
-# download Android SDK, accept licenses and download additional packages such as
-# platform-tools, platforms and build-tools
+# скачать Android SDK, принять лицензию, установить дополнительные пакеты, включая:
+# platform-tools, platforms и build-tools
 export ANDROID_SDK_ROOT=~/android-sdk
 curl https://dl.google.com/android/repository/commandlinetools-${HOST_OS_SHORT}-${SDK_VER}.zip -L --output ~/asdk.zip
 mkdir ${ANDROID_SDK_ROOT} && unzip ~/asdk.zip -d ${ANDROID_SDK_ROOT}/cmdline-tools && rm -rf ~/asdk.zip
@@ -51,106 +53,119 @@ yes | ${ANDROID_SDK_ROOT}/cmdline-tools/cmdline-tools/bin/sdkmanager --sdk_root=
 ${ANDROID_SDK_ROOT}/cmdline-tools/cmdline-tools/bin/sdkmanager --sdk_root=${ANDROID_SDK_ROOT} "platform-tools" "platforms;android-${SDK_API_LEVEL}" "build-tools;${SDK_BUILD_TOOLS}"
 ```
 
-### Using Android Studio
+### Использование Android Studio
 
-Android Studio offers a convenient UI:
-- to install all the dependencies;
-- to manage android virtual devices;
-- to make easy use of adb logs.
+Android Studio предоставляет удобный интерфейс для:
 
-## Building Libs and Tests for Android
+-   установки всех зависимостей;
+-   управления виртуальными Android-устройствами;
+-   просмотра логов adb.
 
-Before running a build you might want to set the Android SDK and NDK environment variables:
+## Сборка библиотек и тестов для Android
+
+Перед запуском сборки рекомендуется установить переменные окружения для Android SDK и NDK:
+
 ```
 export ANDROID_SDK_ROOT=<PATH-TO-ANDROID-SDK>
 export ANDROID_NDK_ROOT=<PATH-TO-ANDROID-NDK>
 ```
 
-Now we're ready to build everything for Android:
+Таким образом, все должно быть готово к сборке на Android:
+
 ```
 ./build.sh mono+libs -os android -arch x64
 ```
-and even run tests one by one for each library:
+
+И также для поочередного запуска тестов для каждой библиотеки:
+
 ```
 ./build.sh libs.tests -os android -arch x64 -test
 ```
-Make sure an emulator is booted (see [`AVD Manager`](#avd-manager)) or a device is plugged in and unlocked.
-`AVD Manager` tool recommends to install `x86` images by default so if you follow that recommendation make sure `-arch x86` was used for the build script.
 
-### Running individual test suites
-The following shows how to run tests for a specific library
+Убедитесь, что эмулятор запущен (см. [`AVD Manager`](#avd-manager)) или устройство подключено и разблокировано.
+`AVD Manager` по умолчанию рекомендует устанавливать образы `x86`, поэтому убедитесь, что в скрипте сборки использован параметр `-arch x86`.
+
+### Запуск отдельных тестовых наборов
+
+Ниже показано, как запускать тесты для конкретной библиотеки:
+
 ```
 ./dotnet.sh build /t:Test src/libraries/System.Numerics.Vectors/tests /p:TargetOS=android /p:TargetArchitecture=x64
 ```
 
-### Running the functional tests
+### Запуск функциональных тестов
 
-There are [functional tests](https://github.com/dotnet/runtime/tree/main/src/tests/FunctionalTests/) which aim to test some specific features/configurations/modes on a target mobile platform.
+Доступны [функциональные тесты](https://github.com/dotnet/runtime/tree/main/src/tests/FunctionalTests/), предназначенные для проверки определенных функций/конфигураций/режимов на целевой мобильной платформе.
 
-A functional test can be run the same way as any library test suite, e.g.:
+Функциональные тесты запускаются так же, как и любые другие тестовые наборы библиотек, например:
+
 ```
 ./dotnet.sh build /t:Test -c Release /p:TargetOS=android /p:TargetArchitecture=x64 src/tests/FunctionalTests/Android/Device_Emulator/PInvoke/Android.Device_Emulator.PInvoke.Test.csproj
 ```
 
-Currently functional tests are expected to return `42` as a success code so please be careful when adding a new one.
+В настоящее время успешное выполнение функциональных тестов ожидает возврат кода `42` - учитывайте это при добавлении новых тестов.
 
-### Testing various configurations
+### Тестирование различных конфигураций
 
-It's possible to test various configurations by setting a combination of additional MSBuild properties such as `RunAOTCompilation`,`MonoForceInterpreter`, and some more.
+Возможно тестирование различных конфигураций путем установки комбинации дополнительных свойств MSBuild, таких как `RunAOTCompilation`, `MonoForceInterpreter` и другие.
 
-1. AOT
+1. AOT  
+   Для сборки в режиме только AOT добавьте `/p:RunAOTCompilation=true /p:MonoForceInterpreter=false` в команду сборки.
 
-To build for AOT only mode, add `/p:RunAOTCompilation=true /p:MonoForceInterpreter=false` to a build command.
+2. AOT-LLVM  
+   Для сборки в режиме AOT-LLVM добавьте `/p:RunAOTCompilation=true /p:MonoForceInterpreter=false /p:MonoEnableLLVM=true`.
 
-2. AOT-LLVM
+3. Интерпретатор  
+   Для сборки в режиме интерпретатора добавьте `/p:RunAOTCompilation=false /p:MonoForceInterpreter=true`.
 
-To build for AOT-LLVM mode, add `/p:RunAOTCompilation=true /p:MonoForceInterpreter=false /p:MonoEnableLLVM=true` to a build command.
+### Дизайн тестового приложения
 
-3. Interpreter
+Android-приложение представляет собой [Java Instrumentation](https://github.com/dotnet/runtime/blob/main/src/tasks/AndroidAppBuilder/Templates/MonoRunner.java) и простую Activity, инициализирующую Mono Runtime через JNI. Этот Mono Runtime запускает простой xunit test runner под названием XHarness.TestRunner (см. https://github.com/dotnet/xharness), который выполняет тесты для всех `*.Tests.dll` библиотек в пакете. Также имеется инструмент XHarness.CLI со встроенным ADB для развертывания `*.apk` на целевом устройстве (физическом или эмуляторе) и получения логов после завершения тестов.
 
-To build for Interpreter mode, add `/p:RunAOTCompilation=false /p:MonoForceInterpreter=true` to a build command.
+### Получение логов
 
-### Test App Design
-Android app is basically a [Java Instrumentation](https://github.com/dotnet/runtime/blob/main/src/tasks/AndroidAppBuilder/Templates/MonoRunner.java) and a simple Activity that inits the Mono Runtime via JNI. This Mono Runtime starts a simple xunit test
-runner called XHarness.TestRunner (see https://github.com/dotnet/xharness) which runs tests for all `*.Tests.dll` libs in the bundle. There is also XHarness.CLI tool with ADB embedded to deploy `*.apk` to a target (device or emulator) and obtain logs once tests are completed.
+XHarness для Android не выводит много информации и сохраняет результаты тестов в файл. Однако вы можете получать логи в реальном времени с помощью команды:
 
-### Obtaining the logs
-XHarness for Android doesn't talk much and only saves test results to a file. However, you can also subscribe to live logs via the following command:
 ```
 adb logcat -s "DOTNET"
 ```
-Or simply open `logcat` window in Android Studio or Visual Studio.
+
+Или просто откройте окно `logcat` в Android Studio или Visual Studio.
 
 ### AVD Manager
-If Android Studio is installed, [AVD Manager](https://developer.android.com/studio/run/managing-avds) can be used from the IDE to create and start Android virtual devices. Otherwise, the Android SDK provides the [`avdmanager` command line tool](https://developer.android.com/studio/command-line/avdmanager).
 
-Example of installing, creating, and launching emulators from the command line (where `SDK_API_LEVEL` matches the installed Android SDK and `EMULATOR_NAME_X86`/`EMULATOR_NAME_X64` are names of your choice):
+При установленном Android Studio можно использовать [AVD Manager](https://developer.android.com/studio/run/managing-avds) из IDE для создания и запуска виртуальных Android-устройств. В противном случае Android SDK предоставляет [инструмент командной строки avdmanager](https://developer.android.com/studio/command-line/avdmanager).
+
+Пример установки, создания и запуска эмуляторов из командной строки (где `SDK_API_LEVEL` соответствует установленному Android SDK, а `EMULATOR_NAME_X86`/`EMULATOR_NAME_X64` - выбранные вами имена):
+
 ```bash
-# Install x86 image
+# Установить образ x86
 ${ANDROID_SDK_ROOT}/cmdline-tools/tools/bin/sdkmanager "system-images;android-${SDK_API_LEVEL};default;x86"
 
-# Create x86 image
+# Создать образ x86
 ${ANDROID_SDK_ROOT}/cmdline-tools/tools/bin/avdmanager create avd --name ${EMULATOR_NAME_X86} --package "system-images;android-${SDK_API_LEVEL};default;x86"
 
-# Launch emulator with x86 image
+# Запустить эмулятор с образом x86
 ${ANDROID_SDK_ROOT}/emulator/emulator -avd ${EMULATOR_NAME_X86} &
 
-# Install x64 image
+# Установить образ x64
 ${ANDROID_SDK_ROOT}/cmdline-tools/tools/bin/sdkmanager "system-images;android-${SDK_API_LEVEL};default;x86_64"
 
-# Create x64 image
+# Создать образ  x64
 ${ANDROID_SDK_ROOT}/cmdline-tools/tools/bin/avdmanager create avd --name ${EMULATOR_NAME_X64} --package "system-images;android-${SDK_API_LEVEL};default;x86_64"
 
-# Launch emulator with x64 image
+# Запустить эмулятор с образом 64
 ${ANDROID_SDK_ROOT}/emulator/emulator -avd ${EMULATOR_NAME_X64} &
 ```
-The emulator can be launched with a variety of options. Run `emulator -help` to see the full list.
 
-### Existing Limitations
-- `-os android` is not supported for Windows yet (`WSL` can be used instead)
-- XHarness.CLI is not able to boot emulators yet (so you need to boot via `AVD Manager` or IDE)
-- AOT and Interpreter modes are not supported yet
+Эмулятор можно запускать с различными параметрами. Используйте `emulator -help` для просмотра полного списка опций.
 
-### Debugging the native runtime code using Android Studio
+### Существующие ограничения
 
-See [Debugging Android](../../debugging/mono/android-debugging.md)
+-   `-os android` пока не поддерживается в Windows (можно использовать `WSL`)
+-   XHarness.CLI пока не умеет запускать эмуляторы (необходим запуск через `AVD Manager` или IDE)
+-   Режимы AOT и интерпретатора пока не поддерживаются
+
+### Отладка нативного runtime-кода в Android Studio
+
+См. [Отладка на Android](../../debugging/mono/android-debugging.md)
